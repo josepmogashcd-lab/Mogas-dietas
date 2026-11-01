@@ -24,7 +24,7 @@
   body{font-family:"Montserrat",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
   .app{max-width:520px;margin:0 auto;height:100%;display:flex;flex-direction:column;background:var(--bg)}
   header{background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
-  header::after{content:"";position:absolute;right:-30px;bottom:-40px;width:140px;height:140px;border-radius:50%;background:var(--brand-light);opacity:.25}
+  header::after{pointer-events:none;content:"";position:absolute;right:-30px;bottom:-40px;width:140px;height:140px;border-radius:50%;background:var(--brand-light);opacity:.25}
   header .brandlogo{height:30px;width:auto;display:block}
   header .sep{width:1px;align-self:stretch;background:rgba(255,255,255,.35)}
   .avatar{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:0 0 auto}
@@ -123,6 +123,17 @@
   .opts button.sec{border-color:var(--line)!important}
   .panel .actions button.doc{background:#fff;color:var(--brand);border:2px solid var(--brand);margin-bottom:10px}
   .panel .actions button:disabled{opacity:.6}
+  .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+  .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
+  .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
+  .panel .cli:first-of-type{border-top:0}
+  .panel .cli>div{flex:1;min-width:0}.panel .cli small{display:block;color:var(--muted);font-size:12px}
+  .panel .cli button{font:inherit;font-size:14px;font-weight:600;background:var(--brand-2);color:var(--brand);border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .panel .cli button.x{background:none;color:#a33;padding:8px}
+  .panel .actions button+button{margin-top:10px}
+  .linkbox{background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;border:2px solid var(--brand-2)}
+  .linkbox input{width:100%;font:inherit;font-size:13px;padding:9px;border:1px solid #dfe3da;border-radius:8px;box-sizing:border-box;color:var(--muted)}
+  .linkbox .linkbtns{display:flex;gap:8px;margin:10px 0 4px}.panel .linkbox .linkbtns button{margin:0;flex:1}
   .docres p{margin:0 0 8px;font-size:14px}
   .docres .ok{color:var(--brand)}
   .doclink{display:block;text-align:center;background:var(--brand-2);color:var(--brand);font-weight:600;border-radius:10px;padding:11px;margin-bottom:12px;text-decoration:none}
@@ -568,7 +579,11 @@ function login(){
   document.getElementById("f").addEventListener("submit", e=>{
     e.preventDefault();
     const v = document.getElementById("code").value.trim().toUpperCase();
-    if(cargarCliente(v)) start(); else document.getElementById("err").textContent="Código no válido. Pídeselo a tu nutricionista.";
+    const mia = store.get("mogas-dieta");
+    if(v===NUTRI_CODE){ store.set("mogas-modo","nutri"); panelInicio(); }
+    else if(mia && mia.f && String(mia.f.codigo).toUpperCase()===v){ store.del("mogas-fuera"); aplicarDatos(mia); start(); }
+    else if(cargarCliente(v)) start();
+    else document.getElementById("err").textContent="Código no válido. Ábrelo con el enlace que te ha enviado tu nutricionista.";
   });
 }
 
@@ -656,11 +671,51 @@ async function generarDoc(btn, out){
       const dl = window.claude ? await window.claude.use("downloads").catch(()=>null) : null;
       if(dl){ await dl.save({filename:titulo.replace(/[\\/:*?"<>|]/g,"")+".docx", data:new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})});
         out.innerHTML=`<p class="ok">✅ Dieta descargada en Word. Súbela a Google Drive para editarla como documento de Google.</p>`; }
-      else out.innerHTML=`<p class="warn">Para crear el documento, abre esta app desde claude.ai con Google Drive conectado.</p>`;
+      else { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})); a.download=titulo.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9 ()_.-]/g,"").trim()+".docx"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},4000);
+        out.innerHTML=`<p class="ok">✅ Dieta descargada en Word (.docx).</p><p class="note">Para editarla como documento de Google: súbela a tu Google Drive y ábrela con Google Docs. También se puede abrir directamente con Word o Pages.</p>`; }
     }
   }catch(e){ out.innerHTML=`<p class="warn">No se ha podido generar el documento.</p>`; }
   btn.disabled=false; btn.textContent=txt;
 }
+
+
+/* =========== DIETAS POR ENLACE (sin servidor) ===========
+   La ficha viaja dentro del enlace (#d=...). El fragmento # no se envía a GitHub:
+   la dieta solo existe en el enlace y en el móvil de quien lo abre. */
+const INC_BASE = JSON.parse(JSON.stringify(INCREMENTOS));
+const NUTRI_CODE = "NUTRICIONISTA";
+let PREVIEW = false;
+const b64u = {
+  enc: u8 => { let s=""; for(let i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); },
+  dec: t => { t=t.replace(/-/g,"+").replace(/_/g,"/"); while(t.length%4) t+="="; const s=atob(t), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u; }
+};
+async function streamBytes(u8, Ctor, fmt){ const st=new Blob([u8]).stream().pipeThrough(new Ctor(fmt)); return new Uint8Array(await new Response(st).arrayBuffer()); }
+async function empaquetar(obj){
+  const raw=new TextEncoder().encode(JSON.stringify(obj));
+  if(typeof CompressionStream!=="undefined"){ try{ return "z"+b64u.enc(await streamBytes(raw,CompressionStream,"deflate-raw")); }catch(e){} }
+  return "j"+b64u.enc(raw);
+}
+async function desempaquetar(t){
+  const u = t[0]==="z" ? await streamBytes(b64u.dec(t.slice(1)),DecompressionStream,"deflate-raw") : b64u.dec(t.slice(1));
+  return JSON.parse(new TextDecoder().decode(u));
+}
+function datosActuales(){ return { f: JSON.parse(JSON.stringify(FICHA)), i: JSON.parse(JSON.stringify(INCREMENTOS)) }; }
+function aplicarDatos(d){
+  const f = (d&&d.f)||{}, base = JSON.parse(JSON.stringify(FICHA_BASE));
+  Object.keys(FICHA).forEach(k=>delete FICHA[k]);
+  Object.keys(base).forEach(k=>{ const v=f[k]; FICHA[k] = (v!==undefined && (base[k]===null || v===null || typeof v===typeof base[k])) ? v : base[k]; });
+  const inc = Array.isArray(d&&d.i) ? d.i.filter(r=>r&&typeof r==="object").map(r=>({id:String(r.id||"r"+Math.random()), nombre:String(r.nombre||""), def:String(r.def||""), tipo:r.tipo==="toma"?"toma":"hc", destino:String(r.destino||"Cena"), cant:+r.cant||0}))
+                                     : JSON.parse(JSON.stringify(INC_BASE));
+  INCREMENTOS.length=0; inc.forEach(r=>INCREMENTOS.push(r));
+}
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const misClientes = () => store.get("mogas-panel-clientes") || {};
+function guardarCliente(){ const all=misClientes(); all[FICHA.codigo]={...datosActuales(), fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
+async function enlaceCliente(){ return location.origin + location.pathname + "#d=" + await empaquetar(datosActuales()); }
 
 /* =========== PANEL DEL NUTRICIONISTA =========== */
 function panel(){
@@ -668,11 +723,11 @@ function panel(){
   const factores=[1.2,1.3,1.35,1.4,1.5,1.55,1.6,1.7,1.8,1.9];
   const fLab=factores.map(f=>f+(f<=1.2?" · sedentario":f<1.4?" · ligero":f<1.6?" · moderado":f<1.8?" · activo":" · muy activo"));
   app.innerHTML=`
-    <header><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Panel del nutricionista</div><div class="s">Nueva dieta · ficha del cliente</div></div></header>
-    <div class="panel">
+    <header class="notr"><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Panel del nutricionista</div><div class="s">${FICHA.nombre?esc(FICHA.nombre):"Nuevo cliente"} · ficha</div></div><button type="button" class="hbtn" id="volver">← Clientes</button></header>
+    <div class="panel notr">
       <section><h2>1. Datos del cliente</h2>
         <label>Nombre<input id="p_nombre" value="${esc(FICHA.nombre)}"></label>
-        <label>Código de acceso<input id="p_codigo" value="${esc(FICHA.codigo)}"></label>
+        <label>Código de acceso<input id="p_codigo" value="${esc(FICHA.codigo)}" placeholder="p. ej. ISA24" autocapitalize="characters"></label>
         <label>Sexo${sel("p_sexo",["Mujer","Hombre"],FICHA.sexo)}</label>
         <label>Objetivo de pasos diarios<input id="p_pasos" type="number" inputmode="numeric" value="${FICHA.pasosObjetivo}"></label>
         <p class="note" style="margin-top:6px">Intolerancias, alergias y sensibilidades:</p>
@@ -706,10 +761,10 @@ function panel(){
         <label class="check"><input type="checkbox" id="p_intest" ${FICHA.intestinoEntrenado?"checked":""}> Tiene el intestino entrenado (tolera más de 90 g/h)</label>
         <p class="note">El cliente puede cambiar la prioridad en cada entreno desde el chat (por ejemplo, rendimiento el día de carrera).</p>
       </section>
-      <div class="actions"><button id="gendoc" class="doc">📄 Generar dieta en Google Docs</button><div id="docres" class="docres"></div><button id="save">Guardar y ver como cliente</button></div>
+      <div class="actions"><div id="saveres"></div><button id="save">💾 Guardar y crear enlace para el cliente</button><button id="preview" class="doc">👀 Ver como cliente</button><button id="gendoc" class="doc">📄 Generar dieta (documento Word / Google Docs)</button><div id="docres" class="docres"></div></div>
     </div>`;
   const $=id=>document.getElementById(id);
-  const leer=()=>{FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase()||"DEMO";FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.otrasRestricciones=$("p_otras").value.trim();
+  const leer=()=>{FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.otrasRestricciones=$("p_otras").value.trim();
     FICHA.tmb=+$("p_tmb").value||0;FICHA.factor=+$("p_factor").value;FICHA.objetivo=$("p_obj").value;FICHA.ajuste=+$("p_aj").value||0;
     FICHA.prioridad=$("p_prio").value;FICHA.deficitMaxSesion=+$("p_defmax").value||0;FICHA.intestinoEntrenado=$("p_intest").checked;FICHA.entrenoIncluido=+$("p_incl").value||0;};
   const pintarCalc=()=>{leer();const c=calculo();$("l_aj").style.display=FICHA.objetivo==="normo"?"none":"";
@@ -757,11 +812,54 @@ function panel(){
   ["p_ent","p_ham","p_sinman"].forEach(id=>$(id).addEventListener("change",()=>{FICHA.reparto=null;pintarRep();}));
   ["p_tmb","p_factor","p_obj","p_aj"].forEach(id=>$(id).addEventListener("input",()=>{pintarCalc();pintarRep();}));
   $("addinc").onclick=()=>{INCREMENTOS.push({id:"r"+Date.now(),nombre:"Nueva actividad",def:"",tipo:"hc",destino:"Cena",cant:1});pintarIncs();};
-  $("save").onclick=()=>{leer();
+  const valido=()=>{leer();
+    if(!FICHA.nombre.trim()){ $("p_nombre").focus(); $("saveres").innerHTML=`<p class="warn">Falta el nombre del cliente.</p>`; return false; }
+    if(!/^[A-Z0-9-]{3,20}$/.test($("p_codigo").value.trim().toUpperCase())){ $("p_codigo").focus(); $("saveres").innerHTML=`<p class="warn">El código debe tener entre 3 y 20 letras o números, sin espacios.</p>`; return false; }
+    if(FICHA.codigo===NUTRI_CODE||FICHA.codigo==="DEMO"){ $("p_codigo").focus(); $("saveres").innerHTML=`<p class="warn">Ese código está reservado. Elige otro.</p>`; return false; }
     const R=reparto(), s=FICHA.comidas.reduce((a,c)=>a+(+R[c]||0),0);
-    if(s!==100){$("rep").scrollIntoView({behavior:"smooth"});return;}try{localStorage.setItem("demo-ficha",JSON.stringify({ficha:FICHA,inc:INCREMENTOS}))}catch(e){};start();};
+    if(s!==100){ $("rep").scrollIntoView({behavior:"smooth"}); $("saveres").innerHTML=`<p class="warn">El reparto de comidas tiene que sumar 100%.</p>`; return false; }
+    return true; };
+  $("save").onclick=async()=>{ if(!valido()) return; guardarCliente();
+    const url=await enlaceCliente();
+    $("saveres").innerHTML=`<div class="linkbox"><p class="ok">✅ Guardado. Envía este enlace a ${esc(FICHA.nombre)}:</p>
+      <input readonly id="linkurl" value="${esc(url)}">
+      <div class="linkbtns"><button type="button" id="copiar">📋 Copiar</button><button type="button" id="compartir">📤 Enviar</button></div>
+      <p class="note">Al abrirlo, su dieta queda guardada en su móvil. Su código (<b>${esc(FICHA.codigo)}</b>) solo sirve en ese mismo móvil. Si cambias la dieta, guarda y envíale el enlace nuevo.</p></div>`;
+    $("copiar").onclick=async()=>{ try{ await navigator.clipboard.writeText(url); $("copiar").textContent="✅ Copiado"; }catch(e){ $("linkurl").select(); document.execCommand("copy"); $("copiar").textContent="✅ Copiado"; } };
+    $("compartir").onclick=async()=>{ const txt=`Hola ${FICHA.nombre.split(" ")[0]}! Aquí tienes tu asistente de dieta MOGAS:`;
+      if(navigator.share){ try{ await navigator.share({title:"Tu dieta MOGAS", text:txt, url}); }catch(e){} }
+      else window.open("https://wa.me/?text="+encodeURIComponent(txt+" "+url),"_blank","noopener"); };
+    $("saveres").scrollIntoView({behavior:"smooth",block:"center"}); };
+  $("preview").onclick=()=>{ leer(); const R=reparto(), s=FICHA.comidas.reduce((a,c)=>a+(+R[c]||0),0);
+    if(s!==100){ $("rep").scrollIntoView({behavior:"smooth"}); return; } PREVIEW=true; start(); };
+  $("volver").onclick=()=>{ leer(); panelInicio(); };
   $("gendoc").onclick=()=>{leer(); generarDoc($("gendoc"),$("docres"));};
   pintarCalc();pintarRep();pintarIncs();
+}
+
+function panelInicio(){
+  PREVIEW=false;
+  const all=misClientes(), cods=Object.keys(all).sort((a,b)=>String(all[a].f.nombre).localeCompare(String(all[b].f.nombre)));
+  app.innerHTML=`
+    <header class="notr"><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Panel del nutricionista</div><div class="s">Tus clientes</div></div><button type="button" class="hbtn" id="psalir">Salir</button></header>
+    <div class="panel notr">
+      <section><button id="nuevo" class="big">➕ Nuevo cliente</button></section>
+      <section><h2>Clientes guardados en este dispositivo</h2>
+        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}</small></div>
+          <button type="button" data-a="ed" data-c="${esc(c)}">Editar</button><button type="button" class="x" data-a="del" data-c="${esc(c)}" title="Borrar">✕</button></div>`).join("")
+          :`<p class="note">Aún no has creado ningún cliente.</p>`}
+      </section>
+      <section><h2>¿Cómo funciona?</h2>
+        <p class="note">1. Crea el cliente y rellena su ficha. 2. Pulsa «Guardar y crear enlace». 3. Envíale el enlace por WhatsApp: al abrirlo tendrá su asistente con su dieta.<br><br>
+        Las fichas se guardan solo en este dispositivo y dentro del enlace; no se suben a ningún servidor. Es la versión de pruebas: para clientes reales montaremos una base de datos privada.</p>
+      </section>
+    </div>`;
+  const $=id=>document.getElementById(id);
+  $("psalir").onclick=()=>{ store.del("mogas-modo"); login(); };
+  $("nuevo").onclick=()=>{ aplicarDatos({f:{...JSON.parse(JSON.stringify(FICHA_BASE)), nombre:"", codigo:""}}); panel(); };
+  app.querySelectorAll(".cli button").forEach(b=>b.onclick=()=>{ const c=b.dataset.c;
+    if(b.dataset.a==="ed"){ aplicarDatos(all[c]); panel(); }
+    else if(confirm(`¿Borrar a ${all[c].f.nombre||c} de este dispositivo? Si ya tiene el enlace, lo seguirá teniendo en su móvil.`)){ delete all[c]; store.set("mogas-panel-clientes",all); panelInicio(); } });
 }
 
 function start(){
@@ -771,7 +869,9 @@ function start(){
     <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
   chat = document.getElementById("chat");
   activarSelector(start);
-  const sl=document.getElementById("salir"); if(sl) sl.onclick=e=>{e.preventDefault(); try{localStorage.removeItem("mogas-codigo")}catch(_){} login();};
+  const sl=document.getElementById("salir");
+  if(sl && PREVIEW){ sl.textContent="← Volver al panel"; sl.classList.add("notr"); sl.onclick=e=>{e.preventDefault(); PREVIEW=false; panel();}; }
+  else if(sl) sl.onclick=e=>{e.preventDefault(); store.del("mogas-codigo"); store.set("mogas-fuera",1); login();};
   const rs=restr();
   bot(`<span class="hello"><img src="${LOGO_ICON}" alt=""><span><b>¡Hola!</b> Soy el asistente de tu dieta de <b>MOGAS</b>.</span></span>${rs.length||FICHA.otrasRestricciones?`\n<span class="note">✅ Todo adaptado a: ${[...rs.map(r=>r.t.toLowerCase()),FICHA.otrasRestricciones].filter(Boolean).map(esc).join(", ")}.</span>`:""}${rs.some(r=>r.nota)?`\n<span class="note">${rs.filter(r=>r.nota).map(r=>esc(r.nota)).join(" ")}</span>`:""}\n¿En qué te puedo ayudar?`);
   menu();
@@ -1403,7 +1503,17 @@ function receta(){
 }
 
 /* --- Dudas --- */
-(function(){ let c=null; try{c=localStorage.getItem("mogas-codigo")}catch(e){} if(c && cargarCliente(c)) start(); else login(); })();
+(async function(){
+  const m = location.hash.match(/^#d=([A-Za-z0-9_\-]+)$/);
+  if(m){
+    try{ const d=await desempaquetar(m[1]); aplicarDatos(d); store.set("mogas-dieta",datosActuales()); store.del("mogas-fuera"); store.del("mogas-modo"); store.del("mogas-codigo");
+      history.replaceState(null,"",location.pathname); start(); return; }
+    catch(e){ history.replaceState(null,"",location.pathname); login(); document.getElementById("err").textContent="El enlace no es válido o está incompleto. Pide a tu nutricionista que te lo vuelva a enviar."; return; }
+  }
+  if(store.get("mogas-modo")==="nutri"){ panelInicio(); return; }
+  const mia=store.get("mogas-dieta"); if(mia && mia.f && !store.get("mogas-fuera")){ aplicarDatos(mia); start(); return; }
+  let c=null; try{c=localStorage.getItem("mogas-codigo")}catch(e){} if(c && cargarCliente(c)) start(); else login();
+})();
 </script>
 </body>
 </html>
