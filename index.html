@@ -126,6 +126,12 @@
   .docres p{margin:0 0 8px;font-size:14px}
   .docres .ok{color:var(--brand)}
   .doclink{display:block;text-align:center;background:var(--brand-2);color:var(--brand);font-weight:600;border-radius:10px;padding:11px;margin-bottom:12px;text-decoration:none}
+  .langsel{display:flex;gap:2px;background:rgba(255,255,255,.18);border-radius:999px;padding:3px;margin-left:auto;position:relative;z-index:1;flex:0 0 auto}
+  .langsel button{font:inherit;font-size:12px;font-weight:600;border:0;background:none;color:#fff;padding:5px 8px;border-radius:999px;cursor:pointer;opacity:.85}
+  .langsel button.on{background:#fff;color:var(--brand);opacity:1}
+  .login .langsel{align-self:center;margin:0 auto 14px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+  .login .langsel button{color:var(--muted)}
+  .login .langsel button.on{background:var(--brand);color:#fff}
   .plate{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;background:#fbfaf7}
   .plate div{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
   .plate span:first-child{color:var(--muted);font-size:14px;flex:0 0 auto}
@@ -135,6 +141,7 @@
 <body>
 <div class="app" id="app"></div>
 
+<script src="i18n.js"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -517,13 +524,39 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
+
+/* =========== IDIOMAS (ES · CA · EN) =========== */
+let LANG = (()=>{ try{ return localStorage.getItem("mogas-lang")||"es"; }catch(e){ return "es"; } })();
+const NUM_RE = /\d+(?:[.,]\d+)*½?|½/g;
+function trT(t){
+  if(LANG==="es" || !window.I18N || !I18N[LANG]) return t;
+  const lead=t.match(/^\s*/)[0], trail=t.match(/\s*$/)[0], nums=[];
+  const key=t.replace(/\s+/g," ").trim().replace(NUM_RE,m=>{nums.push(m);return "#";});
+  const v=I18N[LANG][key]; if(v==null) return t;
+  let i=0; return lead+v.replace(/#/g,()=>nums[i++]??"#")+trail;
+}
+function traducir(el){
+  if(LANG==="es") return;
+  const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); const ns=[]; while(w.nextNode()) ns.push(w.currentNode);
+  ns.forEach(n=>{ if(n.parentNode && n.parentNode.closest && n.parentNode.closest(".langsel,.notr")) return; const v=trT(n.nodeValue); if(v!==n.nodeValue) n.nodeValue=v; });
+  if(el.querySelectorAll) el.querySelectorAll("input[placeholder]").forEach(i=>i.placeholder=trT(i.placeholder));
+}
+new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1) traducir(n); else if(n.nodeType===3){ const v=trT(n.nodeValue); if(v!==n.nodeValue) n.nodeValue=v; } }))).observe(document.getElementById("app"),{childList:true,subtree:true});
+function selectorIdioma(){
+  return `<div class="langsel">${["es","ca","en"].map(l=>`<button type="button" data-l="${l}" class="${l===LANG?"on":""}">${l.toUpperCase()}</button>`).join("")}</div>`;
+}
+function activarSelector(alCambiar){
+  document.querySelectorAll(".langsel button").forEach(b=>b.onclick=()=>{ LANG=b.dataset.l; try{localStorage.setItem("mogas-lang",LANG)}catch(e){}; document.documentElement.lang=LANG; alCambiar(); });
+}
+document.documentElement.lang=LANG;
+
 let chat;
 
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
 function login(){
   app.innerHTML = `
-    <div class="login"><div class="card">
+    <div class="login">${selectorIdioma()}<div class="card">
       <img class="loginlogo" src="${LOGO_FULL}" alt="MOGAS Nutrició i Entrenament">
       <h1>Tu asistente de dieta</h1>
       <p>Introduce el código que te ha dado tu nutricionista.</p>
@@ -531,6 +564,7 @@ function login(){
       <div class="err" id="err"></div>
       <div class="hint">Consejo: añade esta página a la pantalla de inicio para abrirla como una app.</div>
     </div></div>`;
+  activarSelector(login);
   document.getElementById("f").addEventListener("submit", e=>{
     e.preventDefault();
     const v = document.getElementById("code").value.trim().toUpperCase();
@@ -732,10 +766,11 @@ function panel(){
 
 function start(){
   app.innerHTML = `
-    <header><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Asistente de dieta</div><div class="s">${esc(OBJETIVOS[FICHA.objetivo].split(" (")[0])} · ${kcalObj()} kcal/día</div></div></header>
+    <header><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Asistente de dieta</div><div class="s">${esc(OBJETIVOS[FICHA.objetivo].split(" (")[0])} · ${kcalObj()} kcal/día</div></div>${selectorIdioma()}</header>
     <div id="chat"></div>
     <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
   chat = document.getElementById("chat");
+  activarSelector(start);
   const sl=document.getElementById("salir"); if(sl) sl.onclick=e=>{e.preventDefault(); try{localStorage.removeItem("mogas-codigo")}catch(_){} login();};
   const rs=restr();
   bot(`<span class="hello"><img src="${LOGO_ICON}" alt=""><span><b>¡Hola!</b> Soy el asistente de tu dieta de <b>MOGAS</b>.</span></span>${rs.length||FICHA.otrasRestricciones?`\n<span class="note">✅ Todo adaptado a: ${[...rs.map(r=>r.t.toLowerCase()),FICHA.otrasRestricciones].filter(Boolean).map(esc).join(", ")}.</span>`:""}${rs.some(r=>r.nota)?`\n<span class="note">${rs.filter(r=>r.nota).map(r=>esc(r.nota)).join(" ")}</span>`:""}\n¿En qué te puedo ayudar?`);
