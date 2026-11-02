@@ -291,8 +291,8 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.16.3"></script>
-<script src="i18n-vs.js?v=2.16.3"></script>
+<script src="i18n.js?v=2.16.4"></script>
+<script src="i18n-vs.js?v=2.16.4"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -677,7 +677,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.16.3";
+const APP_VERSION = "2.16.4";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1987,8 +1987,8 @@ function puntosDia(a, f){
     d += a.social==="no" ? 20 : a.social==="si" ? ({ctrl:15, algo:8, libre:0}[a.socialTipo]||0) : 0;
     p.dieta=d;
   }
-  if(a.cafe || a.bebAz || a.pico){
-    let z=100; z-=({"1":15,"2":30})[a.cafe]||0; z-=({"1":20,"2":40,"3":60})[a.bebAz]||0;
+  if(a.cafe || a.bebAz || a.bebZero || a.pico){
+    let z=100; z-=({"1":15,"2":30})[a.cafe]||0; z-=({"1":20,"2":40,"3":60})[a.bebAz]||0; z-=({"1":5,"2":10})[a.bebZero]||0;
     if(a.pico==="si"){ const pu=picoUnidades(a), u=pu.dulce+pu.salado/2; z -= u<=0?0 : u<=1?15 : u<=4?35 : u<=8?60 : 80; }
     p.azucar=Math.max(0,z);
   }
@@ -2200,6 +2200,7 @@ function vsQPintar(arriba){
     const SW=[["galletas","Galletas"],["bolleria","Bollería (croissant, magdalena…)"],["chocolate","Chocolate"],["gominolas","Caramelos o gominolas"],["postre","Helado o postre"],["salado","Salado (patatas, snacks)"]];
     body = `<div class="qc"><span class="qt">¿Azúcar en el café o infusiones?</span><div class="qg g3">${ob("cafe","0","No")}${ob("cafe","1","1 sobre")}${ob("cafe","2","2 o más")}</div></div>
       <div class="qc"><span class="qt">¿Bebidas azucaradas? (refrescos, zumos, batidos)</span><div class="qg g4">${ob("bebAz","0","Ninguna")}${ob("bebAz","1","1")}${ob("bebAz","2","2")}${ob("bebAz","3","3 o más")}</div></div>
+      <div class="qc"><span class="qt">¿Refrescos zero o light?</span><div class="qg g3">${ob("bebZero","0","Ninguno")}${ob("bebZero","1","1")}${ob("bebZero","2","2 o más")}</div><small class="qnote">No llevan azúcar, pero mantienen el gusto por el dulce: restan muy poco.</small></div>
       <div class="qc"><span class="qt">¿Has picoteado entre horas?</span><div class="qg g2">${ob("pico","no","No")}${ob("pico","si","Sí")}</div>
         ${a.pico==="si"?`<span class="qs">Pon cuántos de cada uno</span><div class="qpico">${PICO.map(([k,n,u])=>{ const v=(a.picoN||{})[k]||0; return `<div class="qpi${v?" tiene":""}"><span class="qpn"><b>${n}</b><small>${u}</small></span><span class="qpc"><button type="button" class="qo" data-pn="${k}" data-d="-1" aria-label="Quitar">−</button><b>${v}</b><button type="button" class="qo mas" data-pn="${k}" data-d="1" aria-label="Añadir">+</button></span></div>`; }).join("")}</div>
         <span class="qs qtot">${(()=>{ const pu=picoUnidades(a); return pu.dulce+pu.salado ? `Total: ${pu.dulce} dulces${pu.salado?` · ${pu.salado} salados`:""}` : "Toca + en lo que hayas comido"; })()}</span></div>`:""}</div>`;
