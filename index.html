@@ -123,6 +123,11 @@
   .opts button.sec{border-color:var(--line)!important}
   .panel .actions button.doc{background:#fff;color:var(--brand);border:2px solid var(--brand);margin-bottom:10px}
   .panel .actions button:disabled{opacity:.6}
+  .panel textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;font:inherit;font-size:15px;line-height:1.45;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);resize:vertical;min-height:140px}
+  .panel .entrev{border:2px solid var(--brand-2)}
+  .panel input[hidden]{display:none}
+  .panel .erow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .panel label.filebtn{display:inline-block;margin:0;font-size:14px;font-weight:600;color:var(--brand);background:var(--brand-2);border-radius:10px;padding:8px 12px;cursor:pointer}
   .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
   .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
   .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
@@ -685,6 +690,7 @@ async function generarDoc(btn, out){
 const INC_BASE = JSON.parse(JSON.stringify(INCREMENTOS));
 const NUTRI_CODE = "NUTRICIONISTA";
 let PREVIEW = false;
+let ENTREVISTA = {fecha:"", texto:""};   // solo en el panel: NUNCA viaja en el enlace del cliente
 const b64u = {
   enc: u8 => { let s=""; for(let i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); },
   dec: t => { t=t.replace(/-/g,"+").replace(/_/g,"/"); while(t.length%4) t+="="; const s=atob(t), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u; }
@@ -714,7 +720,7 @@ const store = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 const misClientes = () => store.get("mogas-panel-clientes") || {};
-function guardarCliente(){ const all=misClientes(); all[FICHA.codigo]={...datosActuales(), fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
+function guardarCliente(){ const all=misClientes(); all[FICHA.codigo]={...datosActuales(), e:{...ENTREVISTA}, fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
 async function enlaceCliente(){ return location.origin + location.pathname + "#d=" + await empaquetar(datosActuales()); }
 
 /* =========== PANEL DEL NUTRICIONISTA =========== */
@@ -725,6 +731,12 @@ function panel(){
   app.innerHTML=`
     <header class="notr"><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Panel del nutricionista</div><div class="s">${FICHA.nombre?esc(FICHA.nombre):"Nuevo cliente"} · ficha</div></div><button type="button" class="hbtn" id="volver">← Clientes</button></header>
     <div class="panel notr">
+      <section class="entrev"><h2>📝 Entrevista inicial</h2>
+        <p class="note">Pega aquí el resumen de la entrevista. Se guarda solo en tu panel: el cliente no lo ve ni viaja en su enlace.</p>
+        <label>Fecha de la entrevista<input id="p_efecha" type="date" value="${esc(ENTREVISTA.fecha||"")}"></label>
+        <label>Resumen<textarea id="p_etexto" rows="8" placeholder="Objetivos, historial, hábitos, horarios, entrenos, gustos, intolerancias, medicación, observaciones…">${esc(ENTREVISTA.texto||"")}</textarea></label>
+        <div class="erow"><label class="filebtn">📎 Cargar archivo (.txt)<input id="p_efile" type="file" accept=".txt,.md,text/plain" hidden></label><span class="note" id="p_ecount"></span></div>
+      </section>
       <section><h2>1. Datos del cliente</h2>
         <label>Nombre<input id="p_nombre" value="${esc(FICHA.nombre)}"></label>
         <label>Código de acceso<input id="p_codigo" value="${esc(FICHA.codigo)}" placeholder="p. ej. ISA24" autocapitalize="characters"></label>
@@ -764,7 +776,8 @@ function panel(){
       <div class="actions"><div id="saveres"></div><button id="save">💾 Guardar y crear enlace para el cliente</button><button id="preview" class="doc">👀 Ver como cliente</button><button id="gendoc" class="doc">📄 Generar dieta (documento Word / Google Docs)</button><div id="docres" class="docres"></div></div>
     </div>`;
   const $=id=>document.getElementById(id);
-  const leer=()=>{FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.otrasRestricciones=$("p_otras").value.trim();
+  const leerE=()=>{ ENTREVISTA={fecha:$("p_efecha").value, texto:$("p_etexto").value}; const n=ENTREVISTA.texto.trim()?ENTREVISTA.texto.trim().split(/\s+/).length:0; $("p_ecount").textContent=n?`${n} palabras`:""; };
+  const leer=()=>{leerE();FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.otrasRestricciones=$("p_otras").value.trim();
     FICHA.tmb=+$("p_tmb").value||0;FICHA.factor=+$("p_factor").value;FICHA.objetivo=$("p_obj").value;FICHA.ajuste=+$("p_aj").value||0;
     FICHA.prioridad=$("p_prio").value;FICHA.deficitMaxSesion=+$("p_defmax").value||0;FICHA.intestinoEntrenado=$("p_intest").checked;FICHA.entrenoIncluido=+$("p_incl").value||0;};
   const pintarCalc=()=>{leer();const c=calculo();$("l_aj").style.display=FICHA.objetivo==="normo"?"none":"";
@@ -832,7 +845,11 @@ function panel(){
     $("saveres").scrollIntoView({behavior:"smooth",block:"center"}); };
   $("preview").onclick=()=>{ leer(); const R=reparto(), s=FICHA.comidas.reduce((a,c)=>a+(+R[c]||0),0);
     if(s!==100){ $("rep").scrollIntoView({behavior:"smooth"}); return; } PREVIEW=true; start(); };
-  $("volver").onclick=()=>{ leer(); panelInicio(); };
+  $("volver").onclick=()=>{ leer(); if(FICHA.nombre.trim() && /^[A-Z0-9-]{3,20}$/.test(FICHA.codigo) && FICHA.codigo!==NUTRI_CODE && FICHA.codigo!=="DEMO") guardarCliente(); panelInicio(); };
+  $("p_etexto").addEventListener("input",leerE);
+  $("p_efile").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; const t=await f.text();
+    const ta=$("p_etexto"); ta.value = ta.value.trim() ? ta.value.trim()+"\n\n"+t : t; if(!$("p_efecha").value) $("p_efecha").value=new Date().toISOString().slice(0,10); leerE(); e.target.value=""; };
+  leerE();
   $("gendoc").onclick=()=>{leer(); generarDoc($("gendoc"),$("docres"));};
   pintarCalc();pintarRep();pintarIncs();
 }
@@ -845,7 +862,7 @@ function panelInicio(){
     <div class="panel notr">
       <section><button id="nuevo" class="big">➕ Nuevo cliente</button></section>
       <section><h2>Clientes guardados en este dispositivo</h2>
-        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}</small></div>
+        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}${all[c].e&&all[c].e.texto&&all[c].e.texto.trim()?" · 📝 entrevista":""}</small></div>
           <button type="button" data-a="ed" data-c="${esc(c)}">Editar</button><button type="button" class="x" data-a="del" data-c="${esc(c)}" title="Borrar">✕</button></div>`).join("")
           :`<p class="note">Aún no has creado ningún cliente.</p>`}
       </section>
@@ -856,9 +873,9 @@ function panelInicio(){
     </div>`;
   const $=id=>document.getElementById(id);
   $("psalir").onclick=()=>{ store.del("mogas-modo"); login(); };
-  $("nuevo").onclick=()=>{ aplicarDatos({f:{...JSON.parse(JSON.stringify(FICHA_BASE)), nombre:"", codigo:""}}); panel(); };
+  $("nuevo").onclick=()=>{ ENTREVISTA={fecha:new Date().toISOString().slice(0,10), texto:""}; aplicarDatos({f:{...JSON.parse(JSON.stringify(FICHA_BASE)), nombre:"", codigo:""}}); panel(); };
   app.querySelectorAll(".cli button").forEach(b=>b.onclick=()=>{ const c=b.dataset.c;
-    if(b.dataset.a==="ed"){ aplicarDatos(all[c]); panel(); }
+    if(b.dataset.a==="ed"){ ENTREVISTA={fecha:"",texto:"",...(all[c].e||{})}; aplicarDatos(all[c]); panel(); }
     else if(confirm(`¿Borrar a ${all[c].f.nombre||c} de este dispositivo? Si ya tiene el enlace, lo seguirá teniendo en su móvil.`)){ delete all[c]; store.set("mogas-panel-clientes",all); panelInicio(); } });
 }
 
