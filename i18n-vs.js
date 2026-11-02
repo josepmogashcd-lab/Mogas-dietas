@@ -86,6 +86,11 @@ const T = {
 "Cuanto más bajo, mejor. Sale de tu café, refrescos y picoteo dulce.":["Com més baix, millor. Surt del teu cafè, refrescos i picoteig dolç.","The lower, the better. Based on your coffee, soft drinks and sweet snacks."],
 "El índice de adicción al azúcar va al revés: cuanto más alto, más baja tu Vital Score.":["L'índex d'addicció al sucre va al revés: com més alt, més baixa el teu Vital Score.","The sugar addiction index works the other way round: the higher it is, the lower your Vital Score."],
 "# %":["# %","# %"],
+"¿Cómo has salido parado?":["Com te n'has sortit?","How did it go?"],
+"Bien: verdura y proteína sin rebozar ni fritos":["Bé: verdura i proteïna sense arrebossar ni fregits","Well: veg and protein, nothing breaded or fried"],
+"A medias: algo me he pasado":["A mitges: m'he passat una mica","So-so: I overdid it a bit"],
+"Mal: no he podido o no he sabido elegir":["Malament: no he pogut o no he sabut triar","Badly: I couldn't or didn't choose well"],
+
 "▼ # puntos desde hace # semanas. ¡Vas por buen camino!":["▼ # punts des de fa # setmanes. Vas pel bon camí!","▼ # points since # weeks ago. You're on the right track!"],
 "▲ # puntos desde hace # semanas. Vigila el azúcar.":["▲ # punts des de fa # setmanes. Vigila el sucre.","▲ # points since # weeks ago. Watch your sugar."],
 "Igual que hace # semanas.":["Igual que fa # setmanes.","Same as # weeks ago."],

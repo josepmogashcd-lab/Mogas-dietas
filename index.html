@@ -675,7 +675,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.16.0";
+const APP_VERSION = "2.16.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1973,7 +1973,7 @@ function puntosDia(a, f){
   const p={}, dk=["comidas","cantidades","verdura","proteina"];
   if(dk.some(k=>a[k]) || a.social){
     let d=0; dk.forEach(k=>{ if(a[k]==="si") d+=20; });
-    d += a.social==="no" ? 20 : a.social==="si" ? ({ctrl:15, algo:6, libre:0}[a.socialTipo]||0) : 0;
+    d += a.social==="no" ? 20 : a.social==="si" ? ({ctrl:15, algo:8, libre:0}[a.socialTipo]||0) : 0;
     p.dieta=d;
   }
   if(a.cafe || a.bebAz || a.pico){
@@ -2184,7 +2184,7 @@ function vsQPintar(arriba){
     body = yn("comidas","¿Has hecho todas las comidas que te tocaban?") + yn("cantidades","¿Has respetado las cantidades de hidratos, proteína y verdura?")
       + yn("verdura","¿Has comido la verdura y la fibra que tocaban?") + yn("proteina","¿La proteína ha sido sin rebozar ni freír?")
       + `<div class="qc"><span class="qt">¿Has tenido alguna comida social fuera?</span><div class="qg g2">${ob("social","si","Sí")}${ob("social","no","No")}</div>
-        ${a.social==="si"?`<span class="qs">¿Cómo ha sido?</span><div class="qg g3">${ob("socialTipo","ctrl","Muy controlada")}${ob("socialTipo","algo","Algo libre")}${ob("socialTipo","libre","Totalmente libre")}</div>`:""}</div>`;
+        ${a.social==="si"?`<span class="qs">¿Cómo has salido parado?</span><div class="qg g1">${ob("socialTipo","ctrl","Bien: verdura y proteína sin rebozar ni fritos")}${ob("socialTipo","algo","A medias: algo me he pasado")}${ob("socialTipo","libre","Mal: no he podido o no he sabido elegir")}</div>`:""}</div>`;
   } else if(paso==="azucar"){
     const SW=[["galletas","Galletas"],["bolleria","Bollería (croissant, magdalena…)"],["chocolate","Chocolate"],["gominolas","Caramelos o gominolas"],["postre","Helado o postre"],["salado","Salado (patatas, snacks)"]];
     body = `<div class="qc"><span class="qt">¿Azúcar en el café o infusiones?</span><div class="qg g3">${ob("cafe","0","No")}${ob("cafe","1","1 sobre")}${ob("cafe","2","2 o más")}</div></div>
