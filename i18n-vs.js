@@ -86,6 +86,9 @@ const T = {
 "Cuanto más bajo, mejor. Sale de tu café, refrescos y picoteo dulce.":["Com més baix, millor. Surt del teu cafè, refrescos i picoteig dolç.","The lower, the better. Based on your coffee, soft drinks and sweet snacks."],
 "El índice de adicción al azúcar va al revés: cuanto más alto, más baja tu Vital Score.":["L'índex d'addicció al sucre va al revés: com més alt, més baixa el teu Vital Score.","The sugar addiction index works the other way round: the higher it is, the lower your Vital Score."],
 "# %":["# %","# %"],
+"¿Has picoteado algo dulce o con azúcar entre horas?":["Has picat alguna cosa dolça o amb sucre entre hores?","Did you snack on anything sweet or sugary between meals?"],
+"¿Qué dulces? Pon cuántos de cada uno":["Quins dolços? Posa quants de cada un","Which sweets? Enter how many of each"],
+
 "¿Refrescos zero o light?":["Refrescos zero o light?","Zero or diet soft drinks?"],
 "Ninguno":["Cap","None"],
 "No llevan azúcar, pero mantienen el gusto por el dulce: restan muy poco.":["No porten sucre, però mantenen el gust pel dolç: resten molt poc.","They have no sugar, but they keep your sweet tooth going: they take off very little."],
