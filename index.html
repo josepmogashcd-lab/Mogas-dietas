@@ -139,6 +139,7 @@
   .bebconf{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--brand-2);position:sticky;bottom:0}
   .bebconf.pend{background:#FDEBD6}.bebest{font-size:13px;font-weight:600;color:var(--brand-dark)}.bebconf.pend .bebest{color:#B54708}
   .bebok{font:inherit;font-weight:700;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:11px 16px;min-height:44px;cursor:pointer}
+  .bebdel{display:block;width:100%;margin-top:8px;font:inherit;font-size:14px;font-weight:600;color:#B42318;background:#fff;border:1.5px solid #f3c9c4;border-radius:10px;padding:10px;min-height:44px;cursor:pointer}
   .bebalc{margin:-2px 0 4px;font-weight:600}
   .bebg{margin-top:10px}.bebgt{font-weight:650;font-size:14px;margin-bottom:4px}
   .bebi{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
@@ -272,6 +273,7 @@
   .qpc{display:flex;align-items:center;gap:8px}.qpc b{min-width:22px;text-align:center;font-size:17px}
   .qpc .qo{width:44px;min-height:44px;padding:0;font-size:20px}.qpc .qo.mas{background:var(--brand-dark);border-color:var(--brand-dark);color:#fff}
   .qtot{color:var(--brand-dark)}
+  .qdel{color:#B42318}
   .qlink{font:inherit;font-size:13px;font-weight:600;color:var(--brand-dark);background:none;border:0;text-decoration:underline;align-self:flex-start;min-height:40px;cursor:pointer}
   .qpas{display:flex;gap:8px}.qpas .qo{width:52px;font-size:22px}
   .qpas input{flex:1;min-width:0;font:inherit;font-size:24px;font-weight:700;text-align:center;border:1.5px solid #d5dfd1;border-radius:12px;color:var(--grey);background:#f7f9f5}
@@ -675,7 +677,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.16.1";
+const APP_VERSION = "2.16.2";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1166,7 +1168,9 @@ const BEB = Object.fromEntries(BEBIDAS.flatMap(g=>g.items.map(i=>[i.id,{...i,g:g
 const ALCOHOL = new Set(["cer_q","cer_c","cer_m","cer_j","vin_t","vin_b","cava","vermut","tverano","gin","gin_z","cub","cub_z","chupito"]);
 const bebKey = () => "mogas-bebidas-" + (FICHA.codigo||"DEMO");
 const bebDatos = () => store.get(bebKey()) || {};
-const bebGuardar = d => { store.set(bebKey(), d); if(typeof vsBarPintar==="function" && TAB!=="vs") vsBarPintar(); };
+const bebGuardar = d => { store.set(bebKey(), d);
+  if(typeof vsDatos==="function"){ const V=vsDatos(); let cambia=[]; Object.keys(V).forEach(f=>{ const n=alcDia(f); if(V[f].alc!==n){ V[f].alc=n; cambia.push(f); } }); if(cambia.length){ vsGuardar(V); cambia.forEach(f=>vsSubir(f)); } }
+  if(typeof vsBarPintar==="function" && TAB!=="vs") vsBarPintar(); };
 const fechaISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const locale = () => ({es:"es-ES", ca:"ca-ES", en:"en-GB"})[LANG] || "es-ES";
 function kcalDia(dia){ if(!dia) return 0; let k=+dia._otra_k||0; Object.entries(dia).forEach(([id,n])=>{ if(BEB[id]) k+=BEB[id].k*n; }); return k; }
@@ -1183,6 +1187,7 @@ function bebidasApuntar(diaSel){
 ${BEBIDAS.map(g=>`<div class="bebg"><div class="bebgt">${esc(g.g)}</div>${g.items.map(i=>`<div class="bebi" data-id="${i.id}"><div class="bebn"><span>${esc(i.t)}</span><small>≈${i.k} kcal</small></div><div class="bebc"><button type="button" class="m" aria-label="Quitar">−</button><b class="n">${dia[i.id]||0}</b><button type="button" class="p" aria-label="Añadir">+</button></div></div>`).join("")}</div>`).join("")}
 <div class="bebg"><div class="bebgt">✏️ Otra bebida</div><div class="bebotra"><input type="number" inputmode="numeric" min="0" placeholder="kcal" class="ok_in"><button type="button" class="ok_add">Añadir</button></div><span class="note bt-otra">${dia._otra_n?`Otras: ${dia._otra_n} · ${dia._otra_k} kcal`:"Si no está en la lista, mira las kcal en la etiqueta."}</span></div>
 <div class="bebconf"><span class="bebest"></span><button type="button" class="bebok">✅ Confirmar</button></div>
+<button type="button" class="bebdel">🗑️ Borrar todas las bebidas de este día</button>
 <span class="note">Valores aproximados por ración típica.</span>`);
   const box=chat.lastElementChild, D0=JSON.stringify(bebDatos()[diaSel]||{});
   const alcN=d=>Object.entries(d).reduce((a,[id,c])=>a+(UNID_ALC[id]?UNID_ALC[id]*c:0),0);
@@ -1199,6 +1204,12 @@ ${BEBIDAS.map(g=>`<div class="bebg"><div class="bebgt">${esc(g.g)}</div>${g.item
     row.querySelector(".p").onclick=()=>cambia(1); row.querySelector(".m").onclick=()=>cambia(-1); });
   box.querySelector(".ok_add").onclick=()=>{ const inp=box.querySelector(".ok_in"), k=Math.round(+inp.value); if(!(k>0)) { inp.focus(); return; }
     dia._otra_n=(dia._otra_n||0)+1; dia._otra_k=(dia._otra_k||0)+k; inp.value=""; tocar(); };
+  box.querySelector(".bebdel").onclick=()=>{
+    if(!confirm(trT("¿Borrar todas las bebidas apuntadas este día?"))) return;
+    const D=bebDatos(); delete D[diaSel]; bebGuardar(D);
+    Object.keys(dia).forEach(k=>delete dia[k]); box.querySelectorAll(".bebi").forEach(r=>{ r.querySelector(".n").textContent=0; r.classList.remove("tiene"); });
+    box.dataset.ok="1"; repintar(); bot(`<b>🗑️ Borrado</b>\n<span>${diaSel===hoy?"Hoy":"Ayer"}</span>: <span>no hay ninguna bebida apuntada.</span>`);
+  };
   box.querySelector(".bebok").onclick=()=>{
     const D=bebDatos(); if(Object.keys(dia).length) D[diaSel]=JSON.parse(JSON.stringify(dia)); else delete D[diaSel]; bebGuardar(D);
     box.dataset.ok="1"; repintar();
@@ -1944,7 +1955,7 @@ const vsGuardar = d => store.set(vsKey(), d);
 function alcDia(f){
   const b=bebDatos()[f];
   if(b){ let n=0; Object.entries(b).forEach(([id,c])=>{ if(UNID_ALC[id]) n+=UNID_ALC[id]*c; }); return n; }
-  const r=vsDatos()[f]; return (r&&r.alc)||0;
+  const r=vsDatos()[f]; return (r && r.nube && r.alc) || 0;
 }
 const alcPts = n => n===0?100 : n===1?75 : n===2?45 : n<=4?15 : 0;
 /* Castigos por exceso: restan directamente de la nota total del día */
@@ -2200,6 +2211,7 @@ function vsQPintar(arriba){
       <div class="qg g2">${n?ob("alcOk","ok","Correcto")+ob("alcOk","add","Me falta algo"):ob("alcOk","ok","Correcto, no he bebido")+ob("alcOk","add","Se me olvidó apuntar")}</div>
       ${a.alcOk==="add"?`<span class="qs">Toca lo que te faltó apuntar</span><div class="qg g2">${[["cer_c","Caña"],["vin_t","Copa de vino"],["chupito","Chupito"],["cub","Cubata o gin tonic"]].map(([id,t])=>`<button type="button" class="qo" data-add="${id}">+ ${t}</button>`).join("")}</div>
         ${Q.add.length?`<button type="button" class="qlink" data-act="undo">Quitar la última</button>`:""}<span class="qs">Se guarda también en Mis bebidas.</span>`:""}
+      ${n?`<button type="button" class="qlink qdel" data-act="borraralc">🗑️ Borrar el alcohol apuntado este día</button>`:""}
       <small class="qnote">Lo apuntas durante el día en Mis bebidas. Aquí solo lo confirmas.</small></div>`
       + (FICHA.fumador?`<div class="qc"><span class="qt">¿Has fumado hoy?</span><div class="qg g2">${ob("fumo","no","No")}${ob("fumo","si","Sí")}</div>
         ${a.fumo==="si"?`<span class="qs">¿Cuántos cigarrillos?</span><div class="qg g3">${ob("cigs","a","1 – 5")}${ob("cigs","b","6 – 10")}${ob("cigs","c","Más de 10")}</div>`:""}</div>`:"");
@@ -2241,6 +2253,9 @@ function vsQPintar(arriba){
     if(b.dataset.m){ const l=new Set(Q.a[b.dataset.m]||[]); l.has(b.dataset.v)?l.delete(b.dataset.v):l.add(b.dataset.v); Q.a[b.dataset.m]=[...l]; vsQPintar(); return; }
     if(b.dataset.add){ const D=bebDatos(); D[Q.f]=D[Q.f]||{}; D[Q.f][b.dataset.add]=(D[Q.f][b.dataset.add]||0)+1; bebGuardar(D); Q.add.push(b.dataset.add); vsQPintar(); return; }
     const act=b.dataset.act;
+    if(act==="borraralc"){ if(!confirm(trT("¿Borrar todo el alcohol apuntado este día?"))) return;
+      const D=bebDatos(); if(D[Q.f]){ Object.keys(D[Q.f]).forEach(id=>{ if(UNID_ALC[id]) delete D[Q.f][id]; }); if(!Object.keys(D[Q.f]).length) delete D[Q.f]; bebGuardar(D); }
+      Q.add=[]; delete Q.a.alcOk; vsQPintar(); return; }
     if(act==="undo"){ const id=Q.add.pop(), D=bebDatos(); if(id && D[Q.f] && D[Q.f][id]){ D[Q.f][id]--; if(!D[Q.f][id]) delete D[Q.f][id]; if(!Object.keys(D[Q.f]).length) delete D[Q.f]; bebGuardar(D); } vsQPintar(); }
     else if(act==="mas"||act==="menos"){ Q.a.pasos=Math.max(0,(+Q.a.pasos||0)+(act==="mas"?1000:-1000)); vsQPintar(); }
     else if(act==="atras"){ Q.paso--; vsQPintar(true); }
@@ -2277,7 +2292,7 @@ async function vsBajar(){
   try{
     const rows=await nube("/rest/v1/rpc/mis_dias",{method:"POST", body:{p_codigo:FICHA.codigo, p_token:FICHA.token}});
     const V=vsDatos(), P=pasDatos(); let cambio=false;
-    (rows||[]).forEach(r=>{ if(!V[r.fecha] && r.datos){ V[r.fecha]=r.datos; cambio=true; if(r.datos.pasosDia!=null && P.d[r.fecha]==null) P.d[r.fecha]=r.datos.pasosDia; } });
+    (rows||[]).forEach(r=>{ if(!V[r.fecha] && r.datos){ V[r.fecha]={...r.datos, nube:true}; cambio=true; if(r.datos.pasosDia!=null && P.d[r.fecha]==null) P.d[r.fecha]=r.datos.pasosDia; } });
     if(cambio){ vsGuardar(V); pasGuardar(P); if(TAB==="vs" && !Q) vsHome(); else vsBarPintar(); }
   }catch(e){}
   vsSubir();

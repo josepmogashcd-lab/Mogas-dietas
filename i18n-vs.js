@@ -86,6 +86,13 @@ const T = {
 "Cuanto más bajo, mejor. Sale de tu café, refrescos y picoteo dulce.":["Com més baix, millor. Surt del teu cafè, refrescos i picoteig dolç.","The lower, the better. Based on your coffee, soft drinks and sweet snacks."],
 "El índice de adicción al azúcar va al revés: cuanto más alto, más baja tu Vital Score.":["L'índex d'addicció al sucre va al revés: com més alt, més baixa el teu Vital Score.","The sugar addiction index works the other way round: the higher it is, the lower your Vital Score."],
 "# %":["# %","# %"],
+"🗑️ Borrar todas las bebidas de este día":["🗑️ Esborrar totes les begudes d'aquest dia","🗑️ Delete all drinks for this day"],
+"¿Borrar todas las bebidas apuntadas este día?":["Vols esborrar totes les begudes apuntades aquest dia?","Delete all drinks logged for this day?"],
+"🗑️ Borrado":["🗑️ Esborrat","🗑️ Deleted"],
+"no hay ninguna bebida apuntada.":["no hi ha cap beguda apuntada.","no drinks logged."],
+"🗑️ Borrar el alcohol apuntado este día":["🗑️ Esborrar l'alcohol apuntat aquest dia","🗑️ Delete the alcohol logged this day"],
+"¿Borrar todo el alcohol apuntado este día?":["Vols esborrar tot l'alcohol apuntat aquest dia?","Delete all alcohol logged this day?"],
+
 "¿Cómo has salido parado?":["Com te n'has sortit?","How did it go?"],
 "Bien: verdura y proteína sin rebozar ni fritos":["Bé: verdura i proteïna sense arrebossar ni fregits","Well: veg and protein, nothing breaded or fried"],
 "A medias: algo me he pasado":["A mitges: m'he passat una mica","So-so: I overdid it a bit"],
