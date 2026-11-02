@@ -110,7 +110,11 @@
   .sec-card .ico{font-size:24px}
   .sec-card b{font-size:15px}
   .sec-card small{font-size:12px;color:var(--muted);line-height:1.3}
-  .secgrid .sec-card:nth-child(odd):last-child{grid-column:1 / -1}
+  .secgrid .sec-card:nth-child(even):last-child{grid-column:1 / -1}
+  .quick{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .quick button{font:inherit;text-align:left;display:flex;align-items:center;gap:8px;background:var(--brand);color:#fff;border:0;border-radius:14px;padding:11px 10px;cursor:pointer}
+  .quick .qi{font-size:22px;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:0 0 auto}
+  .quick b{display:block;font-size:14px;line-height:1.2}.quick small{display:block;font-size:12px;opacity:.85;line-height:1.25;margin-top:2px}
   ol.pasos{margin:6px 0;padding-left:20px}
   ol.pasos li{margin:5px 0}
   .hello{display:flex;align-items:center;gap:10px;margin-bottom:2px}
@@ -909,7 +913,7 @@ function start(){
   app.innerHTML = `
     <header><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Asistente de dieta</div><div class="s">${esc(OBJETIVOS[FICHA.objetivo].split(" (")[0])} · ${kcalObj()} kcal/día</div></div>${selectorIdioma()}</header>
     <div id="chat"></div>
-    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
+    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v2.11.2</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
   chat = document.getElementById("chat");
   activarSelector(start);
   const sl=document.getElementById("salir");
@@ -975,10 +979,18 @@ const SECCIONES = [
 function menu(){
   SECCION=null;
   const w=document.createElement("div");w.className="secgrid";
+  const hoyP=pasDatos().d[fechaISO()], hoyB=bebDatos()[fechaISO()];
+  const quick=document.createElement("div"); quick.className="quick";
+  quick.innerHTML=`<button type="button" data-q="p"><span class="qi">🚶</span><span><b>Apuntar mis pasos</b><small>${hoyP!=null?`Hoy: ${fmtN(hoyP)} pasos`:"Hoy aún no los has apuntado"}</small></span></button>
+    <button type="button" data-q="b"><span class="qi">🍹</span><span><b>Apuntar una bebida</b><small>${hoyB?`Hoy: ${kcalDia(hoyB)} kcal en bebidas`:"Hoy: ninguna apuntada"}</small></span></button>`;
+  quick.querySelector('[data-q="p"]').onclick=()=>{w.remove();me("🚶 Apuntar mis pasos");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="pasos");pasosApuntar();},250)};
+  quick.querySelector('[data-q="b"]').onclick=()=>{w.remove();me("🍹 Apuntar una bebida");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="bebidas");bebidasApuntar();},250)};
+  w.appendChild(quick);
   SECCIONES.forEach(sec=>{const b=document.createElement("button");b.className="sec-card";
     b.innerHTML=`<span class="ico">${sec.ico}</span><b>${esc(sec.t)}</b><small>${esc(sec.sub)}</small>`;
     b.onclick=()=>{w.remove();me(`${sec.ico} ${sec.t}`);setTimeout(()=>abrirSeccion(sec),250)};w.appendChild(b);});
-  chat.appendChild(w);scroll();
+  chat.appendChild(w);
+  requestAnimationFrame(()=>{ const top=w.offsetTop-chat.offsetTop-8; chat.scrollTop=Math.min(Math.max(top,0),chat.scrollHeight); });
 }
 function abrirSeccion(sec){
   SECCION=sec;
