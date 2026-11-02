@@ -136,6 +136,10 @@
   .bebdia{display:flex;gap:6px;margin:8px 0}.bebdia button{flex:1;font:inherit;font-weight:600;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px;cursor:pointer}
   .bebdia button.on{background:var(--brand);border-color:var(--brand);color:#fff}
   .bebtot{display:flex;justify-content:space-between;align-items:center;background:var(--brand-2);border-radius:10px;padding:9px 12px;margin-bottom:6px}.bebtot b{color:var(--brand);font-size:17px}
+  .bebconf{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--brand-2);position:sticky;bottom:0}
+  .bebconf.pend{background:#FDEBD6}.bebest{font-size:13px;font-weight:600;color:var(--brand-dark)}.bebconf.pend .bebest{color:#B54708}
+  .bebok{font:inherit;font-weight:700;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:11px 16px;min-height:44px;cursor:pointer}
+  .bebalc{margin:-2px 0 4px;font-weight:600}
   .bebg{margin-top:10px}.bebgt{font-weight:650;font-size:14px;margin-bottom:4px}
   .bebi{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
   .bebi.tiene .bebn span{font-weight:600}
@@ -249,6 +253,13 @@
   .qchips{display:flex;flex-wrap:wrap;gap:8px}.qchips .qo{border-radius:22px;padding:0 14px}
   .qo{font:inherit;font-size:14px;font-weight:600;min-height:46px;padding:4px 6px;border-radius:12px;border:1.5px solid #d5dfd1;background:#fff;color:var(--grey);cursor:pointer}
   .qo.on{background:var(--brand-dark);border-color:var(--brand-dark);color:#fff}
+  .qpico{display:flex;flex-direction:column;gap:6px}
+  .qpi{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}.qpi:first-child{border-top:0}
+  .qpn{flex:1;min-width:0}.qpn b{display:block;font-size:14px;color:var(--grey)}.qpn small{display:block;font-size:12px;color:var(--muted)}
+  .qpi.tiene .qpn b{color:var(--brand-dark)}
+  .qpc{display:flex;align-items:center;gap:8px}.qpc b{min-width:22px;text-align:center;font-size:17px}
+  .qpc .qo{width:44px;min-height:44px;padding:0;font-size:20px}.qpc .qo.mas{background:var(--brand-dark);border-color:var(--brand-dark);color:#fff}
+  .qtot{color:var(--brand-dark)}
   .qlink{font:inherit;font-size:13px;font-weight:600;color:var(--brand-dark);background:none;border:0;text-decoration:underline;align-self:flex-start;min-height:40px;cursor:pointer}
   .qpas{display:flex;gap:8px}.qpas .qo{width:52px;font-size:22px}
   .qpas input{flex:1;min-width:0;font:inherit;font-size:24px;font-weight:700;text-align:center;border:1.5px solid #d5dfd1;border-radius:12px;color:var(--grey);background:#f7f9f5}
@@ -652,7 +663,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.13.0";
+const APP_VERSION = "2.14.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1152,24 +1163,42 @@ function nDia(dia){ if(!dia) return 0; let n=+dia._otra_n||0; Object.entries(dia
 function bebidasApuntar(diaSel){
   const hoy=fechaISO(), ayer=fechaISO(new Date(Date.now()-864e5));
   diaSel = diaSel || hoy;
-  const D=bebDatos(), dia=D[diaSel]||{};
+  const dia=JSON.parse(JSON.stringify(bebDatos()[diaSel]||{}));   // borrador: no se guarda hasta pulsar Confirmar
   bot(`<b>🍹 Apunta lo que has bebido</b>
 <div class="bebdia"><button type="button" data-d="${hoy}" class="${diaSel===hoy?"on":""}">Hoy</button><button type="button" data-d="${ayer}" class="${diaSel===ayer?"on":""}">Ayer</button></div>
 <div class="bebtot"><span>Total del día</span><b><span class="bt-k">${kcalDia(dia)}</span> kcal</b></div>
+<div class="bebalc note"></div>
 ${BEBIDAS.map(g=>`<div class="bebg"><div class="bebgt">${esc(g.g)}</div>${g.items.map(i=>`<div class="bebi" data-id="${i.id}"><div class="bebn"><span>${esc(i.t)}</span><small>≈${i.k} kcal</small></div><div class="bebc"><button type="button" class="m" aria-label="Quitar">−</button><b class="n">${dia[i.id]||0}</b><button type="button" class="p" aria-label="Añadir">+</button></div></div>`).join("")}</div>`).join("")}
 <div class="bebg"><div class="bebgt">✏️ Otra bebida</div><div class="bebotra"><input type="number" inputmode="numeric" min="0" placeholder="kcal" class="ok_in"><button type="button" class="ok_add">Añadir</button></div><span class="note bt-otra">${dia._otra_n?`Otras: ${dia._otra_n} · ${dia._otra_k} kcal`:"Si no está en la lista, mira las kcal en la etiqueta."}</span></div>
-<span class="note">Valores aproximados por ración típica. Se guarda en tu móvil para la visita de control.</span>`);
-  const box=chat.lastElementChild;
-  const repintar=()=>{ const d=bebDatos()[diaSel]||{}; box.querySelector(".bt-k").textContent=kcalDia(d);
-    box.querySelector(".bt-otra").textContent = d._otra_n?`Otras: ${d._otra_n} · ${d._otra_k} kcal`:"Si no está en la lista, mira las kcal en la etiqueta."; };
+<div class="bebconf"><span class="bebest"></span><button type="button" class="bebok">✅ Confirmar</button></div>
+<span class="note">Valores aproximados por ración típica.</span>`);
+  const box=chat.lastElementChild, D0=JSON.stringify(bebDatos()[diaSel]||{});
+  const alcN=d=>Object.entries(d).reduce((a,[id,c])=>a+(UNID_ALC[id]?UNID_ALC[id]*c:0),0);
+  const repintar=()=>{ box.querySelector(".bt-k").textContent=kcalDia(dia);
+    const n=alcN(dia); box.querySelector(".bebalc").textContent = n ? (n===1?"Alcohol: 1 consumición":`Alcohol: ${n} consumiciones`) : "Alcohol: ninguna consumición";
+    box.querySelector(".bt-otra").textContent = dia._otra_n?`Otras: ${dia._otra_n} · ${dia._otra_k} kcal`:"Si no está en la lista, mira las kcal en la etiqueta.";
+    const cambiado = JSON.stringify(dia)!==D0 && !box.dataset.ok;
+    box.querySelector(".bebest").textContent = cambiado ? "Cambios sin guardar" : (box.dataset.ok ? "✅ Guardado" : "");
+    box.querySelector(".bebconf").classList.toggle("pend", cambiado); };
+  const tocar=()=>{ delete box.dataset.ok; repintar(); };
   box.querySelectorAll(".bebi").forEach(row=>{ const id=row.dataset.id, n=row.querySelector(".n");
-    const cambia=delta=>{ const D=bebDatos(), d=D[diaSel]||{}; const v=Math.max(0,(d[id]||0)+delta); if(v) d[id]=v; else delete d[id];
-      if(Object.keys(d).length) D[diaSel]=d; else delete D[diaSel]; bebGuardar(D); n.textContent=v; row.classList.toggle("tiene",v>0); repintar(); };
+    const cambia=delta=>{ const v=Math.max(0,(dia[id]||0)+delta); if(v) dia[id]=v; else delete dia[id]; n.textContent=v; row.classList.toggle("tiene",v>0); tocar(); };
     row.classList.toggle("tiene",(dia[id]||0)>0);
     row.querySelector(".p").onclick=()=>cambia(1); row.querySelector(".m").onclick=()=>cambia(-1); });
   box.querySelector(".ok_add").onclick=()=>{ const inp=box.querySelector(".ok_in"), k=Math.round(+inp.value); if(!(k>0)) { inp.focus(); return; }
-    const D=bebDatos(), d=D[diaSel]||{}; d._otra_n=(d._otra_n||0)+1; d._otra_k=(d._otra_k||0)+k; D[diaSel]=d; bebGuardar(D); inp.value=""; repintar(); };
-  box.querySelectorAll(".bebdia button").forEach(b=>b.onclick=()=>{ if(b.dataset.d!==diaSel){ box.remove(); const o=chat.lastElementChild; if(o&&o.classList.contains("opts")) o.remove(); bebidasApuntar(b.dataset.d); } });
+    dia._otra_n=(dia._otra_n||0)+1; dia._otra_k=(dia._otra_k||0)+k; inp.value=""; tocar(); };
+  box.querySelector(".bebok").onclick=()=>{
+    const D=bebDatos(); if(Object.keys(dia).length) D[diaSel]=JSON.parse(JSON.stringify(dia)); else delete D[diaSel]; bebGuardar(D);
+    box.dataset.ok="1"; repintar();
+    const op=box.nextElementSibling; if(op && op.classList.contains("opts")) op.remove();
+    const n=alcN(dia), k=kcalDia(dia), cuando=diaSel===hoy?"hoy":"ayer";
+    bot(`<b>✅ Guardado</b>\n<span>${cuando==="hoy"?"Hoy":"Ayer"}</span>: <b>${k} kcal</b> <span>en bebidas</span>${n?`\n<span>${n===1?"Alcohol: 1 consumición":`Alcohol: ${n} consumiciones`}</span>`:""}`);
+    opts([{t:"🍹 Apuntar otra bebida", f:()=>bebidasApuntar(diaSel)},{t:"📊 Ver el resumen del mes", f:()=>bebidasResumen()}]);
+  };
+  box.querySelectorAll(".bebdia button").forEach(b=>b.onclick=()=>{ if(b.dataset.d===diaSel) return;
+    if(JSON.stringify(dia)!==D0 && !box.dataset.ok && !confirm(trT("Tienes cambios sin guardar. ¿Quieres descartarlos?"))) return;
+    box.remove(); const o=chat.lastElementChild; if(o&&o.classList.contains("opts")) o.remove(); bebidasApuntar(b.dataset.d); });
+  repintar();
   opts([{t:"📊 Ver el resumen del mes", f:()=>bebidasResumen()}]);
 }
 
@@ -1909,11 +1938,18 @@ const alcPts = n => n===0?100 : n===1?75 : n===2?45 : n<=4?15 : 0;
 /* Castigos por exceso: restan directamente de la nota total del día */
 const PEN_ALC = [[12,50],[8,40],[5,25],[3,10]];          // consumiciones del día → puntos que resta
 const PEN_AZ  = [[6,40],[4,30],[3,20],[2,10]];           // unidades de exceso de azúcar → puntos que resta
+const PICO = [["galletas","Galletas","1 = 1 galleta"],["bolleria","Bollería","1 = 1 croissant, magdalena o donut"],["chocolate","Chocolate","1 = 2 onzas"],["chuches","Chucherías y caramelos","1 = un puñado"],["postre","Helado o postre","1 = 1 ración"],["salado","Salado (patatas, snacks)","1 = 1 bolsa pequeña"]];
+function picoUnidades(a){
+  if(a.pico!=="si") return {dulce:0, salado:0};
+  if(a.picoN){ let d=0,s=0; Object.entries(a.picoN).forEach(([k,n])=>{ if(k==="salado") s+=n; else d+=n; }); return {dulce:d, salado:s}; }
+  const u=({"1":1,"2":3,"3":6,"4":10})[a.picoCant]||0, q=a.picoQue||[];   // registros antiguos
+  return (q.length===1 && q[0]==="salado") ? {dulce:0, salado:u} : {dulce:u, salado:0};
+}
 function excesoAzucar(a){
   let u=0;
   if(a.cafe==="2") u+=1;
   u += ({"2":1,"3":3})[a.bebAz]||0;
-  if(a.pico==="si"){ const q=a.picoQue||[]; if(!(q.length===1 && q[0]==="salado")) u += ({"3":2,"4":4})[a.picoCant]||0; }
+  const pu=picoUnidades(a); u += pu.dulce>8 ? 4 : pu.dulce>=5 ? 2 : 0;
   return u;
 }
 function penDe(a, alc){
@@ -1930,7 +1966,7 @@ function puntosDia(a, f){
   }
   if(a.cafe || a.bebAz || a.pico){
     let z=100; z-=({"1":15,"2":30})[a.cafe]||0; z-=({"1":20,"2":40,"3":60})[a.bebAz]||0;
-    if(a.pico==="si"){ let pen=({"1":15,"2":35,"3":60,"4":80})[a.picoCant]||0; const q=a.picoQue||[]; if(q.length===1 && q[0]==="salado") pen=Math.round(pen/2); z-=pen; }
+    if(a.pico==="si"){ const pu=picoUnidades(a), u=pu.dulce+pu.salado/2; z -= u<=0?0 : u<=1?15 : u<=4?35 : u<=8?60 : 80; }
     p.azucar=Math.max(0,z);
   }
   if(a.entreno) p.fuerza = a.entreno==="desc" ? 100 : a.entreno==="si" ? (TIPO_PTS[a.tipo]||60) : 0;
@@ -2103,8 +2139,8 @@ function vsQPintar(arriba){
     body = `<div class="qc"><span class="qt">¿Azúcar en el café o infusiones?</span><div class="qg g3">${ob("cafe","0","No")}${ob("cafe","1","1 sobre")}${ob("cafe","2","2 o más")}</div></div>
       <div class="qc"><span class="qt">¿Bebidas azucaradas? (refrescos, zumos, batidos)</span><div class="qg g4">${ob("bebAz","0","Ninguna")}${ob("bebAz","1","1")}${ob("bebAz","2","2")}${ob("bebAz","3","3 o más")}</div></div>
       <div class="qc"><span class="qt">¿Has picoteado entre horas?</span><div class="qg g2">${ob("pico","no","No")}${ob("pico","si","Sí")}</div>
-        ${a.pico==="si"?`<span class="qs">¿Qué has picoteado? Marca todo lo que aplique</span><div class="qchips">${SW.map(([v,t])=>`<button type="button" class="qo${(a.picoQue||[]).includes(v)?" on":""}" data-m="picoQue" data-v="${v}">${t}</button>`).join("")}</div>
-        <span class="qs">¿Cuánto en total? (1 galleta, 1 mini croissant… = 1)</span><div class="qg g4">${ob("picoCant","1","1")}${ob("picoCant","2","2 – 4")}${ob("picoCant","3","5 – 8")}${ob("picoCant","4","Más de 8")}</div>`:""}</div>`;
+        ${a.pico==="si"?`<span class="qs">Pon cuántos de cada uno</span><div class="qpico">${PICO.map(([k,n,u])=>{ const v=(a.picoN||{})[k]||0; return `<div class="qpi${v?" tiene":""}"><span class="qpn"><b>${n}</b><small>${u}</small></span><span class="qpc"><button type="button" class="qo" data-pn="${k}" data-d="-1" aria-label="Quitar">−</button><b>${v}</b><button type="button" class="qo mas" data-pn="${k}" data-d="1" aria-label="Añadir">+</button></span></div>`; }).join("")}</div>
+        <span class="qs qtot">${(()=>{ const pu=picoUnidades(a); return pu.dulce+pu.salado ? `Total: ${pu.dulce} dulces${pu.salado?` · ${pu.salado} salados`:""}` : "Toca + en lo que hayas comido"; })()}</span></div>`:""}</div>`;
   } else if(paso==="alctab"){
     const n=alcDia(Q.f), D=(bebDatos()[Q.f])||{};
     const lista=Object.entries(D).filter(([id,c])=>UNID_ALC[id]&&c>0).map(([id,c])=>`<li>${c} × <span>${esc(BEB[id].t)}</span></li>`).join("");
@@ -2149,6 +2185,7 @@ function vsQPintar(arriba){
   box.onclick=e=>{
     const b=e.target.closest("button"); if(!b || !Q) return;
     if(b.dataset.k){ Q.a[b.dataset.k]=b.dataset.v; vsQPintar(); return; }
+    if(b.dataset.pn){ const m={...(Q.a.picoN||{})}, v=Math.max(0,(m[b.dataset.pn]||0)+(+b.dataset.d)); if(v) m[b.dataset.pn]=v; else delete m[b.dataset.pn]; Q.a.picoN=m; delete Q.a.picoQue; delete Q.a.picoCant; vsQPintar(); return; }
     if(b.dataset.m){ const l=new Set(Q.a[b.dataset.m]||[]); l.has(b.dataset.v)?l.delete(b.dataset.v):l.add(b.dataset.v); Q.a[b.dataset.m]=[...l]; vsQPintar(); return; }
     if(b.dataset.add){ const D=bebDatos(); D[Q.f]=D[Q.f]||{}; D[Q.f][b.dataset.add]=(D[Q.f][b.dataset.add]||0)+1; bebGuardar(D); Q.add.push(b.dataset.add); vsQPintar(); return; }
     const act=b.dataset.act;
