@@ -232,6 +232,14 @@
   .vscomo ul{list-style:none;margin:4px 0 10px;padding:0}.vscomo li{display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid var(--line)}
   .vscomo li i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:4px}
   .vscomo small{display:block;color:var(--muted);margin:-4px 0 10px;line-height:1.35}
+  .vsadic{background:#fff;border-radius:22px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .vsadt{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--brand-dark)}
+  .vsadr{display:flex;align-items:center;gap:16px}.vsadr .ringv b{font-size:26px}.vsadr .ringv small{font-size:12px;font-weight:700;color:var(--muted);margin-top:2px}
+  .vsadi{flex:1;display:flex;flex-direction:column;gap:8px;align-items:flex-start}.vsadi>small{color:var(--muted);font-size:13px}
+  .vsgauge{position:relative;width:100%;height:10px;border-radius:5px;background:linear-gradient(90deg,#2E7D4F,#7CC04B,#E9C21B,#EE8A1F,#D93B30)}
+  .vsgauge i{position:absolute;top:-4px;width:6px;height:18px;margin-left:-3px;border-radius:3px;background:var(--grey);box-shadow:0 0 0 2px #fff}
+  .vsgl{width:100%;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+  .vsadn{font-size:12px;color:var(--muted);line-height:1.35}
   .vspil{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .vsp{background:#fff;border-radius:16px;padding:10px;display:flex;align-items:center;gap:10px}
   .vsp .t{min-width:0}.vsp b{display:block;font-size:14px;color:var(--grey)}.vsp small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
@@ -663,7 +671,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.14.0";
+const APP_VERSION = "2.15.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1915,7 +1923,7 @@ async function nube(path, {method="GET", body, token, prefer}={}){
 }
 
 const VS_PESOS = {alcohol:25, dieta:20, fuerza:15, tabaco:10, pasos:10, sueno:10, azucar:10};
-const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Fuerza", pasos:"Pasos", sueno:"Sueño", azucar:"Azúcar"};
+const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Fuerza", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
 const VS_BANDAS = [
   {max:20,  n:"Crítico",   ring:"#D93B30", text:"#B42318", track:"#FBE3E1"},
   {max:40,  n:"Bajo",      ring:"#EE8A1F", text:"#B54708", track:"#FDEBD6"},
@@ -2028,8 +2036,17 @@ function recordDe(test){
 const testAlc = f => { if(alcDia(f)>0) return false; const r=vsDatos()[f]; return r&&r.alcOk ? true : null; };
 const testFumo = f => { const r=vsDatos()[f]; if(!r||!r.fumo) return null; return r.fumo==="no"; };
 
-function anillo(v, size, stroke, txt){
-  const r=(size-stroke)/2, c=2*Math.PI*r, b=v==null?{ring:"#cfd8cf",track:"#e6ebe5"}:vsBanda(v), dash=v==null?0:Math.max(0.01,v/100*c), h=size/2;
+/* Índice de adicción al azúcar: 0 % = nada, 100 % = muy alta (al revés que el resto) */
+const ADIC_BANDAS = [
+  {max:20,  n:"Muy baja", ring:"#2E7D4F", text:"#1F6B3F", track:"#D6EADD"},
+  {max:40,  n:"Baja",     ring:"#7CC04B", text:"#3B7D23", track:"#E6F3DC"},
+  {max:60,  n:"Moderada", ring:"#E9C21B", text:"#7A5E00", track:"#FBF3CF"},
+  {max:80,  n:"Alta",     ring:"#EE8A1F", text:"#B54708", track:"#FDEBD6"},
+  {max:100, n:"Muy alta", ring:"#D93B30", text:"#B42318", track:"#FBE3E1"}];
+const adicBanda = v => ADIC_BANDAS.find(b=>v<=b.max) || ADIC_BANDAS[4];
+const indiceAdic = ptsAzucar => ptsAzucar==null ? null : 100-ptsAzucar;
+function anillo(v, size, stroke, txt, banda=vsBanda){
+  const r=(size-stroke)/2, c=2*Math.PI*r, b=v==null?{ring:"#cfd8cf",track:"#e6ebe5"}:banda(v), dash=v==null?0:Math.max(0.01,v/100*c), h=size/2;
   return `<span class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${b.track}" stroke-width="${stroke}"/>${v==null?"":`<circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${b.ring}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${h} ${h})"/>`}</svg><span class="ringv">${txt}</span></span>`;
 }
 const ICO = {
@@ -2074,7 +2091,8 @@ function vsHome(){
   let trend="";
   if(r.score!=null && VS_PER==="mes"){ const p=vsPeriodo("mes",30); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. los 30 días anteriores` : d<0?`▼ ${-d} puntos vs. los 30 días anteriores` : `Igual que los 30 días anteriores`; } }
   const cnt=(ico,tit,n,rec)=>`<div class="vsc"><div class="vsct">${ico}<span>${tit}</span></div><div class="vscn"><b>${n}</b> <span>${n===1?"día":"días"}</span></div><small>Récord: ${rec} días</small></div>`;
-  const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno","azucar"];
+  const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno"];
+  const ia=indiceAdic(r.pil.azucar), ib=ia!=null?adicBanda(ia):null;
   const det=k=>{ const v=r.pil[k]; if(v==null) return "Sin datos";
     if(k==="alcohol" && r.alcSem!=null){ const s=Math.round(r.alcSem*10)/10; return s===1?"1 consumición/semana":`${String(s).replace(".",",")} consumiciones/semana`; }
     return vsBanda(v).n; };
@@ -2089,12 +2107,20 @@ function vsHome(){
       ${trend?`<div class="vstrend">${trend}</div>`:""}
       ${r.pen?`<div class="vspen"><span>Incluye</span> <b>−${r.pen}</b> <span>puntos por excesos de alcohol o azúcar</span></div>`:""}
     </div>
+    <div class="vsadic">
+      <div class="vsadt"><span>ÍNDICE DE ADICCIÓN AL AZÚCAR</span></div>
+      <div class="vsadr">${anillo(ia,86,11,ia==null?"—":`<b>${ia}</b><small>%</small>`,adicBanda)}
+        <div class="vsadi">${ib?`<span class="vsband" style="background:${ib.track};color:${ib.text}">${ib.n}</span>`:`<small>Sin datos todavía</small>`}
+          <div class="vsgauge"><i style="left:${ia==null?0:ia}%"></i></div><div class="vsgl"><span>0 %</span><span>100 %</span></div></div></div>
+      <small class="vsadn">Cuanto más bajo, mejor. Sale de tu café, refrescos y picoteo dulce.</small>
+    </div>
     <button type="button" class="vscta" data-q="${hoy}"><span class="qi">${ICO.test}</span><span class="t"><b>Cuestionario de hoy</b><small>${V[hoy]?"Hecho ✓ · Toca para revisarlo":"Pendiente · 1 minuto"}</small></span>${ICO.flecha}</button>
     ${!V[ayer] && vsInicio()<=ayer && ayer>=fechaISO(sumarDias(new Date(),-1))?`<button type="button" class="vsayer" data-q="${ayer}">¿Se te olvidó ayer? Contestar el de ayer</button>`:""}
     <div class="vshead"><b>Tus pilares</b><button type="button" class="vslink" id="vscomo">Cómo se calcula</button></div>
     <div class="vscomo" id="vscomobox" hidden>
       <b>Cuánto pesa cada pilar</b>
       <ul>${Object.entries(VS_PESOS).map(([k,p])=>`<li><span>${VS_NOM[k]}</span> <span>${p} %</span></li>`).join("")}</ul>
+      <small>El índice de adicción al azúcar va al revés: cuanto más alto, más baja tu Vital Score.</small>
       <b>Alcohol: consumiciones por semana</b>
       <ul><li><span>0</span> <span>100 pts</span></li><li><span>1</span> <span>80 pts</span></li><li><span>2 – 3</span> <span>60 pts</span></li><li><span>4 – 6</span> <span>40 pts</span></li><li><span>7 – 10</span> <span>20 pts</span></li><li><span>Más de 10</span> <span>0 pts</span></li></ul>
       <small>Una caña, una copa de vino o un chupito cuentan como 1 consumición. Un cubata o un gin tonic, como 2.</small>
@@ -2170,7 +2196,8 @@ function vsQPintar(arriba){
     const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno","azucar"];
     body = `<div class="qc qday">${anillo(nota,112,14,nota==null?"—":`<b>${nota}</b>`)}<span class="t"><span class="qlab">${esHoy?"TU DÍA DE HOY":"TU DÍA DE AYER"}</span>${bd?`<span class="vsband" style="background:${bd.track};color:${bd.text}">${bd.n}</span>`:""}<small>Suma a tu Vital Score de los últimos 30 días.</small></span></div>
       ${msgs.join("")}
-      ${orden.map(k=>`<div class="qc qsum"><i style="background:${p[k]!=null?vsBanda(p[k]).ring:"#cfd8cf"}"></i><b>${VS_NOM[k]}</b><span style="color:${p[k]!=null?vsBanda(p[k]).text:"#73766f"}">${p[k]!=null?p[k]:"—"}</span></div>`).join("")}`;
+      ${orden.map(k=>{ if(k==="azucar"){ const ia=indiceAdic(p.azucar), ib=ia!=null?adicBanda(ia):null; return `<div class="qc qsum"><i style="background:${ib?ib.ring:"#cfd8cf"}"></i><b>${VS_NOM[k]}</b><span style="color:${ib?ib.text:"#73766f"}">${ia!=null?ia+" %":"—"}</span></div>`; }
+        return `<div class="qc qsum"><i style="background:${p[k]!=null?vsBanda(p[k]).ring:"#cfd8cf"}"></i><b>${VS_NOM[k]}</b><span style="color:${p[k]!=null?vsBanda(p[k]).text:"#73766f"}">${p[k]!=null?p[k]:"—"}</span></div>`; }).join("")}`;
   }
   const total=Q_PASOS.length-1, fin=paso==="fin";
   box.innerHTML=`<div class="qz">
