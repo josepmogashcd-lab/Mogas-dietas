@@ -182,12 +182,91 @@
   .plate div{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
   .plate span:first-child{color:var(--muted);font-size:14px;flex:0 0 auto}
   .plate span:last-child{text-align:right}
+
+  /* ---- Vital Score ---- */
+  .app{position:relative}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);flex:0 0 auto}
+  .tabs button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  .tabs button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tabs button.on{color:var(--grey);font-weight:700}.tabs button.on svg{stroke:var(--brand)}
+  #chat[hidden],#vs[hidden],#vsbar[hidden],footer[hidden]{display:none}
+  .vsbar{flex:0 0 auto;background:var(--brand-dark)}
+  .vsbarb{width:100%;font:inherit;color:#fff;background:none;border:0;display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;text-align:left}
+  .vsbarb>svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .vsbarb .ringv{color:#fff;font-size:15px;font-weight:700}
+  .vsbt{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .vsbl{font-size:12px;font-weight:700;letter-spacing:.06em}
+  .vsbc{display:flex;flex-wrap:wrap;gap:6px}.chipc{font-size:12px;font-weight:600;background:rgba(255,255,255,.16);border-radius:999px;padding:3px 9px}
+  .ring{position:relative;display:inline-grid;place-items:center;flex:0 0 auto}
+  .ring svg{position:absolute;inset:0}
+  .ringv{position:relative;display:flex;flex-direction:column;align-items:center;line-height:1;font-weight:700;color:var(--grey);font-size:13px}
+  .vs{flex:1;overflow-y:auto;padding:14px 14px 18px;display:flex;flex-direction:column;gap:12px}
+  .vscnt{display:grid;grid-template-columns:1fr;gap:10px}.vscnt.dos{grid-template-columns:1fr 1fr}
+  .vsc{background:#fff;border-radius:18px;padding:12px 14px}
+  .vsct{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--brand-dark)}
+  .vsct svg{width:19px;height:19px;fill:none;stroke:var(--brand);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .vscn{margin-top:2px}.vscn b{font-size:36px;font-weight:700;color:var(--grey);letter-spacing:-.02em}.vscn span{font-size:14px;font-weight:600}
+  .vsc small{display:block;font-size:12px;color:var(--muted)}
+  .vscard{background:#fff;border-radius:24px;padding:14px 14px 18px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .vstog{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--brand-2);border-radius:12px}
+  .vstog button{font:inherit;font-size:13px;font-weight:600;border:0;border-radius:9px;min-height:38px;background:none;color:var(--grey);cursor:pointer}
+  .vstog button.on{background:var(--brand-dark);color:#fff}
+  .vslab{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--brand-dark)}
+  .vscard .ringv b{font-size:60px;letter-spacing:-.03em}.vscard .ringv small{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
+  .vsband{display:inline-block;font-size:15px;font-weight:700;padding:5px 14px;border-radius:999px}
+  .vstrend{font-size:13px;font-weight:600;color:var(--brand-dark)}
+  .vsvacio{margin:0;text-align:center;color:var(--muted);font-size:14px;line-height:1.4}
+  .vscta{font:inherit;text-align:left;display:flex;align-items:center;gap:12px;background:var(--grey);color:#fff;border:0;border-radius:18px;padding:14px 16px;cursor:pointer}
+  .vscta{background:#2f3d27}
+  .vscta .qi{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.14);display:grid;place-items:center;flex:0 0 auto}
+  .vscta svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .vscta .t{flex:1}.vscta b{display:block;font-size:16px}.vscta small{display:block;font-size:13px;opacity:.85;margin-top:2px}
+  .vsayer{font:inherit;font-size:14px;font-weight:600;color:var(--brand-dark);background:#fff;border:1.5px dashed var(--brand-light);border-radius:14px;padding:11px;cursor:pointer}
+  .vshead{display:flex;justify-content:space-between;align-items:center;padding:0 2px}.vshead b{font-size:17px;color:var(--grey)}
+  .vslink{font:inherit;font-size:13px;font-weight:600;color:var(--brand-dark);background:none;border:0;text-decoration:underline;cursor:pointer;min-height:40px}
+  .vscomo{background:#fff;border-radius:16px;padding:12px 14px;font-size:14px}
+  .vscomo ul{list-style:none;margin:4px 0 10px;padding:0}.vscomo li{display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid var(--line)}
+  .vscomo li i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:4px}
+  .vscomo small{display:block;color:var(--muted);margin:-4px 0 10px;line-height:1.35}
+  .vspil{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .vsp{background:#fff;border-radius:16px;padding:10px;display:flex;align-items:center;gap:10px}
+  .vsp .t{min-width:0}.vsp b{display:block;font-size:14px;color:var(--grey)}.vsp small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+  .qz{display:flex;flex-direction:column;gap:10px}
+  .qzh{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;color:var(--brand-dark)}
+  .qx{width:44px;height:44px;border-radius:22px;border:0;background:#e3e9e0;display:grid;place-items:center;cursor:pointer}
+  .qx svg{width:20px;height:20px;fill:none;stroke:var(--grey);stroke-width:2.2;stroke-linecap:round}
+  .qdia{min-width:44px;text-align:right}
+  .qbar{height:6px;background:#dbe3d6;border-radius:3px;overflow:hidden}.qbar i{display:block;height:6px;background:var(--brand);border-radius:3px}
+  .qz h2{margin:4px 0 0;font-size:24px;color:var(--grey)}.qsub{margin:-6px 0 2px;color:var(--muted);font-size:14px}
+  .qc{background:#fff;border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;gap:9px}
+  .qrow{flex-direction:row;align-items:center;gap:10px}.qrow>span{flex:1;font-size:14px;font-weight:600;line-height:1.35}
+  .qyn{display:flex;gap:6px}.qyn .qo{width:54px}
+  .qt{font-size:14px;font-weight:600}.qs{font-size:13px;font-weight:600;color:var(--muted)}
+  .qlab{font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--brand-dark)}.qbig{font-size:18px;color:var(--grey)}
+  .qlist{margin:0;padding-left:18px;font-size:13px;color:var(--muted)}
+  .qnote{font-size:12px;color:var(--muted);line-height:1.4}
+  .qg{display:grid;gap:8px}.qg.g1{grid-template-columns:1fr}.qg.g2{grid-template-columns:1fr 1fr}.qg.g3{grid-template-columns:repeat(3,1fr)}
+  .qchips{display:flex;flex-wrap:wrap;gap:8px}.qchips .qo{border-radius:22px;padding:0 14px}
+  .qo{font:inherit;font-size:14px;font-weight:600;min-height:46px;padding:4px 6px;border-radius:12px;border:1.5px solid #d5dfd1;background:#fff;color:var(--grey);cursor:pointer}
+  .qo.on{background:var(--brand-dark);border-color:var(--brand-dark);color:#fff}
+  .qlink{font:inherit;font-size:13px;font-weight:600;color:var(--brand-dark);background:none;border:0;text-decoration:underline;align-self:flex-start;min-height:40px;cursor:pointer}
+  .qpas{display:flex;gap:8px}.qpas .qo{width:52px;font-size:22px}
+  .qpas input{flex:1;min-width:0;font:inherit;font-size:24px;font-weight:700;text-align:center;border:1.5px solid #d5dfd1;border-radius:12px;color:var(--grey);background:#f7f9f5}
+  .qday{flex-direction:row;align-items:center;gap:16px}.qday .ringv b{font-size:34px}.qday .t{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .qday small{font-size:13px;color:var(--muted);line-height:1.35}
+  .qok,.qreset{border-radius:14px;padding:11px 14px;font-size:14px;font-weight:700}.qok{background:#D6EADD;color:#1F6B3F}.qreset{background:#FDEBD6;color:#B54708}
+  .qsum{flex-direction:row;align-items:center;padding:9px 14px}.qsum i{width:11px;height:11px;border-radius:6px}.qsum b{flex:1;font-size:15px;color:var(--grey)}.qsum span{font-size:17px;font-weight:700}
+  .qzf{display:flex;gap:10px;position:sticky;bottom:0;padding:8px 0 2px;background:var(--bg)}
+  .qback,.qnext{font:inherit;font-size:15px;font-weight:700;min-height:52px;border-radius:14px;cursor:pointer}
+  .qback{width:100px;border:1.5px solid #c9d6c4;background:#fff;color:var(--grey)}.qnext{flex:1;border:0;background:var(--brand-dark);color:#fff}
+  .panel .vsrow{gap:12px}.panel .vsrow .ringv{font-size:13px}
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 
 <script src="i18n.js"></script>
+<script src="i18n-vs.js"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -345,7 +424,9 @@ const FICHA = {
   deficitMaxSesion: 400,
   entrenoIncluido: 400,     // kcal de entreno que ya cubre el factor de actividad    // kcal de déficit extra que aceptamos tras una tirada larga
   intestinoEntrenado: false,// tolera >90 g/h de hidratos
-  reparto: null       // {comida:%} — null = automático
+  reparto: null,      // {comida:%} — null = automático
+  fumador: false,     // si fuma: contador de días sin fumar y pilar de tabaco
+  token: ""           // clave de su Vital Score en la base de datos
 };
 
 /* ---- REPARTO DE CALORÍAS ENTRE COMIDAS ---- */
@@ -570,7 +651,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.11.3";
+const APP_VERSION = "2.12.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -781,6 +862,7 @@ function panel(){
         <label>Código de acceso<input id="p_codigo" value="${esc(FICHA.codigo)}" placeholder="p. ej. ISA24" autocapitalize="characters"></label>
         <label>Sexo${sel("p_sexo",["Mujer","Hombre"],FICHA.sexo)}</label>
         <label>Objetivo de pasos diarios<input id="p_pasos" type="number" inputmode="numeric" value="${FICHA.pasosObjetivo}"></label>
+        <label class="check"><input type="checkbox" id="p_fumador" ${FICHA.fumador?"checked":""}> Fuma (verá su contador de días sin fumar y el tabaco contará en su Vital Score)</label>
         <p class="note" style="margin-top:6px">Intolerancias, alergias y sensibilidades:</p>
         <div class="chips" id="p_restr">${Object.entries(RESTRICCIONES).map(([k,r])=>`<button type="button" class="chip${FICHA.restricciones.includes(k)?" on":""}" data-k="${k}">${esc(r.t)}</button>`).join("")}</div>
         <label>Otras (texto libre)<input id="p_otras" value="${esc(FICHA.otrasRestricciones)}" placeholder="p. ej. no le gusta el pescado azul"></label>
@@ -816,7 +898,7 @@ function panel(){
     </div>`;
   const $=id=>document.getElementById(id);
   const leerE=()=>{ ENTREVISTA={fecha:$("p_efecha").value, texto:$("p_etexto").value}; const n=ENTREVISTA.texto.trim()?ENTREVISTA.texto.trim().split(/\s+/).length:0; $("p_ecount").textContent=n?`${n} palabras`:""; };
-  const leer=()=>{leerE();FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.otrasRestricciones=$("p_otras").value.trim();
+  const leer=()=>{leerE();FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.fumador=$("p_fumador").checked;FICHA.otrasRestricciones=$("p_otras").value.trim();
     FICHA.tmb=+$("p_tmb").value||0;FICHA.factor=+$("p_factor").value;FICHA.objetivo=$("p_obj").value;FICHA.ajuste=+$("p_aj").value||0;
     FICHA.prioridad=$("p_prio").value;FICHA.deficitMaxSesion=+$("p_defmax").value||0;FICHA.intestinoEntrenado=$("p_intest").checked;FICHA.entrenoIncluido=+$("p_incl").value||0;};
   const pintarCalc=()=>{leer();const c=calculo();$("l_aj").style.display=FICHA.objetivo==="normo"?"none":"";
@@ -871,12 +953,17 @@ function panel(){
     const R=reparto(), s=FICHA.comidas.reduce((a,c)=>a+(+R[c]||0),0);
     if(s!==100){ $("rep").scrollIntoView({behavior:"smooth"}); $("saveres").innerHTML=`<p class="warn">El reparto de comidas tiene que sumar 100%.</p>`; return false; }
     return true; };
-  $("save").onclick=async()=>{ if(!valido()) return; guardarCliente();
+  $("save").onclick=async()=>{ if(!valido()) return;
+    let nubeMsg="";
+    if(nubeOn()){ if(!staffSes()) nubeMsg=`<p class="warn">⚠️ No has entrado en la base de datos (pantalla de clientes): su Vital Score solo se guardará en su móvil.</p>`;
+      else { $("save").disabled=true; try{ const tk=await nubeCliente(); if(tk) FICHA.token=tk; else nubeMsg=`<p class="warn">⚠️ Tu sesión ha caducado: vuelve a entrar en la base de datos y guarda otra vez.</p>`; }
+        catch(e){ nubeMsg=`<p class="warn">⚠️ No se ha podido registrar en la base de datos (${esc(e.message)}). Inténtalo otra vez.</p>`; } $("save").disabled=false; } }
+    guardarCliente();
     const url=await enlaceCliente();
     $("saveres").innerHTML=`<div class="linkbox"><p class="ok">✅ Guardado. Envía este enlace a ${esc(FICHA.nombre)}:</p>
       <input readonly id="linkurl" value="${esc(url)}">
       <div class="linkbtns"><button type="button" id="copiar">📋 Copiar</button><button type="button" id="compartir">📤 Enviar</button></div>
-      <p class="note">Al abrirlo, su dieta queda guardada en su móvil. Su código (<b>${esc(FICHA.codigo)}</b>) solo sirve en ese mismo móvil. Si cambias la dieta, guarda y envíale el enlace nuevo.</p></div>`;
+      ${nubeMsg}<p class="note">Al abrirlo, su dieta queda guardada en su móvil. Su código (<b>${esc(FICHA.codigo)}</b>) solo sirve en ese mismo móvil. Si cambias la dieta, guarda y envíale el enlace nuevo.</p></div>`;
     $("copiar").onclick=async()=>{ try{ await navigator.clipboard.writeText(url); $("copiar").textContent="✅ Copiado"; }catch(e){ $("linkurl").select(); document.execCommand("copy"); $("copiar").textContent="✅ Copiado"; } };
     $("compartir").onclick=async()=>{ const txt=`Hola ${FICHA.nombre.split(" ")[0]}! Aquí tienes tu asistente de dieta MOGAS:`;
       if(navigator.share){ try{ await navigator.share({title:"Tu dieta MOGAS", text:txt, url}); }catch(e){} }
@@ -900,6 +987,7 @@ function panelInicio(){
     <header class="notr"><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Panel del nutricionista</div><div class="s">Tus clientes</div></div><button type="button" class="hbtn" id="psalir">Salir</button></header>
     <div class="panel notr">
       <section><button id="nuevo" class="big">➕ Nuevo cliente</button></section>
+      <section id="pvs"></section>
       <section><h2>Clientes guardados en este dispositivo</h2>
         ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}${all[c].e&&all[c].e.texto&&all[c].e.texto.trim()?" · 📝 entrevista":""}</small></div>
           <button type="button" data-a="ed" data-c="${esc(c)}">Editar</button><button type="button" class="x" data-a="del" data-c="${esc(c)}" title="Borrar">✕</button></div>`).join("")
@@ -907,11 +995,12 @@ function panelInicio(){
       </section>
       <section><h2>¿Cómo funciona?</h2>
         <p class="note">1. Crea el cliente y rellena su ficha. 2. Pulsa «Guardar y crear enlace». 3. Envíale el enlace por WhatsApp: al abrirlo tendrá su asistente con su dieta.<br><br>
-        Las fichas se guardan solo en este dispositivo y dentro del enlace; no se suben a ningún servidor. Es la versión de pruebas: para clientes reales montaremos una base de datos privada.</p>
+        Las fichas de dieta se guardan en este dispositivo y dentro del enlace. El Vital Score (cuestionarios diarios) se guarda en la base de datos privada de MOGAS: entra arriba con tu usuario antes de guardar un cliente.</p>
       </section>
     </div>`;
   const $=id=>document.getElementById(id);
   $("psalir").onclick=()=>{ store.del("mogas-modo"); login(); };
+  panelVS($("pvs"));
   $("nuevo").onclick=()=>{ ENTREVISTA={fecha:new Date().toISOString().slice(0,10), texto:""}; aplicarDatos({f:{...JSON.parse(JSON.stringify(FICHA_BASE)), nombre:"", codigo:""}}); panel(); };
   app.querySelectorAll(".cli button").forEach(b=>b.onclick=()=>{ const c=b.dataset.c;
     if(b.dataset.a==="ed"){ ENTREVISTA={fecha:"",texto:"",...(all[c].e||{})}; aplicarDatos(all[c]); panel(); }
@@ -921,16 +1010,23 @@ function panelInicio(){
 function start(){
   app.innerHTML = `
     <header><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Asistente de dieta</div><div class="s">${esc(OBJETIVOS[FICHA.objetivo].split(" (")[0])} · ${kcalObj()} kcal/día</div></div>${selectorIdioma()}</header>
-    <div id="chat"></div>
-    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v${APP_VERSION}</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
+    <div id="vsbar" class="vsbar" hidden></div>
+    <div id="vs" class="vs" hidden></div>
+    <div id="chat" hidden></div>
+    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v${APP_VERSION}</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>
+    <nav class="tabs" aria-label="Secciones"><button type="button" data-t="vs">${ICO.vs}<span>Vital Score</span></button><button type="button" data-t="dieta">${ICO.dieta}<span>Mi dieta</span></button><button type="button" data-t="ayuda">${ICO.ayuda}<span>Ayuda</span></button></nav>`;
   chat = document.getElementById("chat");
   activarSelector(start);
   const sl=document.getElementById("salir");
   if(sl && PREVIEW){ sl.textContent="← Volver al panel"; sl.classList.add("notr"); sl.onclick=e=>{e.preventDefault(); PREVIEW=false; panel();}; }
   else if(sl) sl.onclick=e=>{e.preventDefault(); store.del("mogas-codigo"); store.set("mogas-fuera",1); login();};
+  document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>irTab(b.dataset.t));
+  irTab(TAB);
+  vsBajar();
+}
+function chatHola(){
   const rs=restr();
   bot(`<span class="hello"><img src="${LOGO_ICON}" alt=""><span><b>¡Hola!</b> Soy el asistente de tu dieta de <b>MOGAS</b>.</span></span>${rs.length||FICHA.otrasRestricciones?`\n<span class="note">✅ Todo adaptado a: ${[...rs.map(r=>r.t.toLowerCase()),FICHA.otrasRestricciones].filter(Boolean).map(esc).join(", ")}.</span>`:""}${rs.some(r=>r.nota)?`\n<span class="note">${rs.filter(r=>r.nota).map(r=>esc(r.nota)).join(" ")}</span>`:""}\n¿En qué te puedo ayudar?`);
-  menu();
 }
 
 function scroll(){requestAnimationFrame(()=>chat.scrollTop=chat.scrollHeight)}
@@ -986,7 +1082,7 @@ const SECCIONES = [
     {t:"💬 Hablar con mi nutricionista", f:()=>{bot(`Escríbele directamente a ${esc(CLIENTE.entrenador)}. Para temas de salud (molestias, medicación, embarazo…) consulta siempre con tu nutricionista o con tu médico.`);opts([])}}]}
 ];
 function menu(){
-  SECCION=null;
+  SECCION=null; if(TAB!=="dieta"){ marcarTab("dieta"); const bar=document.getElementById("vsbar"); if(bar) bar.hidden=false; }
   const w=document.createElement("div");w.className="secgrid";
   const hoyP=pasDatos().d[fechaISO()], hoyB=bebDatos()[fechaISO()];
   const quick=document.createElement("div"); quick.className="quick";
@@ -995,7 +1091,7 @@ function menu(){
   quick.querySelector('[data-q="p"]').onclick=()=>{w.remove();me("🚶 Apuntar mis pasos");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="pasos");pasosApuntar();},250)};
   quick.querySelector('[data-q="b"]').onclick=()=>{w.remove();me("🍹 Apuntar una bebida");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="bebidas");bebidasApuntar();},250)};
   w.appendChild(quick);
-  SECCIONES.forEach(sec=>{const b=document.createElement("button");b.className="sec-card";
+  SECCIONES.filter(sec=>sec.id!=="dudas").forEach(sec=>{const b=document.createElement("button");b.className="sec-card";
     b.innerHTML=`<span class="ico">${sec.ico}</span><b>${esc(sec.t)}</b><small>${esc(sec.sub)}</small>`;
     b.onclick=()=>{w.remove();me(`${sec.ico} ${sec.t}`);setTimeout(()=>abrirSeccion(sec),250)};w.appendChild(b);});
   chat.appendChild(w);
@@ -1046,7 +1142,7 @@ const BEB = Object.fromEntries(BEBIDAS.flatMap(g=>g.items.map(i=>[i.id,{...i,g:g
 const ALCOHOL = new Set(["cer_q","cer_c","cer_m","cer_j","vin_t","vin_b","cava","vermut","tverano","gin","gin_z","cub","cub_z","chupito"]);
 const bebKey = () => "mogas-bebidas-" + (FICHA.codigo||"DEMO");
 const bebDatos = () => store.get(bebKey()) || {};
-const bebGuardar = d => store.set(bebKey(), d);
+const bebGuardar = d => { store.set(bebKey(), d); if(typeof vsBarPintar==="function" && TAB!=="vs") vsBarPintar(); };
 const fechaISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const locale = () => ({es:"es-ES", ca:"ca-ES", en:"en-GB"})[LANG] || "es-ES";
 function kcalDia(dia){ if(!dia) return 0; let k=+dia._otra_k||0; Object.entries(dia).forEach(([id,n])=>{ if(BEB[id]) k+=BEB[id].k*n; }); return k; }
@@ -1775,7 +1871,354 @@ function receta(){
   }})));
 }
 
-/* --- Dudas --- */
+/* =========== VITAL SCORE =========== */
+const NUBE = { url:"https://qjimstzgjbkrqlsfdbvq.supabase.co", key:"sb_publishable_-YDlYWX41mOLaFBT_YJqdQ_gndv5lUU" };
+const nubeOn = () => !!(NUBE.url && NUBE.key);
+async function nube(path, {method="GET", body, token, prefer}={}){
+  const h={apikey:NUBE.key, "Content-Type":"application/json"};
+  if(token) h.Authorization="Bearer "+token;
+  if(prefer) h.Prefer=prefer;
+  const r=await fetch(NUBE.url+path,{method, headers:h, body: body!==undefined?JSON.stringify(body):undefined});
+  const t=await r.text(); let j=null; try{ j=t?JSON.parse(t):null; }catch(e){}
+  if(!r.ok) throw new Error((j&&(j.message||j.error_description||j.msg||j.error))||("HTTP "+r.status));
+  return j;
+}
+
+const VS_PESOS = {alcohol:25, dieta:20, fuerza:15, tabaco:10, pasos:10, sueno:10, azucar:10};
+const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Fuerza", pasos:"Pasos", sueno:"Sueño", azucar:"Azúcar"};
+const VS_BANDAS = [
+  {max:20,  n:"Crítico",   ring:"#D93B30", text:"#B42318", track:"#FBE3E1"},
+  {max:40,  n:"Bajo",      ring:"#EE8A1F", text:"#B54708", track:"#FDEBD6"},
+  {max:60,  n:"Mejorable", ring:"#E9C21B", text:"#7A5E00", track:"#FBF3CF"},
+  {max:80,  n:"Bueno",     ring:"#7CC04B", text:"#3B7D23", track:"#E6F3DC"},
+  {max:100, n:"Excelente", ring:"#2E7D4F", text:"#1F6B3F", track:"#D6EADD"}];
+const vsBanda = v => VS_BANDAS.find(b=>v<=b.max) || VS_BANDAS[4];
+/* consumiciones de alcohol por bebida (un combinado o gin tonic cuenta como 2) */
+const UNID_ALC = {cer_q:1,cer_c:1,cer_m:1,cer_j:2,vin_t:1,vin_b:1,cava:1,vermut:1,tverano:1,gin:2,gin_z:2,cub:2,cub_z:2,chupito:1};
+const TIPO_PTS = {fuerza:100, crossfit:100, hyrox:100, dirigida:75, pilates:75, cardio:65, yoga:55};
+const vsKey = () => "mogas-vs-" + (FICHA.codigo||"DEMO");
+const vsDatos = () => store.get(vsKey()) || {};
+const vsGuardar = d => store.set(vsKey(), d);
+function alcDia(f){
+  const b=bebDatos()[f];
+  if(b){ let n=0; Object.entries(b).forEach(([id,c])=>{ if(UNID_ALC[id]) n+=UNID_ALC[id]*c; }); return n; }
+  const r=vsDatos()[f]; return (r&&r.alc)||0;
+}
+const alcPts = n => n===0?100 : n===1?75 : n===2?45 : 15;
+function puntosDia(a, f){
+  const p={}, dk=["comidas","cantidades","verdura","proteina"];
+  if(dk.some(k=>a[k]) || a.social){
+    let d=0; dk.forEach(k=>{ if(a[k]==="si") d+=20; });
+    d += a.social==="no" ? 20 : a.social==="si" ? ({ctrl:15, algo:6, libre:0}[a.socialTipo]||0) : 0;
+    p.dieta=d;
+  }
+  if(a.cafe || a.bebAz || a.pico){
+    let z=100; z-=({"1":15,"2":30})[a.cafe]||0; z-=({"1":20,"2":40})[a.bebAz]||0;
+    if(a.pico==="si"){ let pen=({"1":15,"2":35,"3":60})[a.picoCant]||0; const q=a.picoQue||[]; if(q.length===1 && q[0]==="salado") pen=Math.round(pen/2); z-=pen; }
+    p.azucar=Math.max(0,z);
+  }
+  if(a.entreno) p.fuerza = a.entreno==="desc" ? 100 : a.entreno==="si" ? (TIPO_PTS[a.tipo]||60) : 0;
+  if(a.sueno) p.sueno = ({menos6:30, entre:100, mas8:80})[a.sueno];
+  if(FICHA.fumador && a.fumo) p.tabaco = a.fumo==="no" ? 100 : (({a:40, b:15, c:0})[a.cigs] ?? 20);
+  const ps=pasDatos().d[f], obj=FICHA.pasosObjetivo||10000;
+  if(ps!=null) p.pasos=Math.min(100, Math.round(ps/obj*100));
+  if(a.alcOk) p.alcohol=alcPts(alcDia(f));
+  return p;
+}
+function notaDe(p, fumador){
+  let s=0, w=0; const q={...p}; if(!fumador && Object.keys(q).length) q.tabaco=100;
+  Object.entries(VS_PESOS).forEach(([k,pe])=>{ if(q[k]!=null){ s+=q[k]*pe; w+=pe; } });
+  return w ? Math.round(s/w) : null;
+}
+/* dias: [{f, p:{pilar:puntos}, alc:consumiciones, conf:alcohol confirmado}] · nDias: días del periodo */
+function vsCalcular(dias, nDias, fumador){
+  const sum={}, cnt={};
+  dias.forEach(d=>Object.entries(d.p||{}).forEach(([k,v])=>{ if(k==="alcohol"||v==null) return; sum[k]=(sum[k]||0)+v; cnt[k]=(cnt[k]||0)+1; }));
+  const pil={}; Object.keys(sum).forEach(k=>pil[k]=Math.round(sum[k]/cnt[k]));
+  let alcSem=null;
+  if(dias.some(d=>d.conf)){
+    alcSem = dias.reduce((a,d)=>a+(d.alc||0),0) / Math.max(7,nDias) * 7;
+    pil.alcohol = alcSem<0.5?100 : alcSem<=1.5?80 : alcSem<=3.5?60 : alcSem<=6.5?40 : alcSem<=10.5?20 : 0;
+  }
+  if(!fumador && Object.keys(pil).length) pil.tabaco=100;
+  return {score:notaDe(pil, true), pil, alcSem, n:dias.length};
+}
+function vsInicio(){
+  const fs=[...Object.keys(vsDatos()), ...Object.keys(bebDatos()), ...Object.keys(pasDatos().d)].sort();
+  return fs[0] || fechaISO();
+}
+function vsDiasLocal(desde, hasta){
+  const V=vsDatos(), fs=new Set([...Object.keys(V), ...Object.keys(bebDatos()), ...Object.keys(pasDatos().d)].filter(f=>f>=desde && f<=hasta));
+  return [...fs].sort().map(f=>({f, p:puntosDia(V[f]||{}, f), alc:alcDia(f), conf:!!(V[f]&&V[f].alcOk)}));
+}
+const diasEntre = (a,b) => Math.round((deISO(b)-deISO(a))/864e5)+1;
+function vsPeriodo(tipo, atras=0){
+  const fin=fechaISO(sumarDias(new Date(),-atras)), ini=vsInicio();
+  let desde = tipo==="mes" ? fechaISO(sumarDias(deISO(fin),-29)) : ini;
+  if(desde<ini) desde=ini; if(fin<desde) return {score:null, pil:{}, n:0};
+  return vsCalcular(vsDiasLocal(desde,fin), diasEntre(desde,fin), FICHA.fumador);
+}
+function racha(test){
+  let n=0, d=new Date(); const t0=test(fechaISO(d));
+  if(t0===false) return 0; if(t0!==true) d=sumarDias(d,-1);
+  for(let i=0;i<5000;i++){ if(test(fechaISO(d))!==true) break; n++; d=sumarDias(d,-1); }
+  return n;
+}
+function recordDe(test){
+  let best=0, cur=0, d=deISO(vsInicio()); const hoy=fechaISO();
+  for(let i=0;i<5000 && fechaISO(d)<=hoy;i++){ if(test(fechaISO(d))===true){ cur++; best=Math.max(best,cur); } else cur=0; d=sumarDias(d,1); }
+  return best;
+}
+const testAlc = f => { if(alcDia(f)>0) return false; const r=vsDatos()[f]; return r&&r.alcOk ? true : null; };
+const testFumo = f => { const r=vsDatos()[f]; if(!r||!r.fumo) return null; return r.fumo==="no"; };
+
+function anillo(v, size, stroke, txt){
+  const r=(size-stroke)/2, c=2*Math.PI*r, b=v==null?{ring:"#cfd8cf",track:"#e6ebe5"}:vsBanda(v), dash=v==null?0:Math.max(0.01,v/100*c), h=size/2;
+  return `<span class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${b.track}" stroke-width="${stroke}"/>${v==null?"":`<circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${b.ring}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${h} ${h})"/>`}</svg><span class="ringv">${txt}</span></span>`;
+}
+const ICO = {
+  fumar:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="13" width="15" height="4" rx="1"/><path d="M20 13v4M17 6c0 2 3 2 3 5M3 3l18 18"/></svg>`,
+  alcohol:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l-1 8a4 4 0 0 1-8 0z"/><path d="M12 15v6M8 21h8M3 3l18 18"/></svg>`,
+  vs:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5" class="hi"/></svg>`,
+  dieta:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M9 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/></svg>`,
+  ayuda:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>`,
+  test:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9l2 2 4-4M9 16h6"/></svg>`,
+  flecha:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`,
+  x:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`
+};
+
+/* --- pestañas --- */
+let TAB="vs", VS_PER="mes", Q=null;
+function marcarTab(t){ TAB=t; document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t)); }
+function irTab(t){
+  marcarTab(t); Q=null;
+  const vs=document.getElementById("vs"), bar=document.getElementById("vsbar");
+  vs.hidden = t!=="vs"; chat.hidden = t==="vs"; bar.hidden = t==="vs";
+  const ft=document.querySelector(".app footer"); if(ft) ft.hidden=false;
+  if(t==="vs") vsHome();
+  else { vsBarPintar(); chat.innerHTML=""; if(t==="ayuda"){ dudas(); } else { chatHola(); menu(); } }
+}
+function contadores(){
+  const ca=racha(testAlc), cf=FICHA.fumador?racha(testFumo):0;
+  return {ca, cf, ra:Math.max(ca,recordDe(testAlc)), rf:FICHA.fumador?Math.max(cf,recordDe(testFumo)):0};
+}
+function vsBarPintar(){
+  const bar=document.getElementById("vsbar"); if(!bar) return;
+  const r=vsPeriodo("mes"), c=contadores();
+  bar.innerHTML=`<button type="button" class="vsbarb" aria-label="Ver tu Vital Score">${anillo(r.score,48,7,r.score==null?"—":r.score)}
+    <span class="vsbt"><span class="vsbl"><span>VITAL SCORE</span>${r.score!=null?` · <span>${vsBanda(r.score).n}</span>`:""}</span>
+    <span class="vsbc">${FICHA.fumador?`<span class="chipc"><b>${c.cf}</b> <span>${c.cf===1?"día sin fumar":"días sin fumar"}</span></span>`:""}<span class="chipc"><b>${c.ca}</b> <span>${c.ca===1?"día sin alcohol":"días sin alcohol"}</span></span></span></span>${ICO.flecha}</button>`;
+  bar.querySelector("button").onclick=()=>irTab("vs");
+}
+function vsHome(){
+  Q=null;
+  const ft=document.querySelector(".app footer"); if(ft) ft.hidden=false;
+  const box=document.getElementById("vs"); if(!box) return;
+  const r=vsPeriodo(VS_PER), c=contadores(), V=vsDatos(), hoy=fechaISO(), ayer=fechaISO(sumarDias(new Date(),-1));
+  let trend="";
+  if(r.score!=null && VS_PER==="mes"){ const p=vsPeriodo("mes",30); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. los 30 días anteriores` : d<0?`▼ ${-d} puntos vs. los 30 días anteriores` : `Igual que los 30 días anteriores`; } }
+  const cnt=(ico,tit,n,rec)=>`<div class="vsc"><div class="vsct">${ico}<span>${tit}</span></div><div class="vscn"><b>${n}</b> <span>${n===1?"día":"días"}</span></div><small>Récord: ${rec} días</small></div>`;
+  const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno","azucar"];
+  const det=k=>{ const v=r.pil[k]; if(v==null) return "Sin datos";
+    if(k==="alcohol" && r.alcSem!=null){ const s=Math.round(r.alcSem*10)/10; return s===1?"1 consumición/semana":`${String(s).replace(".",",")} consumiciones/semana`; }
+    return vsBanda(v).n; };
+  const b=r.score!=null?vsBanda(r.score):null;
+  box.innerHTML=`
+    <div class="vscnt${FICHA.fumador?" dos":""}">${FICHA.fumador?cnt(ICO.fumar,"SIN FUMAR",c.cf,c.rf):""}${cnt(ICO.alcohol,"SIN ALCOHOL",c.ca,c.ra)}</div>
+    <div class="vscard">
+      <div class="vstog" role="group"><button type="button" data-p="mes" class="${VS_PER==="mes"?"on":""}">Últimos 30 días</button><button type="button" data-p="total" class="${VS_PER==="total"?"on":""}">Desde el inicio</button></div>
+      <div class="vslab">VITAL SCORE</div>
+      ${anillo(r.score,210,22,r.score==null?`<b>—</b>`:`<b>${r.score}</b><small>de 100</small>`)}
+      ${b?`<span class="vsband" style="background:${b.track};color:${b.text}">${b.n}</span>`:`<p class="vsvacio">Contesta tu primer cuestionario para ver tu Vital Score.</p>`}
+      ${trend?`<div class="vstrend">${trend}</div>`:""}
+    </div>
+    <button type="button" class="vscta" data-q="${hoy}"><span class="qi">${ICO.test}</span><span class="t"><b>Cuestionario de hoy</b><small>${V[hoy]?"Hecho ✓ · Toca para revisarlo":"Pendiente · 1 minuto"}</small></span>${ICO.flecha}</button>
+    ${!V[ayer] && vsInicio()<=ayer && ayer>=fechaISO(sumarDias(new Date(),-1))?`<button type="button" class="vsayer" data-q="${ayer}">¿Se te olvidó ayer? Contestar el de ayer</button>`:""}
+    <div class="vshead"><b>Tus pilares</b><button type="button" class="vslink" id="vscomo">Cómo se calcula</button></div>
+    <div class="vscomo" id="vscomobox" hidden>
+      <b>Cuánto pesa cada pilar</b>
+      <ul>${Object.entries(VS_PESOS).map(([k,p])=>`<li><span>${VS_NOM[k]}</span> <span>${p} %</span></li>`).join("")}</ul>
+      <b>Alcohol: consumiciones por semana</b>
+      <ul><li><span>0</span> <span>100 pts</span></li><li><span>1</span> <span>80 pts</span></li><li><span>2 – 3</span> <span>60 pts</span></li><li><span>4 – 6</span> <span>40 pts</span></li><li><span>7 – 10</span> <span>20 pts</span></li><li><span>Más de 10</span> <span>0 pts</span></li></ul>
+      <small>Una caña, una copa de vino o un chupito cuentan como 1 consumición. Un cubata o un gin tonic, como 2.</small>
+      <b>Colores</b>
+      <ul>${VS_BANDAS.map((x,i)=>`<li><span><i style="background:${x.ring}"></i> ${x.n}</span> <span>${i?VS_BANDAS[i-1].max+1:0} – ${x.max}</span></li>`).join("")}</ul>
+    </div>
+    <div class="vspil">${orden.map(k=>{ const v=r.pil[k]; return `<div class="vsp">${anillo(v,44,6,v==null?"—":v)}<span class="t"><b>${VS_NOM[k]}</b><small>${det(k)}</small></span></div>`; }).join("")}</div>`;
+  box.querySelectorAll(".vstog button").forEach(x=>x.onclick=()=>{ VS_PER=x.dataset.p; vsHome(); });
+  box.querySelectorAll("[data-q]").forEach(x=>x.onclick=()=>vsCuestionario(x.dataset.q));
+  box.querySelector("#vscomo").onclick=()=>{ const e=box.querySelector("#vscomobox"); e.hidden=!e.hidden; };
+  box.scrollTop=0;
+}
+
+/* --- cuestionario diario --- */
+function vsCuestionario(f){
+  const prev=vsDatos()[f], a=prev?JSON.parse(JSON.stringify(prev)):{};
+  if(a.alcOk) a.alcOk="ok";
+  const ps=pasDatos().d[f]; if(ps!=null) a.pasos=ps;
+  Q={f, paso:0, a, add:[]}; vsQPintar(true);
+}
+const Q_PASOS = ["dieta","azucar","alctab","entreno","pasos","fin"];
+function vsQPintar(arriba){
+  const box=document.getElementById("vs"), a=Q.a, paso=Q_PASOS[Q.paso], st=box.scrollTop, esHoy=Q.f===fechaISO();
+  const ft=document.querySelector(".app footer"); if(ft) ft.hidden=true;
+  const ob=(k,v,t)=>`<button type="button" class="qo${a[k]===v?" on":""}" data-k="${k}" data-v="${v}">${t}</button>`;
+  const yn=(k,t)=>`<div class="qc qrow"><span>${t}</span><div class="qyn">${ob(k,"si","Sí")}${ob(k,"no","No")}</div></div>`;
+  const META={dieta:["Dieta","Toca Sí o No. Son 10 segundos."], azucar:["Azúcar","Sé sincero: nadie te juzga."],
+    alctab:[FICHA.fumador?"Alcohol y tabaco":"Alcohol","Lo que más pesa en tu Vital Score."], entreno:["Entreno","¿Te has movido hoy?"],
+    pasos:["Pasos y sueño","Último paso."], fin:["¡Listo!","Así ha ido tu día."]};
+  let body="";
+  if(paso==="dieta"){
+    body = yn("comidas","¿Has hecho todas las comidas que te tocaban?") + yn("cantidades","¿Has respetado las cantidades de hidratos, proteína y verdura?")
+      + yn("verdura","¿Has comido la verdura y la fibra que tocaban?") + yn("proteina","¿La proteína ha sido sin rebozar ni freír?")
+      + `<div class="qc"><span class="qt">¿Has tenido alguna comida social fuera?</span><div class="qg g2">${ob("social","si","Sí")}${ob("social","no","No")}</div>
+        ${a.social==="si"?`<span class="qs">¿Cómo ha sido?</span><div class="qg g3">${ob("socialTipo","ctrl","Muy controlada")}${ob("socialTipo","algo","Algo libre")}${ob("socialTipo","libre","Totalmente libre")}</div>`:""}</div>`;
+  } else if(paso==="azucar"){
+    const SW=[["galletas","Galletas"],["bolleria","Bollería (croissant, magdalena…)"],["chocolate","Chocolate"],["gominolas","Caramelos o gominolas"],["postre","Helado o postre"],["salado","Salado (patatas, snacks)"]];
+    body = `<div class="qc"><span class="qt">¿Azúcar en el café o infusiones?</span><div class="qg g3">${ob("cafe","0","No")}${ob("cafe","1","1 sobre")}${ob("cafe","2","2 o más")}</div></div>
+      <div class="qc"><span class="qt">¿Bebidas azucaradas? (refrescos, zumos, batidos)</span><div class="qg g3">${ob("bebAz","0","Ninguna")}${ob("bebAz","1","1")}${ob("bebAz","2","2 o más")}</div></div>
+      <div class="qc"><span class="qt">¿Has picoteado entre horas?</span><div class="qg g2">${ob("pico","no","No")}${ob("pico","si","Sí")}</div>
+        ${a.pico==="si"?`<span class="qs">¿Qué has picoteado? Marca todo lo que aplique</span><div class="qchips">${SW.map(([v,t])=>`<button type="button" class="qo${(a.picoQue||[]).includes(v)?" on":""}" data-m="picoQue" data-v="${v}">${t}</button>`).join("")}</div>
+        <span class="qs">¿Cuánto en total? (1 galleta, 1 mini croissant… = 1)</span><div class="qg g3">${ob("picoCant","1","1")}${ob("picoCant","2","2 – 4")}${ob("picoCant","3","Más de 4")}</div>`:""}</div>`;
+  } else if(paso==="alctab"){
+    const n=alcDia(Q.f), D=(bebDatos()[Q.f])||{};
+    const lista=Object.entries(D).filter(([id,c])=>UNID_ALC[id]&&c>0).map(([id,c])=>`<li>${c} × <span>${esc(BEB[id].t)}</span></li>`).join("");
+    body = `<div class="qc"><span class="qlab">${esHoy?"ALCOHOL QUE HAS APUNTADO HOY":"ALCOHOL QUE APUNTASTE AYER"}</span>
+      <b class="qbig">${n===0?"Nada":n===1?"1 consumición":`${n} consumiciones`}</b>${lista?`<ul class="qlist">${lista}</ul>`:""}
+      <div class="qg g2">${n?ob("alcOk","ok","Correcto")+ob("alcOk","add","Me falta algo"):ob("alcOk","ok","Correcto, no he bebido")+ob("alcOk","add","Se me olvidó apuntar")}</div>
+      ${a.alcOk==="add"?`<span class="qs">Toca lo que te faltó apuntar</span><div class="qg g2">${[["cer_c","Caña"],["vin_t","Copa de vino"],["chupito","Chupito"],["cub","Cubata o gin tonic"]].map(([id,t])=>`<button type="button" class="qo" data-add="${id}">+ ${t}</button>`).join("")}</div>
+        ${Q.add.length?`<button type="button" class="qlink" data-act="undo">Quitar la última</button>`:""}<span class="qs">Se guarda también en Mis bebidas.</span>`:""}
+      <small class="qnote">Lo apuntas durante el día en Mis bebidas. Aquí solo lo confirmas.</small></div>`
+      + (FICHA.fumador?`<div class="qc"><span class="qt">¿Has fumado hoy?</span><div class="qg g2">${ob("fumo","no","No")}${ob("fumo","si","Sí")}</div>
+        ${a.fumo==="si"?`<span class="qs">¿Cuántos cigarrillos?</span><div class="qg g3">${ob("cigs","a","1 – 5")}${ob("cigs","b","6 – 10")}${ob("cigs","c","Más de 10")}</div>`:""}</div>`:"");
+  } else if(paso==="entreno"){
+    body = `<div class="qc"><span class="qt">¿Has entrenado hoy?</span><div class="qg g1">${ob("entreno","si","Sí")}${ob("entreno","no","No")}${ob("entreno","desc","Hoy tocaba descanso")}</div></div>
+      ${a.entreno==="si"?`<div class="qc"><span class="qt">¿Qué has hecho?</span><div class="qg g2">${[["fuerza","Fuerza en sala"],["crossfit","CrossFit"],["hyrox","Hyrox"],["dirigida","Clase dirigida"],["pilates","Pilates"],["yoga","Yoga o estiramientos"],["cardio","Cardio (correr, bici, nadar)"]].map(([v,t])=>ob("tipo",v,t)).join("")}</div></div>`:""}`;
+  } else if(paso==="pasos"){
+    body = `<div class="qc"><label class="qt" for="qpasos">Pasos de hoy</label><div class="qpas"><button type="button" class="qo" data-act="menos" aria-label="Restar 1.000 pasos">−</button><input id="qpasos" type="number" inputmode="numeric" min="0" max="100000" value="${a.pasos!=null?a.pasos:""}" placeholder="0"><button type="button" class="qo" data-act="mas" aria-label="Sumar 1.000 pasos">+</button></div>
+      <small class="qnote">Míralo en la app de salud de tu móvil o en tu reloj.</small></div>
+      <div class="qc"><span class="qt">¿Cuánto has dormido esta noche?</span><div class="qg g3">${ob("sueno","menos6","Menos de 6 h")}${ob("sueno","entre","6 – 8 h")}${ob("sueno","mas8","Más de 8 h")}</div></div>`;
+  } else {
+    const p=puntosDia(Q.a, Q.f), nota=notaDe(p, FICHA.fumador), bd=nota!=null?vsBanda(nota):null, c=contadores(), msgs=[];
+    if(testAlc(Q.f)===true) msgs.push(`<div class="qok">${c.ca===1?"¡1 día sin alcohol!":`¡Ya llevas ${c.ca} días sin alcohol!`}</div>`);
+    else if(testAlc(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin alcohol vuelve a empezar mañana</div>`);
+    if(FICHA.fumador && testFumo(Q.f)===true) msgs.push(`<div class="qok">${c.cf===1?"¡1 día sin fumar!":`¡Ya llevas ${c.cf} días sin fumar!`}</div>`);
+    else if(FICHA.fumador && testFumo(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin fumar vuelve a empezar mañana</div>`);
+    const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno","azucar"];
+    body = `<div class="qc qday">${anillo(nota,112,14,nota==null?"—":`<b>${nota}</b>`)}<span class="t"><span class="qlab">${esHoy?"TU DÍA DE HOY":"TU DÍA DE AYER"}</span>${bd?`<span class="vsband" style="background:${bd.track};color:${bd.text}">${bd.n}</span>`:""}<small>Suma a tu Vital Score de los últimos 30 días.</small></span></div>
+      ${msgs.join("")}
+      ${orden.map(k=>`<div class="qc qsum"><i style="background:${p[k]!=null?vsBanda(p[k]).ring:"#cfd8cf"}"></i><b>${VS_NOM[k]}</b><span style="color:${p[k]!=null?vsBanda(p[k]).text:"#73766f"}">${p[k]!=null?p[k]:"—"}</span></div>`).join("")}`;
+  }
+  const total=Q_PASOS.length-1, fin=paso==="fin";
+  box.innerHTML=`<div class="qz">
+    <div class="qzh"><button type="button" class="qx" data-act="cerrar" aria-label="Cerrar">${ICO.x}</button><span>${fin?"Resumen":`Paso ${Q.paso+1} de ${total}`}</span><span class="qdia">${esHoy?"Hoy":"Ayer"}</span></div>
+    <div class="qbar"><i style="width:${Math.min(Q.paso,total)/total*100}%"></i></div>
+    <h2>${META[paso][0]}</h2><p class="qsub">${META[paso][1]}</p>
+    ${body}
+    <div class="qzf">${Q.paso>0&&!fin?`<button type="button" class="qback" data-act="atras">Atrás</button>`:""}<button type="button" class="qnext" data-act="${fin?"cerrar":"sig"}">${fin?"Volver a mi Vital Score":paso==="pasos"?"Ver mi día":"Siguiente"}</button></div>
+  </div>`;
+  box.scrollTop = arriba ? 0 : st;
+  const inp=box.querySelector("#qpasos"); if(inp) inp.oninput=()=>{ Q.a.pasos = inp.value===""?null:Math.max(0,Math.min(100000,Math.round(+inp.value))); };
+  box.onclick=e=>{
+    const b=e.target.closest("button"); if(!b || !Q) return;
+    if(b.dataset.k){ Q.a[b.dataset.k]=b.dataset.v; vsQPintar(); return; }
+    if(b.dataset.m){ const l=new Set(Q.a[b.dataset.m]||[]); l.has(b.dataset.v)?l.delete(b.dataset.v):l.add(b.dataset.v); Q.a[b.dataset.m]=[...l]; vsQPintar(); return; }
+    if(b.dataset.add){ const D=bebDatos(); D[Q.f]=D[Q.f]||{}; D[Q.f][b.dataset.add]=(D[Q.f][b.dataset.add]||0)+1; bebGuardar(D); Q.add.push(b.dataset.add); vsQPintar(); return; }
+    const act=b.dataset.act;
+    if(act==="undo"){ const id=Q.add.pop(), D=bebDatos(); if(id && D[Q.f] && D[Q.f][id]){ D[Q.f][id]--; if(!D[Q.f][id]) delete D[Q.f][id]; if(!Object.keys(D[Q.f]).length) delete D[Q.f]; bebGuardar(D); } vsQPintar(); }
+    else if(act==="mas"||act==="menos"){ Q.a.pasos=Math.max(0,(+Q.a.pasos||0)+(act==="mas"?1000:-1000)); vsQPintar(); }
+    else if(act==="atras"){ Q.paso--; vsQPintar(true); }
+    else if(act==="sig"){ if(Q_PASOS[Q.paso]==="pasos") vsGuardarDia(); Q.paso++; vsQPintar(true); }
+    else if(act==="cerrar"){ Q=null; vsHome(); }
+  };
+}
+function vsGuardarDia(){
+  const a=JSON.parse(JSON.stringify(Q.a));
+  if(a.pasos!=null && a.pasos!==""){ const P=pasDatos(); P.d[Q.f]=Math.round(+a.pasos); pasGuardar(P); }
+  delete a.pasos; a.alcOk=!!a.alcOk; if(!a.alcOk) delete a.alcOk;
+  a.alc=alcDia(Q.f); a.t=Date.now();
+  const V=vsDatos(); V[Q.f]=a; vsGuardar(V);
+  vsSubir(Q.f);
+}
+
+/* --- sincronización con la base de datos (solo si el cliente tiene token) --- */
+const pendKey = () => "mogas-vs-pend-" + (FICHA.codigo||"DEMO");
+let SUBIENDO=false;
+async function vsSubir(f){
+  if(!nubeOn() || !FICHA.token || PREVIEW) return;
+  const pend=new Set(store.get(pendKey())||[]); if(f) pend.add(f); store.set(pendKey(),[...pend]);
+  if(SUBIENDO) return; SUBIENDO=true;
+  try{
+    for(const x of [...pend]){
+      const r=vsDatos()[x]; if(!r){ pend.delete(x); continue; }
+      try{ await nube("/rest/v1/rpc/guardar_dia",{method:"POST", body:{p_codigo:FICHA.codigo, p_token:FICHA.token, p_fecha:x, p_datos:{...r, alc:alcDia(x), pasosDia:pasDatos().d[x]??null}, p_puntos:puntosDia(r,x)}}); pend.delete(x); }
+      catch(e){ if(/fecha/.test(e.message)) pend.delete(x); else break; }
+    }
+  } finally { store.set(pendKey(),[...pend]); SUBIENDO=false; }
+}
+async function vsBajar(){
+  if(!nubeOn() || !FICHA.token || PREVIEW) return;
+  try{
+    const rows=await nube("/rest/v1/rpc/mis_dias",{method:"POST", body:{p_codigo:FICHA.codigo, p_token:FICHA.token}});
+    const V=vsDatos(), P=pasDatos(); let cambio=false;
+    (rows||[]).forEach(r=>{ if(!V[r.fecha] && r.datos){ V[r.fecha]=r.datos; cambio=true; if(r.datos.pasosDia!=null && P.d[r.fecha]==null) P.d[r.fecha]=r.datos.pasosDia; } });
+    if(cambio){ vsGuardar(V); pasGuardar(P); if(TAB==="vs" && !Q) vsHome(); else vsBarPintar(); }
+  }catch(e){}
+  vsSubir();
+}
+
+/* --- panel: sesión del equipo y Vital Score de los clientes --- */
+const staffSes = () => store.get("mogas-staff");
+async function staffLogin(email, password){
+  const j=await nube("/auth/v1/token?grant_type=password",{method:"POST", body:{email, password}});
+  store.set("mogas-staff",{t:j.access_token, r:j.refresh_token, exp:Date.now()+j.expires_in*1000, email});
+}
+async function staffToken(){
+  const s=staffSes(); if(!s) return null;
+  if(Date.now() < s.exp-60000) return s.t;
+  try{ const j=await nube("/auth/v1/token?grant_type=refresh_token",{method:"POST", body:{refresh_token:s.r}});
+    store.set("mogas-staff",{...s, t:j.access_token, r:j.refresh_token, exp:Date.now()+j.expires_in*1000}); return j.access_token; }
+  catch(e){ store.del("mogas-staff"); return null; }
+}
+async function nubeCliente(){
+  const t=await staffToken(); if(!t) return null;
+  const rows=await nube("/rest/v1/clientes?on_conflict=codigo",{method:"POST", token:t, prefer:"resolution=merge-duplicates,return=representation",
+    body:[{codigo:FICHA.codigo, nombre:FICHA.nombre, fumador:!!FICHA.fumador}]});
+  return rows && rows[0] && rows[0].token;
+}
+async function panelVS(el){
+  if(!nubeOn()){ el.innerHTML=""; return; }
+  const s=staffSes();
+  if(!s){
+    el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="note">Entra con tu usuario de la base de datos para ver el Vital Score de tus clientes y para que se guarde el de los clientes nuevos.</p>
+      <form id="stf"><label>Email<input id="st_e" type="email" autocomplete="username"></label><label>Contraseña<input id="st_p" type="password" autocomplete="current-password"></label><div class="actions"><button>Entrar</button></div><p class="warn" id="st_err"></p></form>`;
+    el.querySelector("#stf").onsubmit=async e=>{ e.preventDefault(); const er=el.querySelector("#st_err"); er.textContent="Entrando…";
+      try{ await staffLogin(el.querySelector("#st_e").value.trim(), el.querySelector("#st_p").value); panelVS(el); }
+      catch(x){ er.textContent="No se ha podido entrar: revisa el email y la contraseña."; } };
+    return;
+  }
+  el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="note">Cargando…</p>`;
+  try{
+    const t=await staffToken(); if(!t){ panelVS(el); return; }
+    const desde=fechaISO(sumarDias(new Date(),-29)), hoy=fechaISO();
+    const [cl, ds]=await Promise.all([nube("/rest/v1/clientes?select=codigo,nombre,fumador",{token:t}), nube(`/rest/v1/dias?select=codigo,fecha,datos,puntos&fecha=gte.${desde}&order=fecha`,{token:t})]);
+    const filas=(cl||[]).map(c=>{
+      const mios=(ds||[]).filter(d=>d.codigo===c.codigo), ini=mios.length?mios[0].fecha:hoy;
+      const dias=mios.map(d=>{ const p={...(d.puntos||{})}; delete p.alcohol; if(!c.fumador) delete p.tabaco; return {f:d.fecha, p, alc:(d.datos&&d.datos.alc)||0, conf:!!(d.datos&&d.datos.alcOk)}; });
+      const r=vsCalcular(dias, diasEntre(ini<desde?desde:ini, hoy), c.fumador);
+      return {c, r, ult:mios.length?mios[mios.length-1].fecha:null, n:mios.length};
+    }).sort((a,b)=>(a.r.score??999)-(b.r.score??999));
+    el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="note">Últimos 30 días. Primero, quien más lo necesita.</p>
+      ${filas.length?filas.map(x=>{ const b=x.r.score!=null?vsBanda(x.r.score):null; return `<div class="cli vsrow">${anillo(x.r.score,44,6,x.r.score==null?"—":x.r.score)}<div><b>${esc(x.c.nombre||x.c.codigo)}</b><small>${b?esc(b.n)+" · ":""}${x.ult?`Último cuestionario: ${esc(fmtDia(deISO(x.ult),{day:"numeric",month:"short"}))} · ${x.n} días en 30`:"Aún no ha contestado ningún cuestionario"}</small></div></div>`; }).join("")
+        :`<p class="note">Aún no hay clientes en la base de datos. Guarda un cliente para que aparezca aquí.</p>`}
+      <p class="note">Conectado como ${esc(s.email)} · <a href="#" id="st_out">Salir</a></p>`;
+  }catch(e){
+    el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="warn">No se han podido cargar los datos (${esc(e.message)}).</p><p class="note"><a href="#" id="st_out">Volver a entrar</a></p>`;
+  }
+  const o=el.querySelector("#st_out"); if(o) o.onclick=e=>{ e.preventDefault(); store.del("mogas-staff"); panelVS(el); };
+}
+
+/* --- Arranque --- */
 (async function(){
   const m = location.hash.match(/^#d=([A-Za-z0-9_\-]+)$/);
   if(m){
