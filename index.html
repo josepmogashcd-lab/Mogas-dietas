@@ -128,6 +128,19 @@
   .panel input[hidden]{display:none}
   .panel .erow{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .panel label.filebtn{display:inline-block;margin:0;font-size:14px;font-weight:600;color:var(--brand);background:var(--brand-2);border-radius:10px;padding:8px 12px;cursor:pointer}
+  .plate .tot{border-top:1.5px solid var(--line);margin-top:4px;padding-top:6px;font-weight:650}
+  .bebdia{display:flex;gap:6px;margin:8px 0}.bebdia button{flex:1;font:inherit;font-weight:600;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px;cursor:pointer}
+  .bebdia button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .bebtot{display:flex;justify-content:space-between;align-items:center;background:var(--brand-2);border-radius:10px;padding:9px 12px;margin-bottom:6px}.bebtot b{color:var(--brand);font-size:17px}
+  .bebg{margin-top:10px}.bebgt{font-weight:650;font-size:14px;margin-bottom:4px}
+  .bebi{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+  .bebi.tiene .bebn span{font-weight:600}
+  .bebn{flex:1;min-width:0;font-size:14px;line-height:1.3}.bebn small{display:block;color:var(--muted);font-size:12px}
+  .bebc{display:flex;align-items:center;gap:6px}.bebc b{min-width:20px;text-align:center}
+  .bebc button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--brand);background:#fff;color:var(--brand);font-size:19px;line-height:1;cursor:pointer;padding:0}
+  .bebc button.p{background:var(--brand);color:#fff}
+  .bebotra{display:flex;gap:6px;margin:4px 0}.bebotra input{flex:1;min-width:0;font:inherit;font-size:16px;padding:7px 10px;border:1.5px solid var(--line);border-radius:10px}
+  .bebotra button{font:inherit;font-weight:600;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:7px 14px;cursor:pointer}
   .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
   .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
   .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
@@ -929,6 +942,9 @@ const SECCIONES = [
     {t:"🙈 Me he saltado una comida", f:saltada},
     {t:"🥂 Tengo una comida social", f:comidaSocial},
     {t:"🍕 Mi comida libre semanal", f:()=>{bot(`Tienes <b>1 comida libre a la semana</b>. Elige tú el día, pero que sea <b>una comida</b>, no un día entero. La siguiente comida, vuelve a tu dieta con normalidad, sin compensar ni saltarte nada.`);opts([])}}]},
+  {id:"bebidas", ico:"🍹", t:"Mis bebidas", sub:"Apunta lo que bebes y mira tu resumen del mes", items:()=>[
+    {t:"🍹 Apuntar una bebida", f:()=>bebidasApuntar()},
+    {t:"📊 Ver el resumen del mes", f:()=>bebidasResumen()}]},
   {id:"cocina", ico:"👩‍🍳", t:"Cocina y batch cooking", sub:"Prepara la semana en 1 hora, tiempos de cocinado y conservación", items:()=>[
     {t:"🥘 Preparar mi batch cooking", f:batchInicio},
     {t:"⏱️ Tiempos de cocinado por verdura", f:tiemposInicio},
@@ -953,6 +969,118 @@ function abrirSeccion(sec){
   opts(sec.items(),{back:"menu"});
 }
 function dudas(){ abrirSeccion(SECCIONES.find(x=>x.id==="dudas")); }
+/* =========== CONTADOR DE BEBIDAS ===========
+   Valores aproximados por ración típica. Se guarda en el móvil del cliente, por día. */
+const BEBIDAS = [
+  {g:"🍺 Cerveza", items:[
+    {id:"cer_q", t:"Cerveza · quinto (20 cl)", k:85},
+    {id:"cer_c", t:"Cerveza · caña (25 cl)", k:105},
+    {id:"cer_m", t:"Cerveza · mediana o lata (33 cl)", k:140},
+    {id:"cer_j", t:"Cerveza · jarra o pinta (50 cl)", k:215},
+    {id:"sin_q", t:"Cerveza sin alcohol · quinto (20 cl)", k:45},
+    {id:"sin_m", t:"Cerveza sin alcohol · mediana o lata (33 cl)", k:75}]},
+  {g:"🍷 Vino y aperitivos", items:[
+    {id:"vin_t", t:"Copa de vino tinto (15 cl)", k:125},
+    {id:"vin_b", t:"Copa de vino blanco o rosado (15 cl)", k:115},
+    {id:"cava", t:"Copa de cava (12 cl)", k:90},
+    {id:"vermut", t:"Vermut (10 cl)", k:145},
+    {id:"tverano", t:"Tinto de verano (25 cl)", k:130}]},
+  {g:"🍸 Combinados", items:[
+    {id:"gin", t:"Gin tonic (tónica normal)", k:185},
+    {id:"gin_z", t:"Gin tonic con tónica zero", k:115},
+    {id:"cub", t:"Combinado con refresco (ron, whisky o vodka + cola o limón)", k:195},
+    {id:"cub_z", t:"Combinado con refresco zero", k:115},
+    {id:"chupito", t:"Chupito (3 cl)", k:70}]},
+  {g:"🥤 Refrescos con azúcar", items:[
+    {id:"cola", t:"Coca-Cola normal · lata (33 cl)", k:140},
+    {id:"aqua", t:"Aquarius · lata (33 cl)", k:80},
+    {id:"aqua_b", t:"Aquarius · botella (50 cl)", k:120},
+    {id:"ref", t:"Otro refresco con azúcar · lata (33 cl)", k:120},
+    {id:"tonica", t:"Tónica normal · botellín (20 cl)", k:70},
+    {id:"zumo", t:"Zumo · vaso (20 cl)", k:90}]},
+  {g:"0️⃣ Bebidas zero (0 kcal)", items:[
+    {id:"cola_z", t:"Coca-Cola Zero o Light", k:0},
+    {id:"aqua_z", t:"Aquarius Zero", k:0},
+    {id:"tonica_z", t:"Tónica zero", k:0},
+    {id:"ref_z", t:"Otro refresco zero", k:0}]}
+];
+const BEB = Object.fromEntries(BEBIDAS.flatMap(g=>g.items.map(i=>[i.id,{...i,g:g.g}])));
+const ALCOHOL = new Set(["cer_q","cer_c","cer_m","cer_j","vin_t","vin_b","cava","vermut","tverano","gin","gin_z","cub","cub_z","chupito"]);
+const bebKey = () => "mogas-bebidas-" + (FICHA.codigo||"DEMO");
+const bebDatos = () => store.get(bebKey()) || {};
+const bebGuardar = d => store.set(bebKey(), d);
+const fechaISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const locale = () => ({es:"es-ES", ca:"ca-ES", en:"en-GB"})[LANG] || "es-ES";
+function kcalDia(dia){ if(!dia) return 0; let k=+dia._otra_k||0; Object.entries(dia).forEach(([id,n])=>{ if(BEB[id]) k+=BEB[id].k*n; }); return k; }
+function nDia(dia){ if(!dia) return 0; let n=+dia._otra_n||0; Object.entries(dia).forEach(([id,c])=>{ if(BEB[id]) n+=c; }); return n; }
+
+function bebidasApuntar(diaSel){
+  const hoy=fechaISO(), ayer=fechaISO(new Date(Date.now()-864e5));
+  diaSel = diaSel || hoy;
+  const D=bebDatos(), dia=D[diaSel]||{};
+  bot(`<b>🍹 Apunta lo que has bebido</b>
+<div class="bebdia"><button type="button" data-d="${hoy}" class="${diaSel===hoy?"on":""}">Hoy</button><button type="button" data-d="${ayer}" class="${diaSel===ayer?"on":""}">Ayer</button></div>
+<div class="bebtot"><span>Total del día</span><b><span class="bt-k">${kcalDia(dia)}</span> kcal</b></div>
+${BEBIDAS.map(g=>`<div class="bebg"><div class="bebgt">${esc(g.g)}</div>${g.items.map(i=>`<div class="bebi" data-id="${i.id}"><div class="bebn"><span>${esc(i.t)}</span><small>≈${i.k} kcal</small></div><div class="bebc"><button type="button" class="m" aria-label="Quitar">−</button><b class="n">${dia[i.id]||0}</b><button type="button" class="p" aria-label="Añadir">+</button></div></div>`).join("")}</div>`).join("")}
+<div class="bebg"><div class="bebgt">✏️ Otra bebida</div><div class="bebotra"><input type="number" inputmode="numeric" min="0" placeholder="kcal" class="ok_in"><button type="button" class="ok_add">Añadir</button></div><span class="note bt-otra">${dia._otra_n?`Otras: ${dia._otra_n} · ${dia._otra_k} kcal`:"Si no está en la lista, mira las kcal en la etiqueta."}</span></div>
+<span class="note">Valores aproximados por ración típica. Se guarda en tu móvil para la visita de control.</span>`);
+  const box=chat.lastElementChild;
+  const repintar=()=>{ const d=bebDatos()[diaSel]||{}; box.querySelector(".bt-k").textContent=kcalDia(d);
+    box.querySelector(".bt-otra").textContent = d._otra_n?`Otras: ${d._otra_n} · ${d._otra_k} kcal`:"Si no está en la lista, mira las kcal en la etiqueta."; };
+  box.querySelectorAll(".bebi").forEach(row=>{ const id=row.dataset.id, n=row.querySelector(".n");
+    const cambia=delta=>{ const D=bebDatos(), d=D[diaSel]||{}; const v=Math.max(0,(d[id]||0)+delta); if(v) d[id]=v; else delete d[id];
+      if(Object.keys(d).length) D[diaSel]=d; else delete D[diaSel]; bebGuardar(D); n.textContent=v; row.classList.toggle("tiene",v>0); repintar(); };
+    row.classList.toggle("tiene",(dia[id]||0)>0);
+    row.querySelector(".p").onclick=()=>cambia(1); row.querySelector(".m").onclick=()=>cambia(-1); });
+  box.querySelector(".ok_add").onclick=()=>{ const inp=box.querySelector(".ok_in"), k=Math.round(+inp.value); if(!(k>0)) { inp.focus(); return; }
+    const D=bebDatos(), d=D[diaSel]||{}; d._otra_n=(d._otra_n||0)+1; d._otra_k=(d._otra_k||0)+k; D[diaSel]=d; bebGuardar(D); inp.value=""; repintar(); };
+  box.querySelectorAll(".bebdia button").forEach(b=>b.onclick=()=>{ if(b.dataset.d!==diaSel){ box.remove(); const o=chat.lastElementChild; if(o&&o.classList.contains("opts")) o.remove(); bebidasApuntar(b.dataset.d); } });
+  opts([{t:"📊 Ver el resumen del mes", f:()=>bebidasResumen()}]);
+}
+
+function resumenMes(y,m){ // m: 0-11
+  const D=bebDatos(), pre=`${y}-${String(m+1).padStart(2,"0")}-`;
+  const tot={}, dias=Object.keys(D).filter(k=>k.startsWith(pre)).sort();
+  let k=0,n=0,alc=0,zero=0,otraN=0,otraK=0;
+  dias.forEach(f=>{ const d=D[f]; Object.entries(d).forEach(([id,c])=>{ if(!BEB[id]) return; tot[id]=(tot[id]||0)+c; n+=c; k+=BEB[id].k*c; if(ALCOHOL.has(id)) alc+=c; if(BEB[id].k===0) zero+=c; });
+    otraN+=+d._otra_n||0; otraK+=+d._otra_k||0; });
+  n+=otraN; k+=otraK;
+  const diasCon=dias.filter(f=>nDia(D[f])-(Object.entries(D[f]).filter(([id])=>BEB[id]&&BEB[id].k===0).reduce((a,[,c])=>a+c,0))>0).length;
+  return {tot,k,n,alc,zero,otraN,otraK,diasCon,diasReg:dias.length};
+}
+function bebidasResumen(y,m){
+  const now=new Date(); if(y==null){ y=now.getFullYear(); m=now.getMonth(); }
+  const R=resumenMes(y,m), nombreMes=new Date(y,m,1).toLocaleDateString(locale(),{month:"long",year:"numeric"});
+  const esActual = y===now.getFullYear() && m===now.getMonth();
+  const diasMes = esActual ? now.getDate() : new Date(y,m+1,0).getDate();
+  const semanal = Math.round(R.k/diasMes*7/10)*10;
+  const filas = BEBIDAS.flatMap(g=>g.items).filter(i=>R.tot[i.id]).map(i=>`<div><span>${esc(i.t)} <small>× ${R.tot[i.id]}</small></span><b>${i.k*R.tot[i.id]} kcal</b></div>`).join("")
+    + (R.otraN?`<div><span>Otras bebidas <small>× ${R.otraN}</small></span><b>${R.otraK} kcal</b></div>`:"");
+  const def = FICHA.objetivo==="deficit" && FICHA.ajuste>0 ? FICHA.ajuste : 0;
+  bot(`<b>📊 Tus bebidas · <span>${esc(nombreMes)}</span></b>
+${R.n?`<div class="plate">${filas}<div class="tot"><span>Total</span><b>${R.k} kcal</b></div></div>
+<ul><li><b>${R.n}</b> bebidas apuntadas, <b>${R.alc}</b> con alcohol y <b>${R.zero}</b> zero.</li>
+<li>Has bebido algo con calorías <b>${R.diasCon}</b> días.</li>
+${diasMes>=7?`<li>De media, unas <b>${semanal} kcal</b> a la semana en bebidas.</li>`:""}
+${def&&R.k?`<li>Equivale a unos <b>${(R.k/def).toLocaleString(locale(),{maximumFractionDigits:1})}</b> días de tu déficit (${def} kcal/día).</li>`:""}</ul>`
+:`<span class="note">Aún no hay bebidas apuntadas este mes.</span>`}
+<span class="note">Enséñale este resumen a tu nutricionista en la visita de control.</span>`);
+  const prev=new Date(y,m-1,1), next=new Date(y,m+1,1);
+  opts([{t:"🍹 Apuntar una bebida", f:()=>bebidasApuntar()},
+    ...(R.n?[{t:"📤 Enviar el resumen a mi nutricionista", f:()=>bebidasEnviar(y,m)}]:[]),
+    {t:"⬅️ Mes anterior", f:()=>bebidasResumen(prev.getFullYear(),prev.getMonth())},
+    ...(!esActual?[{t:"➡️ Mes siguiente", f:()=>bebidasResumen(next.getFullYear(),next.getMonth())}]:[])]);
+}
+async function bebidasEnviar(y,m){
+  const R=resumenMes(y,m), nombreMes=new Date(y,m,1).toLocaleDateString(locale(),{month:"long",year:"numeric"});
+  const L = BEBIDAS.flatMap(g=>g.items).filter(i=>R.tot[i.id]).map(i=>`• ${trT(i.t)}: ${R.tot[i.id]} (${i.k*R.tot[i.id]} kcal)`);
+  if(R.otraN) L.push(`• ${trT("Otras bebidas")}: ${R.otraN} (${R.otraK} kcal)`);
+  const txt = `${trT("Bebidas")} · ${nombreMes} · ${FICHA.nombre||FICHA.codigo}\n${L.join("\n")}\n${trT("Total")}: ${R.k} kcal`;
+  if(navigator.share){ try{ await navigator.share({text:txt}); }catch(e){} }
+  else window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank","noopener");
+  bot(`<span class="note">Resumen preparado para enviar.</span>`); opts([{t:"📊 Ver el resumen del mes", f:()=>bebidasResumen(y,m)}]);
+}
+
 /* --- Comida social --- */
 const miles = n => n.toLocaleString("es-ES");
 function comidaSocial(){
