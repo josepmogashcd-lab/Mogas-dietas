@@ -200,11 +200,19 @@
 
   /* ---- Vital Score ---- */
   .app{position:relative}
-  .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);flex:0 0 auto}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);flex:0 0 auto}
   .tabs button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
   .tabs button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .tabs button.on{color:var(--grey);font-weight:700}.tabs button.on svg{stroke:var(--brand)}
   #chat[hidden],#vs[hidden],#vsbar[hidden],footer[hidden]{display:none}
+  .apgrid{display:flex;flex-direction:column;gap:10px;padding:4px 0 8px}
+  .aptit{font-size:18px;font-weight:700;color:var(--grey);padding:2px 2px 0}
+  .apcard{font:inherit;text-align:left;display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-top:3px solid var(--brand-light);border-radius:16px;padding:14px;min-height:76px;cursor:pointer;color:var(--ink)}
+  .apcard .qi{font-size:26px;width:48px;height:48px;border-radius:12px;background:var(--brand-2);display:grid;place-items:center;flex:0 0 auto}
+  .apcard>span:nth-child(2){flex:1;min-width:0}.apcard b{display:block;font-size:17px}.apcard small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+  .apmas{width:40px;height:40px;border-radius:20px;background:var(--brand);color:#fff;font-size:24px;display:grid;place-items:center;flex:0 0 auto}
+  .apsec{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}.apsec button{font:inherit;font-size:14px;border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:20px;padding:9px 13px;cursor:pointer;min-height:44px}
+  .tabs button{font-size:11px}
   .vsbar{flex:0 0 auto;background:var(--brand-dark)}
   .vsbarb{width:100%;font:inherit;color:#fff;background:none;border:0;display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;text-align:left}
   .vsbarb>svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
@@ -301,8 +309,8 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.18.2"></script>
-<script src="i18n-vs.js?v=2.18.2"></script>
+<script src="i18n.js?v=2.19.0"></script>
+<script src="i18n-vs.js?v=2.19.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -688,7 +696,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.18.2";
+const APP_VERSION = "2.19.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1052,7 +1060,7 @@ function start(){
     <div id="vs" class="vs" hidden></div>
     <div id="chat" hidden></div>
     <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v${APP_VERSION}</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>
-    <nav class="tabs" aria-label="Secciones"><button type="button" data-t="vs">${ICO.vs}<span>Vital Score</span></button><button type="button" data-t="dieta">${ICO.dieta}<span>Mi dieta</span></button><button type="button" data-t="ayuda">${ICO.ayuda}<span>Ayuda</span></button></nav>`;
+    <nav class="tabs" aria-label="Secciones"><button type="button" data-t="vs">${ICO.vs}<span>Vital Score</span></button><button type="button" data-t="apuntar">${ICO.apuntar}<span>Apuntar</span></button><button type="button" data-t="dieta">${ICO.dieta}<span>Mi dieta</span></button><button type="button" data-t="ayuda">${ICO.ayuda}<span>Ayuda</span></button></nav>`;
   chat = document.getElementById("chat");
   activarSelector(start);
   const sl=document.getElementById("salir");
@@ -1074,7 +1082,7 @@ function opts(list, {back=true}={}){
   const w=document.createElement("div");w.className="opts";
   const vuelta = [];
   if(back && SECCION && back!=="menu"){const sec=SECCION; vuelta.push({t:`↩︎ ${sec.t}`, f:()=>abrirSeccion(sec), sec:true});}
-  if(back) vuelta.push({t:"🏠 Menú", f:menu, sec:true});
+  if(back) vuelta.push(TAB==="apuntar" ? {t:"🏠 Apuntar", f:apuntarMenu, sec:true} : {t:"🏠 Menú", f:menu, sec:true});
   const all = [...list, ...vuelta];
   all.filter(o=>o.sec||!prohibido(o.t)).forEach(o=>{
     const b=document.createElement("button");b.textContent=o.sec?o.t:adaptarTexto(o.t);if(o.sec)b.className="sec";
@@ -1094,7 +1102,6 @@ const SECCIONES = [
     {t:"📊 Tabla de hidratos", f:()=>tablaHC(1)},
     {t:"🍝 Buscar una receta", f:receta}]},
   {id:"deporte", ico:"🏃", t:"Entreno y deporte", sub:"Ajustes por entreno, cambios de horario, tiradas y carreras", items:()=>[
-    {t:"🏋️ Apuntar un entreno", f:()=>entrenoApuntar()},
     {t:"💪 He entrenado / caminado más hoy", f:actividad},
     {t:"⏰ Hoy entreno a otra hora", f:otraHora},
     {t:"🏁 Tengo una tirada larga o carrera", f:evento},
@@ -1123,16 +1130,12 @@ const SECCIONES = [
 function menu(){
   SECCION=null; if(TAB!=="dieta"){ marcarTab("dieta"); const bar=document.getElementById("vsbar"); if(bar) bar.hidden=false; }
   const w=document.createElement("div");w.className="secgrid";
-  const hoyP=pasDatos().d[fechaISO()], hoyB=bebDatos()[fechaISO()];
+  const hoyB=bebDatos()[fechaISO()];
   const quick=document.createElement("div"); quick.className="quick";
-  quick.innerHTML=`<button type="button" data-q="p"><span class="qi">🚶</span><span><b>Apuntar mis pasos</b><small>${hoyP!=null?`Hoy: ${fmtN(hoyP)} pasos`:"Hoy aún no los has apuntado"}</small></span></button>
-    <button type="button" data-q="e" class="qwide"><span class="qi">🏋️</span><span><b>Apuntar un entreno</b><small>${(()=>{ const s=semanaEnt(fechaISO(), f=>entDia(f), pautaEnt()); return s.n===1?`Esta semana: 1 entreno de ${s.pauta}`:`Esta semana: ${s.n} entrenos de ${s.pauta}`; })()}</small></span></button>
-    <button type="button" data-q="b"><span class="qi">🍹</span><span><b>Apuntar una bebida</b><small>${hoyB?`Hoy: ${kcalDia(hoyB)} kcal en bebidas`:"Hoy: ninguna apuntada"}</small></span></button>`;
-  quick.querySelector('[data-q="p"]').onclick=()=>{w.remove();me("🚶 Apuntar mis pasos");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="pasos");pasosApuntar();},250)};
-  quick.querySelector('[data-q="e"]').onclick=()=>{w.remove();me("🏋️ Apuntar un entreno");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="deporte");entrenoApuntar();},250)};
+  quick.innerHTML=`<button type="button" data-q="b" class="qwide"><span class="qi">🍹</span><span><b>Apuntar una bebida</b><small>${hoyB?`Hoy: ${kcalDia(hoyB)} kcal en bebidas`:"Hoy: ninguna apuntada"}</small></span></button>`;
   quick.querySelector('[data-q="b"]').onclick=()=>{w.remove();me("🍹 Apuntar una bebida");setTimeout(()=>{SECCION=SECCIONES.find(x=>x.id==="bebidas");bebidasApuntar();},250)};
   w.appendChild(quick);
-  SECCIONES.filter(sec=>sec.id!=="dudas").forEach(sec=>{const b=document.createElement("button");b.className="sec-card";
+  SECCIONES.filter(sec=>sec.id!=="dudas" && sec.id!=="pasos").forEach(sec=>{const b=document.createElement("button");b.className="sec-card";
     b.innerHTML=`<span class="ico">${sec.ico}</span><b>${esc(sec.t)}</b><small>${esc(sec.sub)}</small>`;
     b.onclick=()=>{w.remove();me(`${sec.ico} ${sec.t}`);setTimeout(()=>abrirSeccion(sec),250)};w.appendChild(b);});
   chat.appendChild(w);
@@ -2099,6 +2102,7 @@ const ICO = {
   alcohol:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l-1 8a4 4 0 0 1-8 0z"/><path d="M12 15v6M8 21h8M3 3l18 18"/></svg>`,
   vs:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5" class="hi"/></svg>`,
   dieta:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M9 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/></svg>`,
+  apuntar:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>`,
   ayuda:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>`,
   test:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9l2 2 4-4M9 16h6"/></svg>`,
   flecha:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`,
@@ -2114,7 +2118,7 @@ function irTab(t){
   vs.hidden = t!=="vs"; chat.hidden = t==="vs"; bar.hidden = t==="vs";
   const ft=document.querySelector(".app footer"); if(ft) ft.hidden=false;
   if(t==="vs") vsHome();
-  else { vsBarPintar(); chat.innerHTML=""; if(t==="ayuda"){ dudas(); } else { chatHola(); menu(); } }
+  else { vsBarPintar(); chat.innerHTML=""; if(t==="ayuda"){ dudas(); } else if(t==="apuntar"){ apuntarMenu(); } else { chatHola(); menu(); } }
 }
 function contadores(){
   const ca=racha(testAlc), cf=FICHA.fumador?racha(testFumo):0;
@@ -2234,7 +2238,7 @@ function vsQPintar(arriba){
       ${a.alcOk==="add"?`<span class="qs">Toca lo que te faltó apuntar</span><div class="qg g2">${[["cer_c","Caña"],["vin_t","Copa de vino"],["chupito","Chupito"],["cub","Cubata o gin tonic"]].map(([id,t])=>`<button type="button" class="qo" data-add="${id}">+ ${t}</button>`).join("")}</div>
         ${Q.add.length?`<button type="button" class="qlink" data-act="undo">Quitar la última</button>`:""}<span class="qs">Se guarda también en Mis bebidas.</span>`:""}
       ${n?`<button type="button" class="qlink qdel" data-act="borraralc">🗑️ Borrar el alcohol apuntado este día</button>`:""}
-      <small class="qnote">Lo apuntas durante el día en Mis bebidas. Aquí solo lo confirmas.</small></div>`
+      <small class="qnote">Lo apuntas durante el día en la pestaña Apuntar o en Mis bebidas. Aquí solo lo confirmas.</small></div>`
       + (FICHA.fumador?`<div class="qc"><span class="qt">¿Has fumado hoy?</span><div class="qg g2">${ob("fumo","no","No")}${ob("fumo","si","Sí")}</div>
         ${a.fumo==="si"?`<span class="qs">¿Cuántos cigarrillos?</span><div class="qg g3">${ob("cigs","a","1 – 5")}${ob("cigs","b","6 – 10")}${ob("cigs","c","Más de 10")}</div>`:""}</div>`:"");
   } else if(paso==="entreno"){
@@ -2243,9 +2247,9 @@ function vsQPintar(arriba){
       ${L.length?`<ul class="qlist">${L.map(x=>`<li><span>${esc(sesionTxt(x))}</span>${x.min?` · <span>${x.min} min</span>`:""}</li>`).join("")}</ul>`:`<b class="qbig">Ninguno</b>`}
       <div class="qg g2">${L.length?ob("entOk","ok","Correcto")+ob("entOk","add","Me falta alguno"):ob("entOk","ok","Correcto, no he entrenado")+ob("entOk","add","Se me olvidó apuntarlo")}</div>
       ${a.entOk==="add"?`<span class="qs">Toca lo que te faltó apuntar</span><div class="qg g2">${[["fuerza","Fuerza en sala"],["crossfit","CrossFit o Hyrox"],["dirigida","Clase dirigida o pilates"],["cardio","Cardio"],["yoga","Yoga o estiramientos"]].map(([v,t])=>`<button type="button" class="qo" data-addent="${v}">+ ${t}</button>`).join("")}</div>
-        ${Q.addEnt&&Q.addEnt.length?`<button type="button" class="qlink" data-act="undoent">Quitar el último</button>`:""}<span class="qs">Para poner la duración o las calorías, usa Apuntar un entreno.</span>`:""}
+        ${Q.addEnt&&Q.addEnt.length?`<button type="button" class="qlink" data-act="undoent">Quitar el último</button>`:""}<span class="qs">Para poner la duración o las calorías, usa la pestaña Apuntar.</span>`:""}
       <div class="${sem.n>=sem.pauta?"qok":"vsadev"}">${sem.n===1?`Esta semana: 1 entreno de ${sem.pauta}`:`Esta semana: ${sem.n} entrenos de ${sem.pauta}`}</div>
-      <small class="qnote">Los entrenos se apuntan en Mi dieta → Apuntar un entreno. Aquí solo lo confirmas.</small></div>`;
+      <small class="qnote">Los entrenos se apuntan en la pestaña Apuntar. Aquí solo lo confirmas.</small></div>`;
   } else if(paso==="pasos"){
     body = `<div class="qc"><label class="qt" for="qpasos">Pasos de hoy</label><div class="qpas"><button type="button" class="qo" data-act="menos" aria-label="Restar 1.000 pasos">−</button><input id="qpasos" type="number" inputmode="numeric" min="0" max="100000" value="${a.pasos!=null?a.pasos:""}" placeholder="0"><button type="button" class="qo" data-act="mas" aria-label="Sumar 1.000 pasos">+</button></div>
       <small class="qnote">Míralo en la app de salud de tu móvil o en tu reloj.</small></div>
@@ -2474,6 +2478,23 @@ function entrenoApuntar(diaSel){
 /* cuando cambian los entrenos de un día con cuestionario, se vuelve a subir */
 function vsSyncEnt(f){ const V=vsDatos(); if(V[f]){ V[f].ent=entDatos()[f]||[]; delete V[f].entreno; delete V[f].tipo; vsGuardar(V); vsSubir(f); } }
 
+/* =========== PESTAÑA APUNTAR: pasos, entrenos y bebidas =========== */
+function apuntarMenu(){
+  SECCION=null; if(TAB!=="apuntar") marcarTab("apuntar");
+  const hoy=fechaISO(), ps=pasDatos().d[hoy], B=bebDatos()[hoy], s=semanaEnt(hoy, f=>entDia(f), pautaEnt());
+  const nAlc=B?Object.entries(B).reduce((a,[id,c])=>a+(UNID_ALC[id]?UNID_ALC[id]*c:0),0):0;
+  const w=document.createElement("div"); w.className="apgrid";
+  const tarjetas=[
+    {ico:"🚶", t:"Pasos", sub: ps!=null?`Hoy: ${fmtN(ps)} pasos`:"Hoy aún no los has apuntado", f:pasosApuntar},
+    {ico:"🏋️", t:"Entrenos", sub: s.n===1?`Esta semana: 1 entreno de ${s.pauta}`:`Esta semana: ${s.n} entrenos de ${s.pauta}`, f:()=>entrenoApuntar()},
+    {ico:"🍹", t:"Bebidas", sub: B?(nAlc?`Hoy: ${kcalDia(B)} kcal · ${nAlc} de alcohol`:`Hoy: ${kcalDia(B)} kcal en bebidas`):"Hoy: ninguna apuntada", f:()=>bebidasApuntar()}];
+  w.innerHTML=`<div class="aptit">¿Qué quieres apuntar?</div>`+tarjetas.map((x,i)=>`<button type="button" class="apcard" data-i="${i}"><span class="qi">${x.ico}</span><span><b>${x.t}</b><small>${x.sub}</small></span><span class="apmas" aria-hidden="true">+</span></button>`).join("")
+    +`<div class="apsec"><button type="button" data-o="sem">📅 Poner la media de pasos de una semana</button><button type="button" data-o="ps">📊 Ver mis semanas de pasos</button><button type="button" data-o="bm">📊 Resumen de bebidas del mes</button></div>`;
+  w.querySelectorAll(".apcard").forEach(b=>b.onclick=()=>{ const x=tarjetas[+b.dataset.i]; w.remove(); me(`${x.ico} ${trT(x.t)}`); setTimeout(()=>x.f(),250); });
+  const otras={sem:["📅 Poner la media de pasos de una semana",pasosMediaSemana],ps:["📊 Ver mis semanas de pasos",()=>pasosResumen()],bm:["📊 Resumen de bebidas del mes",()=>bebidasResumen()]};
+  w.querySelectorAll(".apsec button").forEach(b=>b.onclick=()=>{ const [txt,fn]=otras[b.dataset.o]; w.remove(); me(trT(txt)); setTimeout(fn,250); });
+  chat.appendChild(w); requestAnimationFrame(()=>{ chat.scrollTop=Math.max(0,w.offsetTop-chat.offsetTop-8); });
+}
 /* --- Arranque --- */
 (async function(){
   const m = location.hash.match(/^#d=([A-Za-z0-9_\-]+)$/);
