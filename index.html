@@ -301,8 +301,8 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.18.1"></script>
-<script src="i18n-vs.js?v=2.18.1"></script>
+<script src="i18n.js?v=2.18.2"></script>
+<script src="i18n-vs.js?v=2.18.2"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -688,7 +688,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.18.1";
+const APP_VERSION = "2.18.2";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -2002,7 +2002,7 @@ function puntosDia(a, f){
   if(dk.some(k=>a[k]) || a.social){
     const W={comidas:15, cantidades:25, verdura:30, proteina:15};   // la verdura es lo que más pesa
     let d=0; dk.forEach(k=>{ if(a[k]==="si") d+=W[k]; });
-    d += a.social==="no" ? 15 : a.social==="si" ? ({ctrl:11, algo:6, libre:0}[a.socialTipo]||0) : 0;
+    d += a.social==="no" ? 15 : a.social==="si" ? Math.min(15, ({ctrl:11, algo:6, libre:0}[a.socialTipo]||0) + ({bien:4, no:1, mal:0}[a.socialHc]||0)) : 0;
     p.dieta=d;
   }
   if(a.cafe || a.bebAz || a.bebZero || a.pico){
@@ -2215,7 +2215,8 @@ function vsQPintar(arriba){
     body = yn("comidas","¿Has hecho todas las comidas que te tocaban?") + yn("cantidades","¿Has respetado las cantidades de hidratos, proteína y verdura?")
       + yn("verdura","¿Has comido la verdura y la fibra que tocaban?") + yn("proteina","¿La proteína ha sido sin rebozar ni freír?")
       + `<div class="qc"><span class="qt">¿Has tenido alguna comida social fuera?</span><div class="qg g2">${ob("social","si","Sí")}${ob("social","no","No")}</div>
-        ${a.social==="si"?`<span class="qs">¿Cómo has salido parado?</span><div class="qg g1">${ob("socialTipo","ctrl","Bien: verdura y proteína sin rebozar ni fritos")}${ob("socialTipo","algo","A medias: algo me he pasado")}${ob("socialTipo","libre","Mal: no he podido o no he sabido elegir")}</div>`:""}</div>`;
+        ${a.social==="si"?`<span class="qs">¿Cómo has salido parado?</span><div class="qg g1">${ob("socialTipo","ctrl","Bien: verdura y proteína sin rebozar ni fritos")}${ob("socialTipo","algo","A medias: algo me he pasado")}${ob("socialTipo","libre","Mal: no he podido o no he sabido elegir")}</div>
+        <span class="qs">¿Y los hidratos?</span><div class="qg g1">${ob("socialHc","bien","Hidrato de calidad en su cantidad (arroz, patata, pasta, legumbre…)")}${ob("socialHc","mal","Hidrato refinado o demasiada cantidad")}${ob("socialHc","no","No he comido hidratos")}</div>`:""}</div>`;
   } else if(paso==="azucar"){
     const SW=[["galletas","Galletas"],["bolleria","Bollería (croissant, magdalena…)"],["chocolate","Chocolate"],["gominolas","Caramelos o gominolas"],["postre","Helado o postre"],["salado","Salado (patatas, snacks)"]];
     body = `<div class="qc"><span class="qt">¿Azúcar en el café o infusiones?</span><div class="qg g3">${ob("cafe","0","No")}${ob("cafe","1","1 sobre")}${ob("cafe","2","2 o más")}</div></div>

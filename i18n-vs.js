@@ -86,6 +86,11 @@ const T = {
 "Cuanto más bajo, mejor. Sale de tu café, refrescos y picoteo dulce.":["Com més baix, millor. Surt del teu cafè, refrescos i picoteig dolç.","The lower, the better. Based on your coffee, soft drinks and sweet snacks."],
 "El índice de adicción al azúcar va al revés: cuanto más alto, más baja tu Vital Score.":["L'índex d'addicció al sucre va al revés: com més alt, més baixa el teu Vital Score.","The sugar addiction index works the other way round: the higher it is, the lower your Vital Score."],
 "# %":["# %","# %"],
+"¿Y los hidratos?":["I els hidrats?","And the carbs?"],
+"Hidrato de calidad en su cantidad (arroz, patata, pasta, legumbre…)":["Hidrat de qualitat en la seva quantitat (arròs, patata, pasta, llegum…)","Quality carbs in the right amount (rice, potato, pasta, pulses…)"],
+"Hidrato refinado o demasiada cantidad":["Hidrat refinat o massa quantitat","Refined carbs or too much"],
+"No he comido hidratos":["No he menjat hidrats","I didn't eat any carbs"],
+
 "Cardio":["Cardio","Cardio"],
 "Correr":["Córrer","Running"],
 "Bici":["Bici","Cycling"],
