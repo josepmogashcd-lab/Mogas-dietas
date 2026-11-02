@@ -570,6 +570,15 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
+const APP_VERSION = "2.11.3";
+/* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
+(function(){ try{
+  fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
+    v=(v||"").trim(); if(!v || v===APP_VERSION) return;
+    const k="mogas-upd-"+v; if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k,"1");
+    location.replace(location.pathname+"?v="+encodeURIComponent(v)+location.hash);
+  }).catch(()=>{});
+}catch(e){} })();
 
 /* =========== IDIOMAS (ES · CA · EN) =========== */
 let LANG = (()=>{ try{ return localStorage.getItem("mogas-lang")||"es"; }catch(e){ return "es"; } })();
@@ -913,7 +922,7 @@ function start(){
   app.innerHTML = `
     <header><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Asistente de dieta</div><div class="s">${esc(OBJETIVOS[FICHA.objetivo].split(" (")[0])} · ${kcalObj()} kcal/día</div></div>${selectorIdioma()}</header>
     <div id="chat"></div>
-    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v2.11.2</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
+    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v${APP_VERSION}</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>`;
   chat = document.getElementById("chat");
   activarSelector(start);
   const sl=document.getElementById("salir");
