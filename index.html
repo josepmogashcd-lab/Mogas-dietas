@@ -671,7 +671,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.15.0";
+const APP_VERSION = "2.15.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -2113,6 +2113,7 @@ function vsHome(){
         <div class="vsadi">${ib?`<span class="vsband" style="background:${ib.track};color:${ib.text}">${ib.n}</span>`:`<small>Sin datos todavía</small>`}
           <div class="vsgauge"><i style="left:${ia==null?0:ia}%"></i></div><div class="vsgl"><span>0 %</span><span>100 %</span></div></div></div>
       <small class="vsadn">Cuanto más bajo, mejor. Sale de tu café, refrescos y picoteo dulce.</small>
+      <small class="vsadn">Es un indicador de hábitos, no un diagnóstico médico.</small>
     </div>
     <button type="button" class="vscta" data-q="${hoy}"><span class="qi">${ICO.test}</span><span class="t"><b>Cuestionario de hoy</b><small>${V[hoy]?"Hecho ✓ · Toca para revisarlo":"Pendiente · 1 minuto"}</small></span>${ICO.flecha}</button>
     ${!V[ayer] && vsInicio()<=ayer && ayer>=fechaISO(sumarDias(new Date(),-1))?`<button type="button" class="vsayer" data-q="${ayer}">¿Se te olvidó ayer? Contestar el de ayer</button>`:""}
