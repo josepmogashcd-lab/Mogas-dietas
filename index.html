@@ -208,6 +208,14 @@
   .chip.rch small{opacity:.75;font-size:12px}
   .panel .mini{font:inherit;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:2px 8px;margin-left:6px;cursor:pointer}
   .panel small.auto{font-size:11px;background:var(--brand-2);color:var(--brand);border-radius:6px;padding:1px 6px;margin-left:6px}
+  .espgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .espc{font:inherit;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;color:var(--ink)}
+  .espc img,.espc .espph{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--brand-2)}
+  .espc .espph{display:grid;place-items:center;font-size:30px}
+  .espc .espt{font-weight:600;font-size:13px;line-height:1.25;padding:6px 8px 0}.espc small{color:var(--muted);font-size:12px;padding:2px 8px 8px}
+  .espc[hidden]{display:none}
+  .espimg{width:100%;border-radius:12px;display:block;margin-bottom:8px;aspect-ratio:4/3;object-fit:cover}
+  .espq{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;margin-top:8px}
   .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
   .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
   .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
@@ -344,9 +352,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.23.0"></script>
-<script src="i18n-vs.js?v=2.23.0"></script>
-<script src="i18n-alim.js?v=2.23.0"></script>
+<script src="i18n.js?v=2.24.0"></script>
+<script src="i18n-vs.js?v=2.24.0"></script>
+<script src="i18n-alim.js?v=2.24.0"></script>
+<script src="recetas-esp.js?v=2.24.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -832,7 +841,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.23.0";
+const APP_VERSION = "2.24.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1240,6 +1249,62 @@ function recetasComidaHTML(comida){
   });
 })();
 
+
+/* =========== RECETAS ESPECIALES (Excel de recetas) ===========
+   Para un día especial: fotos, cantidades recalculadas a las kcal de su comida o cena y paso a paso. */
+const ESP = () => window.RECETAS_ESP || [];
+const espKcal = r => r.ing.reduce((a,[n,g,k])=>a+(g*k/100),0);
+const espNombre = n => n.replace(/\s*\((?=[^)]*\d)[^)]*\)/g,"").replace(/\s+/g," ").trim();
+const espOk = r => !prohibido(r.t) && !r.ing.some(([n,g])=>g>0 && prohibido(n));
+function espEscalar(r,T){
+  const base=espKcal(r), f=Math.min(3,Math.max(0.4,T/base));
+  const L=r.ing.map(([n,g,k,nota])=>{ const nm=espNombre(n), nt=nota&&!/\d/.test(nota)&&nota.length>2&&!/^no$/i.test(nota)?` (${nota.toLowerCase()})`:"";
+    if(!g) return {t:/^\d/.test(nm)?nm:`${nm}${nt?nt:" al gusto"}`, k:0};
+    const q=g*f<10?Math.max(1,Math.round(g*f)):Math.round(g*f/5)*5;
+    const hv=/huevo/i.test(n)&&!/clara/i.test(n) ? ` (≈${Math.max(1,Math.round(q/60))} ${Math.max(1,Math.round(q/60))===1?"huevo":"huevos"})` : "";
+    const nmx=/^AOVE$/i.test(nm)?"aceite de oliva virgen extra":(/^[A-ZÁÉÍÓÚÑ][a-záéíóúñü]/.test(nm)?nm.charAt(0).toLowerCase()+nm.slice(1):nm);
+    return {t:`${q} g de ${nmx}${hv}${nt}`, k:q*k/100}; });
+  return {L, kcal:Math.round(L.reduce((a,x)=>a+x.k,0))};
+}
+function espMes(T, n=5){
+  const now=new Date(), seed=`${now.getFullYear()}-${now.getMonth()}-${FICHA.codigo||""}`;
+  let h=0; for(const ch of seed) h=(h*31+ch.charCodeAt(0))>>>0;
+  const rnd=()=>{ h^=h<<13; h>>>=0; h^=h>>17; h^=h<<5; h>>>=0; return h/4294967296; };
+  const L=ESP().filter(r=>r.tipo==="principal" && espOk(r)).map(r=>({r, s:rnd()})).sort((a,b)=>a.s-b.s).map(x=>x.r);
+  return L.slice(0,n);
+}
+let ESP_COMIDA=null;
+function espComidaPorDefecto(){ return ESP_COMIDA || (FICHA.comidas.includes("Cena")?"Cena":FICHA.comidas.includes("Comida")?"Comida":FICHA.comidas[FICHA.comidas.length-1]); }
+function espTarjetas(L,T){
+  return `<div class="espgrid">${L.map(r=>`<button type="button" class="espc" data-r="${r.id}">${r.img?`<img src="recetas/${r.img}" alt="" loading="lazy">`:`<span class="espph">🍽️</span>`}<span class="espt">${esc(r.t)}</span><small>≈${espEscalar(r,T).kcal} kcal</small></button>`).join("")}</div>`;
+}
+function espAtar(box,c){ box.querySelectorAll(".espc").forEach(b=>b.onclick=()=>{ const r=ESP().find(x=>x.id===b.dataset.r); if(r){ me(r.t); setTimeout(()=>espVer(r,c),200); } }); }
+function especiales(){
+  const c=espComidaPorDefecto(), T=kcalComida(c);
+  if(!ESP().length){ bot("Las recetas todavía no se han cargado. Vuelve a abrir la app en un momento."); opts([]); return; }
+  bot(`⭐ <b>Tus 5 recetas especiales del mes</b> · para tu <span>${esc(c.toLowerCase())}</span> (${T} kcal)
+<span class="note">Para un día especial, por ejemplo el viernes por la noche. Las cantidades ya están ajustadas a tus kcal. Úsalas de vez en cuando: algunas sacian menos que tu plato de siempre.</span>${espTarjetas(espMes(T),T)}`);
+  espAtar(chat.lastElementChild,c);
+  opts([{t:"📚 Ver todas las recetas", f:()=>espTodas()},
+    ...["Comida","Cena"].filter(x=>x!==c && FICHA.comidas.includes(x)).map(x=>({t:x==="Cena"?"🌙 Para la cena":"☀️ Para la comida", f:()=>{ ESP_COMIDA=x; especiales(); }}))]);
+}
+function espTodas(){
+  const c=espComidaPorDefecto(), T=kcalComida(c), L=ESP().filter(r=>r.tipo==="principal" && espOk(r)).sort((a,b)=>a.t.localeCompare(b.t,"es"));
+  bot(`📚 <b>Todas las recetas</b> · <span>${L.length}</span> para tu <span>${esc(c.toLowerCase())}</span> (${T} kcal)
+<input type="search" class="espq" placeholder="Busca: pollo, pasta, salmón…" aria-label="Buscar receta">${espTarjetas(L,T)}`);
+  const box=chat.lastElementChild; espAtar(box,c);
+  const q=box.querySelector(".espq"); q.oninput=()=>{ const v=sinAcentos(q.value.toLowerCase().trim());
+    box.querySelectorAll(".espc").forEach(b=>{ const r=ESP().find(x=>x.id===b.dataset.r); const txt=sinAcentos((r.t+" "+r.ing.map(i=>i[0]).join(" ")).toLowerCase()); b.hidden = v && !txt.includes(v); }); };
+  opts([{t:"⭐ Las 5 del mes", f:especiales}]);
+}
+function espVer(r,c){
+  const T=kcalComida(c), e=espEscalar(r,T);
+  bot(`${r.img?`<img class="espimg" src="recetas/${r.img}" alt="">`:""}<b>${esc(r.t)}</b> · ≈${e.kcal} kcal
+<span class="note">Cantidades para tu <span>${esc(c.toLowerCase())}</span> de ${T} kcal. Pésalo todo con báscula, y el aceite también.</span>
+<b>Ingredientes</b><ul>${e.L.map(x=>`<li>${esc(adaptarTexto(x.t))}</li>`).join("")}</ul><b>Cómo se hace</b><ol>${r.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`);
+  opts([{t:"⭐ Otras recetas del mes", f:especiales},{t:"📚 Ver todas las recetas", f:espTodas}]);
+}
+
 /* =========== MIS ALIMENTOS (cliente) ===========
    El cliente marca lo que no le gusta o no tolera; se aplica a su dieta y lo puede enviar a su nutricionista. */
 function alimGuardarCliente(){ if(PREVIEW) return; const d=store.get("mogas-dieta"); if(d && d.f){ d.f.noGusta=[...(FICHA.noGusta||[])]; d.f.intolAlim=[...(FICHA.intolAlim||[])]; store.set("mogas-dieta",d); } }
@@ -1623,6 +1688,7 @@ const SECCIONES = [
     {t:"🥗 Montar mi comida o cena", f:montarInicio},
     {t:"🔄 Cambiar un alimento", f:cambiar},
     {t:"📊 Tabla de hidratos", f:()=>tablaHC(1)},
+    {t:"⭐ Receta especial (5 recetas del mes)", f:especiales},
     {t:"🍝 Buscar una receta", f:receta},
     {t:"🥦 Mis alimentos (no me gustan / intolerancias)", f:()=>misAlimentos()}]},
   {id:"deporte", ico:"🏃", t:"Entreno y deporte", sub:"Ajustes por entreno, cambios de horario, tiradas y carreras", items:()=>[

@@ -63,7 +63,28 @@ const T = {
 "🍽️ Cena · #:#–#:#":["🍽️ Sopar · #:#–#:#", "🍽️ Dinner · #:#–#:#"],
 "🍽️ Cena · #:#":["🍽️ Sopar · #:#", "🍽️ Dinner · #:#"],
 "🌙 Pre-cama · #:#–#:#":["🌙 Pre-llit · #:#–#:#", "🌙 Bedtime snack · #:#–#:#"],
-"🌙 Pre-cama · #:#":["🌙 Pre-llit · #:#", "🌙 Bedtime snack · #:#"]
+"🌙 Pre-cama · #:#":["🌙 Pre-llit · #:#", "🌙 Bedtime snack · #:#"],
+"⭐ Receta especial (5 recetas del mes)":["⭐ Recepta especial (5 receptes del mes)", "⭐ Special recipe (5 recipes of the month)"],
+"⭐":["⭐", "⭐"],
+"Tus 5 recetas especiales del mes":["Les teves 5 receptes especials del mes", "Your 5 special recipes of the month"],
+"· para tu":["· per al teu", "· for your"],
+"cena":["sopar", "dinner"],
+"comida":["dinar", "lunch"],
+"(# kcal)":["(# kcal)", "(# kcal)"],
+"Para un día especial, por ejemplo el viernes por la noche. Las cantidades ya están ajustadas a tus kcal. Úsalas de vez en cuando: algunas sacian menos que tu plato de siempre.":["Per a un dia especial, per exemple divendres a la nit. Les quantitats ja estan ajustades a les teves kcal. Fes-les servir de tant en tant: algunes sacien menys que el teu plat de sempre.", "For a special day, for example Friday night. The amounts are already adjusted to your kcal. Use them now and then: some are less filling than your usual plate."],
+"📚 Ver todas las recetas":["📚 Veure totes les receptes", "📚 See all recipes"],
+"🌙 Para la cena":["🌙 Per al sopar", "🌙 For dinner"],
+"☀️ Para la comida":["☀️ Per al dinar", "☀️ For lunch"],
+"Todas las recetas":["Totes les receptes", "All recipes"],
+"para tu":["per al teu", "for your"],
+"Busca: pollo, pasta, salmón…":["Cerca: pollastre, pasta, salmó…", "Search: chicken, pasta, salmon…"],
+"⭐ Las 5 del mes":["⭐ Les 5 del mes", "⭐ This month's 5"],
+"Cantidades para tu":["Quantitats per al teu", "Amounts for your"],
+"de # kcal. Pésalo todo con báscula, y el aceite también.":["de # kcal. Pesa-ho tot amb bàscula, i l'oli també.", "of # kcal. Weigh everything, oil included."],
+"Ingredientes":["Ingredients", "Ingredients"],
+"Cómo se hace":["Com es fa", "How to make it"],
+"⭐ Otras recetas del mes":["⭐ Altres receptes del mes", "⭐ Other recipes this month"],
+"Las recetas todavía no se han cargado. Vuelve a abrir la app en un momento.":["Les receptes encara no s'han carregat. Torna a obrir l'app d'aquí a un moment.", "The recipes haven't loaded yet. Reopen the app in a moment."]
 };
 if(!window.I18N) return;
 I18N.ca = I18N.ca || {}; I18N.en = I18N.en || {};
