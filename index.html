@@ -356,10 +356,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.28.0"></script>
-<script src="i18n-vs.js?v=2.28.0"></script>
-<script src="i18n-alim.js?v=2.28.0"></script>
-<script src="recetas-esp.js?v=2.28.0"></script>
+<script src="i18n.js?v=2.29.0"></script>
+<script src="i18n-vs.js?v=2.29.0"></script>
+<script src="i18n-alim.js?v=2.29.0"></script>
+<script src="recetas-esp.js?v=2.29.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -870,7 +870,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.28.0";
+const APP_VERSION = "2.29.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -935,25 +935,30 @@ function login(){
 
 /* =========== DIETA → DOCUMENTO (Google Docs / Word) =========== */
 const LETRAS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const compLinea = c => c ? c.op.join(" / ") : "";
 function recetasDoc(comida){
   const T=kcalComida(comida); if(!T) return null; const L=recetasPara(comida,T); if(!L.length) return null;
   const out=[], bocs=L.filter(esBocadillo), agrupar=bocs.length>=2;
   const pref = n => agrupar ? `${n+1})` : `${LETRAS[n]})`;
+  const compDoc = c => c ? [{k:"o",p:`+ Para completar (≈${c.kcal} Kcal), añade: `,t:adaptarTexto(compLinea(c))}] : [];
   let n=0;
   // bocadillos y tostadas: un solo bloque con el pan común y un relleno por opción
   if(agrupar){
     const es=bocs.map(r=>escalar(r,T)), pg=panComun(T), media=Math.round(es.reduce((a,e)=>a+e.kcal,0)/es.length);
     const tipos=new Set(bocs.map(r=>r.i.find(([id])=>PANES.includes(id))[0]));
     const pan = tipos.size>1 ? `${pg} g de pan (mejor integral)` : lineaIng([...tipos][0], pg);
-    out.push({k:"l",t:`${pref(n++)} BOCADILLO O TOSTADA (≈${media} Kcal)`,azul:""});
+    const comp = complemento(T-media);
+    out.push({k:"l",t:`${pref(n++)} BOCADILLO O TOSTADA (≈${comp?T:media} Kcal)`,azul:""});
     out.push({k:"o",p:"Base para todas: ",t:adaptarTexto(pan)});
     bocs.forEach((r,j)=>{ const e=es[j];
-      const partes=r.i.map(([id],k)=>[id,e.qs[k]]).filter(([id])=>!PANES.includes(id)).map(([id,q])=> id==="aove" ? `${q} g de AOVE` : lineaIng(id,q));
+      const partes=e.items.filter(([id])=>!PANES.includes(id)).map(([id,q])=> id==="aove" ? `${q} g de AOVE` : lineaIng(id,q));
       out.push({k:"o",p:`${LETRAS[j]}- `,t:adaptarTexto(partes.join(" + ")+(r.nota?` (${r.nota})`:""))}); });
+    out.push(...compDoc(comp));
     out.push({k:"esp"});
   }
-  L.filter(r=>!agrupar||!esBocadillo(r)).forEach(r=>{ const e=escalar(r,T); out.push({k:"l",t:`${pref(n++)} ${adaptarTexto(r.n).toUpperCase()} (≈${e.kcal} Kcal)`,azul:""});
-    r.i.forEach(([id],j)=>out.push({k:"o",p:"•  ",t:adaptarTexto(lineaIng(id,e.qs[j]))}));
+  L.filter(r=>!agrupar||!esBocadillo(r)).forEach(r=>{ const e=escalar(r,T); out.push({k:"l",t:`${pref(n++)} ${adaptarTexto(r.n).toUpperCase()} (≈${e.comp?T:e.kcal} Kcal)`,azul:""});
+    e.items.forEach(([id,q])=>out.push({k:"o",p:"•  ",t:adaptarTexto(lineaIng(id,q))}));
+    out.push(...compDoc(e.comp));
     (r.p||[]).forEach((x,n)=>out.push({k:"o",p:`${n+1}. `,t:x})); out.push({k:"esp"}); });
   return out;
 }
@@ -1138,6 +1143,7 @@ const ING = {
   chia:      {es:"semillas de chía", ca:"llavors de xia", en:"chia seeds", u:"g", k:490, p:17},
   kiwi:      {es:"kiwi", es2:"kiwis", ca:"kiwi", ca2:"kiwis", en:"kiwi", en2:"kiwis", u:"ud", k:45, p:0.8},
   fruta:     {es:"pieza de fruta", es2:"piezas de fruta", ca:"peça de fruita", ca2:"peces de fruita", en:"piece of fruit", en2:"pieces of fruit", u:"ud", k:80, p:0.8},
+  bebBatido: {es:"bebida de avena o leche entera", ca:"beguda de civada o llet sencera", en:"oat drink or whole milk", u:"ml", k:55, p:2},
   tortitas:  {es:"tortita de arroz o maíz", es2:"tortitas de arroz o maíz", ca:"galeta d'arròs o blat de moro", ca2:"galetes d'arròs o blat de moro", en:"rice or corn cake", en2:"rice or corn cakes", u:"ud", k:28, p:0.6},
   bebVeg:    {es:"bebida de avellanas y arroz, de avena o leche", ca:"beguda d'avellanes i arròs, de civada o llet", en:"hazelnut-rice or oat drink, or milk", u:"ml", k:55, p:1},
   cereales:  {es:"cereales recomendados", ca:"cereals recomanats", en:"recommended cereal", u:"g", k:380, p:8},
@@ -1201,7 +1207,7 @@ const RECETAS = [
   {id:"tostMolde", n:"Tostadas de pan de molde con pavo y queso", m:["Desayuno","Segundo desayuno","Merienda"],
    i:[["panMolde",70],["pavo",40],["quesoLight",1]]},
   {id:"postWhey", n:"Batido post-entreno con tortitas y frutos secos", m:["Merienda","Segundo desayuno"],
-   i:[["proteina",30],["tortitas",4],["frSecos",20]]},
+   i:[["proteina",30],["bebBatido",200],["tortitas",4],["frSecos",15]]},
   {id:"yogFruta", n:"Yogur con fruta a trozos", m:["Segundo desayuno","Merienda"],
    i:[["yogNat",120],["fruta",1]]},
   {id:"frutaTort", n:"Fruta y tortitas de arroz o maíz", m:["Segundo desayuno","Merienda"],
@@ -1222,32 +1228,72 @@ const COMIDAS_RECETA = ["Desayuno","Segundo desayuno","Merienda"];
 function redondear(u,q){ if(u==="ud") return Math.max(1,Math.round(q)); return Math.max(1,redondo(q)); }
 const kcalIng = (id,q) => { const g=ING[id]; if(!g||g.fijo) return 0; return g.u==="ud" ? g.k*q : g.k*q/100; };
 const recetaKcal = (r, qs) => Math.round(r.i.reduce((a,[id,q],j)=>a+kcalIng(id, qs?qs[j]:q),0));
-/* cantidades para llegar a T kcal; el aceite y las especias no se escalan.
-   Bocadillos y tostadas: todos llevan el mismo pan (panComun) y se recalcula solo el relleno. */
-const PANES = ["panBl","panInt"];
+const itemsKcal = it => Math.round(it.reduce((a,[id,q])=>a+kcalIng(id,q),0));
+/* Cantidades lógicas en desayunos, segundos desayunos y meriendas:
+   gramos de 5 en 5, yogures de 125/200/250 g, bebidas de 50 en 50 ml, fruta en piezas, tortitas siempre el paquete (4)
+   y topes para que nada sea incomible (embutido, latas, proteína en polvo, frutos secos…). */
+const PLATANO = [[50,"½ plátano"],[90,"1 plátano de Canarias pequeño"],[120,"1 plátano mediano"],[160,"1 banana grande"]];
+const REGLAS = {
+  platano:{pasos:PLATANO.map(x=>x[0])},
+  yogProt:{pasos:[125,200,250]}, griego:{pasos:[125,200,250]}, yogNat:{pasos:[125,200,250]},
+  bebAvena:{max:300}, bebVeg:{max:300}, lecheDesn:{max:300}, bebBatido:{max:300}, claras:{paso:10,max:200},
+  tortitas:{fija:4},
+  proteina:{max:35, min:15}, frSecos:{max:()=>enDeficit()?20:30, min:10}, chia:{max:15}, cremaCac:{max:20}, choco85:{max:20}, miel:{max:20}, cacao:{max:10}, cacPolvo:{max:20},
+  frutosRoj:{paso:10,max:150}, aguacate:{max:70}, cottage:{max:75}, serrano:{max:90}, pavo:{max:100}, salmonAh:{max:60}, pollo:{max:100}, tofu:{max:120}, hummus:{max:40},
+  avena:{max:90}, panMolde:{max:100}, harinaAv:{max:100}, cremaArroz:{max:90}, cereales:{max:90},
+  atun:{max:2}, quesoLight:{max:2}, huevo:{max:3}, huevoDuro:{max:2}, kiwi:{max:2}, fruta:{max:2}, yogSoja:{max:2}
+};
+const regla = id => REGLAS[id]||{};
+const topeDe = id => { const m=regla(id).max; return typeof m==="function" ? m() : (m??Infinity); };
+function ajustarQ(id, q, redU=Math.round){
+  const g=ING[id], R=regla(id); if(g.fijo) return q;
+  if(R.fija) return R.fija;
+  if(R.pasos) return R.pasos.reduce((a,b)=>Math.abs(b-q)<Math.abs(a-q)?b:a);
+  let v;
+  if(g.u==="ud") v=Math.max(1,redU(q));
+  else { const paso=R.paso||(g.u==="ml"&&q>=100?50:5); v=Math.max(R.min||paso, Math.round(q/paso)*paso); }
+  return Math.min(v, topeDe(id));
+}
+/* Bocadillos y tostadas: todos llevan el mismo pan (panComun) y se recalcula solo el relleno.
+   Si la comida tiene muchas kcal, el bocadillo se queda en un tamaño razonable y se completa aparte (fruta, kéfir o frutos secos). */
+const PANES = ["panBl","panInt"], TB_MAX = 480;
 const esBocadillo = r => r.i.some(([id])=>PANES.includes(id));
-const panComun = T => Math.min(120, Math.max(30, Math.round(60*T/330/5)*5));   // 60 g para ≈330 kcal
+const tamBoc = T => Math.min(T, Math.max(TB_MAX, T-250));   // lo que pasa de ahí va al complemento (máx. ≈250 kcal)
+const panComun = T => Math.min(120, Math.max(30, Math.round(60*tamBoc(T)/330/5)*5));   // 60 g para ≈330 kcal
+function complemento(resto){
+  if(!(resto>=60)) return null;
+  const tope=topeDe("frSecos"), fs = n => Math.min(tope, Math.max(10, Math.round(n/6.1/5)*5));
+  const op=[];
+  op.push(resto<=115 ? "1 pieza de fruta" : resto<=175 ? "2 piezas de fruta" : resto<=260 ? `1 pieza de fruta + ${fs(resto-80)} g de frutos secos` : `2 piezas de fruta + ${fs(resto-160)} g de frutos secos`);
+  op.push(resto<=135 ? "1 kéfir o yogur bebible" : resto<=230 ? "1 kéfir o yogur bebible + 1 pieza de fruta" : `1 kéfir o yogur bebible + 1 pieza de fruta + ${fs(resto-170)} g de frutos secos`);
+  if(Math.abs(fs(resto)*6.1-resto)<=resto*0.25) op.push(`${fs(resto)} g de frutos secos`);
+  return {kcal:Math.round(resto/10)*10, op};
+}
 function escalar(r, T){
-  const boc=esBocadillo(r), pg=boc?panComun(T):0;
-  const fijoQ = (id,q) => PANES.includes(id) ? pg : q;
-  const esFijo = id => ING[id].fijo || id==="aove" || (boc && PANES.includes(id));
-  const q1 = r.i.map(([id,q])=> esFijo(id) ? fijoQ(id,q) : q);
+  const boc=esBocadillo(r), Tb=boc?tamBoc(T):T, pg=boc?panComun(T):0;
+  const esFijo = id => ING[id].fijo || id==="aove" || regla(id).fija || (boc && PANES.includes(id));
+  const q1 = r.i.map(([id,q])=> boc&&PANES.includes(id) ? pg : regla(id).fija || q);
   const base=recetaKcal(r,q1), fijoK=r.i.reduce((a,[id],j)=>a+(esFijo(id)?kcalIng(id,q1[j]):0),0);
   const lo=boc?0.3:0.5, hi=boc?2.5:2;
-  const f=Math.min(hi, Math.max(lo, (T-fijoK)/Math.max(1,base-fijoK)));   // sin desfigurar la receta
-  const red = (u,q) => boc && u==="g" ? Math.max(5,Math.round(q/5)*5) : redondear(u,q);   // rellenos de 5 en 5 g
-  // afina el ingrediente más calórico escalable para acercarse a T
-  const afinar = qs => { qs=[...qs]; const k0=recetaKcal(r,qs), j=r.i.map(([id],j)=>j).filter(j=>{const id=r.i[j][0]; return ING[id].u==="g"&&!esFijo(id);}).sort((a,b)=>kcalIng(r.i[b][0],qs[b])-kcalIng(r.i[a][0],qs[a]))[0];
-    let dev=0; if(j!=null){ const id=r.i[j][0], dq=(T-k0)/ING[id].k*100, nq=red("g", qs[j]+dq), q0=r.i[j][1]*(boc?f:1);
-      if(nq>0 && nq<=q0*2.2 && nq>=q0*0.4){ qs[j]=nq; dev=Math.abs(Math.log(nq/q0)); } }
-    return {qs, dev, err:Math.abs(recetaKcal(r,qs)-T)/T}; };
-  const prop = (redU) => r.i.map(([id,q],j)=> q==null||esFijo(id) ? q1[j] : ING[id].u==="ud" ? Math.max(1,redU(q*f)) : red(ING[id].u, q*f));
+  const f=Math.min(hi, Math.max(lo, (Tb-fijoK)/Math.max(1,base-fijoK)));   // sin desfigurar la receta
+  // afina los ingredientes en gramos (del más calórico al menos) para acercarse a Tb, sin pasar sus topes
+  const afinar = qs => { qs=[...qs]; let dev=0;
+    const js=r.i.map((x,j)=>j).filter(j=>{const id=r.i[j][0]; return ING[id].u==="g"&&!esFijo(id)&&!regla(id).pasos;}).sort((a,b)=>kcalIng(r.i[b][0],qs[b])-kcalIng(r.i[a][0],qs[a]));
+    for(const j of js){ const k0=recetaKcal(r,qs); if(Math.abs(Tb-k0)/Tb<0.04) break;
+      const id=r.i[j][0], q0=r.i[j][1]*f, nq=ajustarQ(id, qs[j]+(Tb-k0)/ING[id].k*100);
+      if(nq>0 && nq<=q0*2.2 && nq>=q0*0.4){ qs[j]=nq; dev+=Math.abs(Math.log(nq/q0)); } }
+    return {qs, dev, err:Math.abs(recetaKcal(r,qs)-Tb)/Tb}; };
+  const prop = redU => r.i.map(([id,q],j)=> q==null||esFijo(id) ? q1[j] : ajustarQ(id, q*f, redU));
   // unidades (lonchas, latas, huevos) redondeadas o por debajo: se queda la que deja el relleno más proporcionado
   const cand=[afinar(prop(Math.round)), afinar(prop(Math.floor))].sort((a,b)=>(a.err*3+a.dev)-(b.err*3+b.dev));
-  const qs=cand[0].qs;
-  return {qs, kcal:recetaKcal(r,qs), f};
+  const qs=cand[0].qs, items=r.i.map(([id],j)=>[id,qs[j]]);
+  // bocadillo corto de relleno por los topes: se completa con lonchas de queso light (si no lleva aguacate)
+  if(boc && !r.i.some(([id])=>["aguacate","quesoLight","cottage","hummus"].includes(id))){ const n=Math.min(2,Math.floor((Tb-itemsKcal(items)+20)/ING.quesoLight.k)); if(n>0) items.push(["quesoLight",n]); }
+  const kcal=itemsKcal(items);
+  return {qs, items, kcal, f, comp:complemento(T-kcal)};
 }
 function lineaIng(id,q){ const g=ING[id]; if(g.fijo) return g.es;
+  if(id==="platano"){ const p=PLATANO.find(x=>x[0]===q); if(p) return p[1]; }
   if(g.u==="ud") return `${q} ${q===1?g.es:(g.es2||g.es)}`;
   return `${q} ${g.u} de ${g.es}`; }
 const recetaOk = r => !r.i.some(([id])=>prohibido(ING[id].es)) && !prohibido(r.n);
@@ -1259,7 +1305,7 @@ function recetasPara(comida, T){
 }
 const kcalComida = c => { const R=reparto(); return FICHA.comidas.includes(c) ? Math.round(kcalObj()*R[c]/1000)*10 : 0; };
 function recetaHTML(r, T){ const e=escalar(r,T);
-  return `<div class="rec"><b>${esc(adaptarTexto(r.n))}</b> <small>≈${e.kcal} kcal</small><ul>${r.i.map(([id],j)=>`<li>${esc(adaptarTexto(lineaIng(id,e.qs[j])))}</li>`).join("")}</ul>${r.p?`<ol>${r.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}</div>`; }
+  return `<div class="rec"><b>${esc(adaptarTexto(r.n))}</b> <small>≈${e.comp?T:e.kcal} kcal</small><ul>${e.items.map(([id,q])=>`<li>${esc(adaptarTexto(lineaIng(id,q)))}</li>`).join("")}</ul>${e.comp?`<span class="note">Para completar, añade una opción:</span><ul>${e.comp.op.map(x=>`<li>${esc(adaptarTexto(x))}</li>`).join("")}</ul>`:""}${r.p?`<ol>${r.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}</div>`; }
 function recetasComidaHTML(comida){
   const T=kcalComida(comida); if(!T) return "";
   const L=recetasPara(comida,T); if(!L.length) return "";
@@ -1303,6 +1349,10 @@ function recetasComidaHTML(comida){
     "Bate la harina, el huevo, las claras, el plátano, el cacao, la levadura y la canela; añade la leche hasta tener la textura que te guste.":["Bat la farina, l'ou, les clares, el plàtan, el cacau, el llevat i la canyella; afegeix la llet fins a tenir la textura que t'agradi.","Blend the flour, egg, egg whites, banana, cocoa, baking powder and cinnamon; add milk until you like the texture."],
     "Haz las tortitas en una sartén antiadherente con unas gotas de aceite en spray.":["Fes les creps en una paella antiadherent amb unes gotes d'oli en esprai.","Cook the pancakes in a non-stick pan with a little spray oil."],
     "Pon la crema de cacahuete y los frutos rojos por encima.":["Posa-hi la crema de cacauet i els fruits vermells per sobre.","Top with the peanut butter and berries."],
+    "# plátano":["# plàtan","# banana"],"# plátano mediano":["# plàtan mitjà","# medium banana"],"# plátano de Canarias pequeño":["# plàtan de Canàries petit","# small Canary Islands banana"],"# banana grande":["# banana grossa","# large banana"],
+    "Para completar, añade una opción:":["Per completar, afegeix-hi una opció:","To round it off, add one option:"],
+    "# pieza de fruta":["# peça de fruita","# piece of fruit"],"# piezas de fruta":["# peces de fruita","# pieces of fruit"],"# kéfir o yogur bebible":["# quefir o iogurt per beure","# kefir or drinking yogurt"],"# kéfirs o yogures bebibles":["# quefirs o iogurts per beure","# kefirs or drinking yogurts"],
+    "# g de frutos secos":["# g de fruits secs","# g nuts"],"# piezas de fruta + # g de frutos secos":["# peces de fruita + # g de fruits secs","# pieces of fruit + # g nuts"],"# pieza de fruta + # g de frutos secos":["# peça de fruita + # g de fruits secs","# piece of fruit + # g nuts"],"# kéfir o yogur bebible + # pieza de fruta":["# quefir o iogurt per beure + # peça de fruita","# kefir or drinking yogurt + # piece of fruit"],"# kéfir o yogur bebible + # pieza de fruta + # g de frutos secos":["# quefir o iogurt per beure + # peça de fruita + # g de fruits secs","# kefir or drinking yogurt + # piece of fruit + # g nuts"],
     "≈# kcal":["≈# kcal","≈# kcal"],"🥪 Segundo desayuno":["🥪 Segon esmorzar","🥪 Mid-morning snack"]
   };
   Object.entries(RN).forEach(([es,[ca,en]])=>{ I18N.ca[es]=ca; I18N.en[es]=en; });
@@ -1326,7 +1376,7 @@ const protGkg = () => FICHA.protGkg>0 ? FICHA.protGkg : (PROT_GKG[FICHA.perfil]|
 const protIng = (id,q) => { const g=ING[id]; if(!g||g.fijo) return 0; return g.u==="ud" ? (g.p||0)*q : (g.p||0)*q/100; };
 function protComida(c){ // proteína estimada de un desayuno, segundo desayuno, merienda o pre-cama
   const T=kcalComida(c); if(!T) return 0;
-  if(COMIDAS_RECETA.includes(c)){ const L=recetasPara(c,T); if(L.length){ const v=L.map(r=>{ const e=escalar(r,T); return r.i.reduce((a,[id],j)=>a+protIng(id,e.qs[j]),0); }); return v.reduce((a,b)=>a+b,0)/v.length; } }
+  if(COMIDAS_RECETA.includes(c)){ const L=recetasPara(c,T); if(L.length){ const v=L.map(r=>{ const e=escalar(r,T); return e.items.reduce((a,[id,q])=>a+protIng(id,q),0); }); return v.reduce((a,b)=>a+b,0)/v.length; } }
   return T*0.15/4;
 }
 /* Grupo 1 (pesar en crudo): proteína y kcal por 100 g */
@@ -1721,7 +1771,7 @@ function panel(){
     const cs=COMIDAS_RECETA.filter(c=>FICHA.comidas.includes(c));
     box.innerHTML = cs.length ? cs.map(c=>{ const T=kcalComida(c), sel=(FICHA.recetas||{})[c], man=Array.isArray(sel), elegidas=new Set(recetasPara(c,T).map(r=>r.id));
       return `<div class="alg"><b>${esc(c)} · ${T} kcal ${man?`<button type="button" class="mini" data-auto="${esc(c)}">↺ automático</button>`:`<small class="auto">auto</small>`}</b><div class="chips">${RECETAS.filter(r=>r.m.includes(c)||(man&&sel.includes(r.id))).map(r=>{ const ok=recetaOk(r), e=escalar(r,T), on=elegidas.has(r.id);
-        return ok?`<button type="button" class="chip rch${on?" on":""}" data-c="${esc(c)}" data-r="${r.id}" title="${esc(r.i.map(([id],j)=>lineaIng(id,e.qs[j])).join(" · "))}">${esc(r.n)} <small>≈${e.kcal}</small></button>`:`<span class="chip bloq" title="Lleva algo que no puede o no le gusta">🔒 ${esc(r.n)}</span>`; }).join("")}</div></div>`; }).join("")
+        return ok?`<button type="button" class="chip rch${on?" on":""}" data-c="${esc(c)}" data-r="${r.id}" title="${esc(e.items.map(([id,q])=>lineaIng(id,q)).join(" · ")+(e.comp?" · + "+compLinea(e.comp):""))}">${esc(r.n)} <small>≈${e.kcal}</small></button>`:`<span class="chip bloq" title="Lleva algo que no puede o no le gusta">🔒 ${esc(r.n)}</span>`; }).join("")}</div></div>`; }).join("")
       : `<p class="note">Marca desayuno, segundo desayuno o merienda en sus comidas.</p>`;
     box.querySelectorAll(".rch").forEach(b=>b.onclick=()=>{ const c=b.dataset.c, T=kcalComida(c), R={...(FICHA.recetas||{})};
       const cur=new Set(Array.isArray(R[c])?R[c]:recetasPara(c,T).map(r=>r.id)); cur.has(b.dataset.r)?cur.delete(b.dataset.r):cur.add(b.dataset.r);
