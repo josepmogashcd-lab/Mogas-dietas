@@ -356,10 +356,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.29.1"></script>
-<script src="i18n-vs.js?v=2.29.1"></script>
-<script src="i18n-alim.js?v=2.29.1"></script>
-<script src="recetas-esp.js?v=2.29.1"></script>
+<script src="i18n.js?v=2.29.2"></script>
+<script src="i18n-vs.js?v=2.29.2"></script>
+<script src="i18n-alim.js?v=2.29.2"></script>
+<script src="recetas-esp.js?v=2.29.2"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -787,11 +787,12 @@ const GRUPOS = {
     "4 tortitas de arroz o maíz + 30 g de crema de cacahuete (2 porciones de 15 g)",
     "200 g de yogur Alpro de avena o coco (o 2 Sojasun) + 30 g de cereales recomendados + 1 pieza de fruta"]},
   fruta: {nombre:"1 pieza de fruta equivale a…", nota:"", opciones:[
-    "1 manzana, pera o naranja",
+    "1 pieza normal (manzana, pera, naranja…)",
+    "2 piezas pequeñas (por ejemplo, 2 mandarinas)",
     "1 plátano de Canarias pequeño",
-    "300 g de sandía o melón",
-    "200 g de mango, piña o frutos rojos",
-    "150 g de uvas"]},
+    "200 g de piña, mango o arándanos",
+    "150 g de uvas",
+    "300 g de fresas, frutos rojos, sandía o melón"]},
   precama: {nombre:"Pre-cama", nota:"Una opción (≈250 kcal).", opciones:[
     "200 g de yogur Alpro de avena o coco (o 2 Sojasun) + 25 g de cereales recomendados",
     "200 g de yogur Alpro de avena o coco (o 2 Sojasun) + 1 pieza de fruta",
@@ -870,7 +871,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.29.1";
+const APP_VERSION = "2.29.2";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -975,15 +976,15 @@ function dietaParaDoc(){
   if(c.signo) datos.push([c.signo<0?"Déficit calórico=":"Superávit calórico=",`${c.signo<0?"-":"+"}${FICHA.ajuste} Kcal`]);
   datos.push(["Total Kcal Objetivo=",String(kc)]);
   if(restr().length||FICHA.otrasRestricciones) datos.push(["Adaptada a:",[...restr().map(r=>r.t.toLowerCase()),FICHA.otrasRestricciones].filter(Boolean).join(", ")]);
-  const cajas=[];
+  const cajas=[[{k:"h",t:"Equivalencia de fruta:",first:true},{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" / ")}]];
   // Cafés + desayuno / segundo desayuno
   const c1=[{k:"h",t:"Cafés del día :",first:true},{k:"t",t:ad("Utilizar poca leche de avena para el café")},{k:"total",kcal:60}];
   if(FICHA.comidas.includes("Desayuno")){
     const rd=recetasDoc("Desayuno");
-    c1.push({k:"h",t:`Desayuno${fj("Desayuno")}:`},{k:"esp"},...(rd||[...opciones(GRUPOS.desayuno.opciones),{k:"esp"},{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" o ")}]),{k:"total",kcal:kcalDe("Desayuno")});
+    c1.push({k:"h",t:`Desayuno${fj("Desayuno")}:`},{k:"esp"},...(rd||[...opciones(GRUPOS.desayuno.opciones),{k:"esp"},{k:"t",t:"1 pieza de fruta"}]),{k:"total",kcal:kcalDe("Desayuno")});
   }
   cajas.push(c1);
-  if(FICHA.comidas.includes("Segundo desayuno")) cajas.push([{k:"h",t:`Segundo desayuno${fj("Segundo desayuno")}:`,first:true},...(recetasDoc("Segundo desayuno")||[{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" o ")}]),{k:"total",kcal:kcalDe("Segundo desayuno")}]);
+  if(FICHA.comidas.includes("Segundo desayuno")) cajas.push([{k:"h",t:`Segundo desayuno${fj("Segundo desayuno")}:`,first:true},...(recetasDoc("Segundo desayuno")||[{k:"t",t:"1 pieza de fruta"}]),{k:"total",kcal:kcalDe("Segundo desayuno")}]);
   // Comida y cena
   const principales=["Comida","Cena"].filter(n=>FICHA.comidas.includes(n));
   const autoP = FICHA.platoAuto && FICHA.peso>0;
@@ -1017,7 +1018,7 @@ function dietaParaDoc(){
       {k:"l",t:"Postres:",azul:"Escoger una de las siguientes opciones"},{k:"t",t:GRUPOS.postreCaliente.opciones.filter(ok).map(ad).join(" / ")},
       {k:"tb",t:"+5 gr de AOVE",before:120},{k:"total",kcal:totales}]);
   }
-  if(FICHA.comidas.includes("Merienda")) cajas.push([{k:"h",t:`Merienda${fj("Merienda")}:`,first:true},...(recetasDoc("Merienda")||[{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" o ")}]),{k:"total",kcal:kcalDe("Merienda")}]);
+  if(FICHA.comidas.includes("Merienda")) cajas.push([{k:"h",t:`Merienda${fj("Merienda")}:`,first:true},...(recetasDoc("Merienda")||[{k:"t",t:"1 pieza de fruta"}]),{k:"total",kcal:kcalDe("Merienda")}]);
   const pc = FICHA.comidas.includes("Pre-cama");
   cajas.push([{k:"h",t:pc?`Pre-cama${fj("Pre-cama")}:`:`PRE CAMA, SOLO días fuera de lo común:`,first:true},...opciones(GRUPOS.precama.opciones),{k:"total",kcal:pc?kcalDe("Pre-cama"):KCAL_PRECAMA}]);
   const D=diasCliente();
@@ -1265,7 +1266,7 @@ function complemento(resto){
   const tope=topeDe("frSecos"), fs = n => Math.min(tope, Math.max(10, Math.round(n/6.1/5)*5));
   const op=[];
   op.push(resto<=115 ? "1 pieza de fruta" : resto<=175 ? "2 piezas de fruta" : resto<=260 ? `1 pieza de fruta + ${fs(resto-80)} g de frutos secos` : `2 piezas de fruta + ${fs(resto-160)} g de frutos secos`);
-  op.push(resto<=135 ? "1 kéfir o yogur bebible" : resto<=230 ? "1 kéfir o yogur bebible + 1 pieza de fruta" : `1 kéfir o yogur bebible + 1 pieza de fruta + ${fs(resto-170)} g de frutos secos`);
+  op.push(resto<=135 ? "1 kéfir o yogur bebible" : "1 kéfir o yogur bebible + 1 pieza de fruta");
   if(Math.abs(fs(resto)*6.1-resto)<=resto*0.25) op.push(`${fs(resto)} g de frutos secos`);
   return {kcal:Math.round(resto/10)*10, op};
 }
@@ -1350,6 +1351,10 @@ function recetasComidaHTML(comida){
     "Haz las tortitas en una sartén antiadherente con unas gotas de aceite en spray.":["Fes les creps en una paella antiadherent amb unes gotes d'oli en esprai.","Cook the pancakes in a non-stick pan with a little spray oil."],
     "Pon la crema de cacahuete y los frutos rojos por encima.":["Posa-hi la crema de cacauet i els fruits vermells per sobre.","Top with the peanut butter and berries."],
     "# plátano":["# plàtan","# banana"],"# plátano mediano":["# plàtan mitjà","# medium banana"],"# plátano de Canarias pequeño":["# plàtan de Canàries petit","# small Canary Islands banana"],"# banana grande":["# banana grossa","# large banana"],
+    "# pieza normal (manzana, pera, naranja…)":["# peça normal (poma, pera, taronja…)","1 regular piece (apple, pear, orange…)"],
+    "# piezas pequeñas (por ejemplo, # mandarinas)":["# peces petites (per exemple, # mandarines)","# small pieces (for example, # tangerines)"],
+    "# g de piña, mango o arándanos":["# g de pinya, mango o nabius","# g pineapple, mango or blueberries"],"# g de uvas":["# g de raïm","# g grapes"],
+    "# g de fresas, frutos rojos, sandía o melón":["# g de maduixes, fruits vermells, síndria o meló","# g strawberries, berries, watermelon or melon"],"Equivalencia de fruta:":["Equivalència de fruita:","Fruit equivalents:"],
     "Para completar, añade una opción:":["Per completar, afegeix-hi una opció:","To round it off, add one option:"],
     "# pieza de fruta":["# peça de fruita","# piece of fruit"],"# piezas de fruta":["# peces de fruita","# pieces of fruit"],"# kéfir o yogur bebible":["# quefir o iogurt per beure","# kefir or drinking yogurt"],"# kéfirs o yogures bebibles":["# quefirs o iogurts per beure","# kefirs or drinking yogurts"],
     "# g de frutos secos":["# g de fruits secs","# g nuts"],"# piezas de fruta + # g de frutos secos":["# peces de fruita + # g de fruits secs","# pieces of fruit + # g nuts"],"# pieza de fruta + # g de frutos secos":["# peça de fruita + # g de fruits secs","# piece of fruit + # g nuts"],"# kéfir o yogur bebible + # pieza de fruta":["# quefir o iogurt per beure + # peça de fruita","# kefir or drinking yogurt + # piece of fruit"],"# kéfir o yogur bebible + # pieza de fruta + # g de frutos secos":["# quefir o iogurt per beure + # peça de fruita + # g de fruits secs","# kefir or drinking yogurt + # piece of fruit + # g nuts"],
