@@ -136,7 +136,7 @@ A("# g de tortillas de trigo (fajitas): # fajitas de unos # g","# g de truites d
  ["Una opción del grupo #, pesada en crudo:","Una opció del grup #, pesada en cru:","One option from group #, weighed raw:"],["O # opciones del grupo # (sin cocinar, ideal para ensaladas; puedes repetir):","O # opcions del grup # (sense cuinar, ideal per a amanides; pots repetir):","Or # options from group # (no cooking, ideal for salads; you can repeat):"],
  ["# opción, y otra más los días de entreno:","# opció, i una altra els dies d'entrenament:","# option, plus another on training days:"],["# opción:","# opció:","# option:"],
  ["# g de pescado azul (salmón, atún…), # día a la semana","# g de peix blau (salmó, tonyina…), # dia a la setmana","# g oily fish (salmon, tuna…), # day a week"],
- ["🥗 Comida","🥗 Dinar","🥗 Lunch"],["Ganancia muscular · # kcal/día","Guany muscular · # kcal/dia","Muscle gain · # kcal/day"],["Mantenimiento · # kcal/día","Manteniment · # kcal/dia","Maintenance · # kcal/day"]
+ ["🥗 Comida","🥗 Dinar","🥗 Lunch"],["Ganancia muscular · # kcal/día","Guany muscular · # kcal/dia","Muscle gain · # kcal/day"],["Mejora de masa muscular · # kcal/día","Millora de massa muscular · # kcal/dia","Muscle gain · # kcal/day"],["Rendimiento · # kcal/día","Rendiment · # kcal/dia","Performance · # kcal/day"],["Rendimiento (normocalórica)","Rendiment (normocalòrica)","Performance (maintenance calories)"],["Mejora de masa muscular (superávit)","Millora de massa muscular (superàvit)","Muscle gain (surplus)"],["Mantenimiento · # kcal/día","Manteniment · # kcal/dia","Maintenance · # kcal/day"]
 ].forEach(([es,ca,en])=>A(es,ca,en));
 })();
 (function(){ if(!window.I18N) return; const A=(es,ca,en)=>{ I18N.ca[es]=ca; I18N.en[es]=en; };
