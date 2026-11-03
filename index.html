@@ -181,6 +181,17 @@
   .pasres{margin-top:6px}
   .pasaj{margin-top:8px;border-radius:10px;padding:9px 11px;font-size:14px}.pasaj.mas{background:#D6EADD;color:#1F6B3F}.pasaj.menos{background:#FDEBD6;color:#8a3a06}
   .plate .pasfu{display:block;font-size:12px;color:var(--muted)}
+  .chip.al3{display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
+  .chip.al3 .ae{font-style:normal}.chip.al3 .ae:empty{display:none}
+  .chip.al3.ng{background:#FFF4E5;border-color:#F0B35A;color:#8A4B00}
+  .chip.al3.it{background:#B42318;border-color:#B42318;color:#fff}
+  .alleg{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--muted);margin:6px 0 10px}
+  .alleg span{display:inline-flex;align-items:center;gap:5px}
+  .al3x{display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);background:#fff}
+  .al3x.ng{background:#FFF4E5;border-color:#F0B35A}.al3x.it{background:#B42318;border-color:#B42318}
+  .alimbox .alg{margin:10px 0}.alimbox .alg>b{display:block;font-size:14px;margin-bottom:6px}
+  .alimbox .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .avisoimp{border:2px solid var(--brand);background:var(--brand-2)}.avisoimp p{margin:0;font-weight:600;color:var(--brand)}
   .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
   .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
   .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
@@ -317,8 +328,9 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.20.0"></script>
-<script src="i18n-vs.js?v=2.20.0"></script>
+<script src="i18n.js?v=2.21.0"></script>
+<script src="i18n-vs.js?v=2.21.0"></script>
+<script src="i18n-alim.js?v=2.21.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -482,7 +494,9 @@ const FICHA = {
   entrenosSemana: 3,  // entrenos pautados por semana
   peso: 0,            // kg (Tanita)
   pasosMedia: 0,      // media de pasos real (oficial o reloj); 0 = desconocida
-  noGusta: []         // alimentos de la tabla que no le gustan
+  noGusta: [],        // alimentos de la tabla que no le gustan
+  intolAlim: [],      // alimentos de la tabla que no tolera o le sientan mal
+  pedirAlimentos: false // cliente online: al abrir su enlace marca él mismo sus alimentos
 };
 
 /* ---- REPARTO DE CALORÍAS ENTRE COMIDAS ---- */
@@ -543,7 +557,7 @@ function adaptarTexto(t){ restr().forEach(r=>(r.cambiar||[]).forEach(([re,rep])=
     let out=rep.replace(/\$&/g,m).replace(/\$(\d)/g,(_,i)=>g[i-1]||""); if(m[0]&&m[0]!==m[0].toLowerCase()) out=out[0].toUpperCase()+out.slice(1); return out;}))); return t.replace(/sin gluten sin gluten/g,"sin gluten").replace(/sin lactosa sin lactosa/g,"sin lactosa"); }
 function prohibido(t){ const ng=noGustaRe(); return restr().some(r=>r.quitar && r.quitar.test(t)) || !!(ng && ng.test(sinAcentos(t))); }
 function adaptarNodo(el){
-  if(!restr().length && !(FICHA.noGusta||[]).length) return;
+  if(!restr().length && !(FICHA.noGusta||[]).length && !(FICHA.intolAlim||[]).length) return;
   el.querySelectorAll("li, .plate > div, table.cmp tr").forEach(x=>{ if(prohibido(x.textContent)) x.remove(); });
   const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); const ns=[]; while(w.nextNode()) ns.push(w.currentNode);
   ns.forEach(n=>{const a=adaptarTexto(n.nodeValue); if(a!==n.nodeValue) n.nodeValue=a;});
@@ -565,13 +579,30 @@ const ALIM_RESTR = {lactosa:["Leche","Queso","Yogur"], gluten:["Pan","Pan integr
 const alimRestr = () => { const m={}; (FICHA.restricciones||[]).forEach(k=>(ALIM_RESTR[k]||[]).forEach(a=>m[a]=RESTRICCIONES[k].t)); return m; };
 let NOGUSTA_RE=null, NOGUSTA_KEY="";
 function noGustaRe(){
-  const l=FICHA.noGusta||[], k=l.join("|"); if(k===NOGUSTA_KEY) return NOGUSTA_RE;
+  const l=[...(FICHA.noGusta||[]),...(FICHA.intolAlim||[])], k=l.join("|"); if(k===NOGUSTA_KEY) return NOGUSTA_RE;
   NOGUSTA_KEY=k; if(!l.length) return NOGUSTA_RE=null;
   const esc2=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
   const pat=l.map(a=>{ let s=a.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); s=s.replace(/(es|s)$/,""); return esc2(s)+"(?:es|s)?"; }).join("|");
   return NOGUSTA_RE=new RegExp("(?<![\\p{L}])(?:"+pat+")(?![\\p{L}])","iu");
 }
 const sinAcentos = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+/* Estado de cada alimento: "" (bien) · "ng" (no le gusta) · "it" (intolerancia / le sienta mal). Al tocar: bien → no gusta → intolerancia → bien */
+const alimEstado = a => (FICHA.intolAlim||[]).includes(a) ? "it" : (FICHA.noGusta||[]).includes(a) ? "ng" : "";
+function alimCiclo(a){
+  const ng=new Set(FICHA.noGusta||[]), it=new Set(FICHA.intolAlim||[]), e=alimEstado(a);
+  ng.delete(a); it.delete(a); if(e==="") ng.add(a); else if(e==="ng") it.add(a);
+  FICHA.noGusta=[...ng]; FICHA.intolAlim=[...it]; NOGUSTA_KEY="#";
+}
+/* Rejilla de alimentos (panel y cliente). Devuelve HTML; los botones llevan data-a con el nombre en castellano */
+function alimRejilla(){
+  const R=alimRestr();
+  return Object.entries(ALIMENTOS).map(([g,l])=>`<div class="alg"><b>${esc(g)}</b><div class="chips">${l.map(a=>R[a]
+    ? `<span class="chip bloq" title="${esc(R[a])}">🔒 <span>${esc(a)}</span></span>`
+    : `<button type="button" class="chip al3 ${alimEstado(a)}" data-a="${esc(a)}"><i class="ae">${{ng:"👎",it:"🚫"}[alimEstado(a)]||""}</i><span>${esc(a)}</span></button>`).join("")}</div></div>`).join("");
+}
+const alimLeyenda = () => `<div class="alleg"><span><i class="al3x"></i> Me gusta</span><span><i class="al3x ng"></i> 👎 No me gusta</span><span><i class="al3x it"></i> 🚫 Intolerancia o me sienta mal</span></div>`;
+function alimResumen(){ const n=(FICHA.noGusta||[]).length, i=(FICHA.intolAlim||[]).length;
+  return n||i ? `${n} que no le gustan · ${i} con intolerancia o que le sientan mal.` : "Ninguno marcado."; }
 /* ---- CLIENTES DE PRUEBA (versión web) ----
    Cada código de acceso carga su ficha. Solo para pruebas: nada de datos de clientes reales aquí. */
 const CLIENTES = { "DEMO": {} };
@@ -735,7 +766,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.20.0";
+const APP_VERSION = "2.21.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -928,6 +959,42 @@ const misClientes = () => store.get("mogas-panel-clientes") || {};
 function guardarCliente(){ const all=misClientes(); all[FICHA.codigo]={...datosActuales(), e:{...ENTREVISTA}, fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
 async function enlaceCliente(){ return location.origin + location.pathname + "#d=" + await empaquetar(datosActuales()); }
 
+
+/* =========== MIS ALIMENTOS (cliente) ===========
+   El cliente marca lo que no le gusta o no tolera; se aplica a su dieta y lo puede enviar a su nutricionista. */
+function alimGuardarCliente(){ if(PREVIEW) return; const d=store.get("mogas-dieta"); if(d && d.f){ d.f.noGusta=[...(FICHA.noGusta||[])]; d.f.intolAlim=[...(FICHA.intolAlim||[])]; store.set("mogas-dieta",d); } }
+async function alimEnlaceRespuesta(){ return location.origin+location.pathname+"#r="+await empaquetar({c:FICHA.codigo, n:FICHA.nombre, ng:FICHA.noGusta||[], it:FICHA.intolAlim||[], t:Date.now()}); }
+async function alimEnviar(){
+  const url=await alimEnlaceRespuesta(), txt=`${FICHA.nombre?FICHA.nombre.split(" ")[0]+": ":""}${trT("Mis alimentos")} (MOGAS)`;
+  if(navigator.share){ try{ await navigator.share({title:"MOGAS", text:txt, url}); }catch(e){} }
+  else window.open("https://wa.me/?text="+encodeURIComponent(txt+" "+url),"_blank","noopener");
+}
+function misAlimentos(primeraVez){
+  bot(`<b>🥦 Mis alimentos</b>
+${primeraVez?`<span class="note">Antes de empezar, tu nutricionista necesita saber qué alimentos no te gustan o no te sientan bien, para preparar tu dieta.</span>\n`:""}<span class="note">Toca un alimento <b>una vez</b> si no te gusta (👎) y <b>otra vez</b> si tienes intolerancia o te sienta mal (🚫). Una tercera vez lo deja como estaba. Los que marques no te saldrán en la dieta.</span>
+${alimLeyenda()}<div class="alimbox">${alimRejilla()}</div><span class="note alimcnt"></span>`);
+  const box=chat.lastElementChild;
+  const cuenta=()=>{ const n=(FICHA.noGusta||[]).length, i=(FICHA.intolAlim||[]).length; box.querySelector(".alimcnt").textContent = n||i ? `Marcados: ${n} 👎 · ${i} 🚫` : "Todavía no has marcado ninguno."; };
+  const atar=()=>box.querySelectorAll(".al3").forEach(b=>b.onclick=()=>{ alimCiclo(b.dataset.a); const e=alimEstado(b.dataset.a);
+    b.className="chip al3 "+e; b.querySelector(".ae").textContent={ng:"👎",it:"🚫"}[e]||""; alimGuardarCliente(); cuenta(); });
+  atar(); cuenta();
+  const fin=()=>{ if(!PREVIEW) store.set("mogas-alim-hecho-"+FICHA.codigo,1); };
+  opts([{t:"📤 Guardar y enviar a mi nutricionista", f:async()=>{ fin(); await alimEnviar(); bot(`✅ Guardado. Tu dieta ya no te propondrá los alimentos que has marcado.\n<span class="note">Si no se ha abierto WhatsApp, vuelve a pulsar «Enviar a mi nutricionista».</span>`); opts([{t:"📤 Enviar a mi nutricionista", f:alimEnviar},{t:"🥦 Revisar mis alimentos", f:()=>misAlimentos()}]); }},
+    ...(primeraVez?[]:[{t:"✅ Guardar", f:()=>{ fin(); bot("✅ Guardado. Tu dieta ya no te propondrá los alimentos que has marcado."); opts([]); }}])], {back:!primeraVez});
+}
+/* El nutricionista recibe la respuesta: enlace #r=... o pegado en el panel */
+async function alimImportar(texto){
+  const m=String(texto||"").match(/#r=([A-Za-z0-9_\-]+)/) || String(texto||"").trim().match(/^([zj][A-Za-z0-9_\-]+)$/);
+  if(!m) return {ok:false, msg:"No reconozco el enlace. Pega el enlace completo que te ha enviado el cliente."};
+  let d; try{ d=await desempaquetar(m[1]); }catch(e){ return {ok:false, msg:"El enlace está incompleto o dañado."}; }
+  const all=misClientes(), c=String(d.c||"").toUpperCase(), cli=all[c];
+  if(!cli) return {ok:false, msg:`No tienes ningún cliente con el código ${c} en este dispositivo.`};
+  const okL=l=>Array.isArray(l)?l.filter(a=>typeof a==="string"&&Object.values(ALIMENTOS).some(g=>g.includes(a))):[];
+  cli.f.noGusta=okL(d.ng); cli.f.intolAlim=okL(d.it); cli.f.pedirAlimentos=false; cli.alimRecibido=new Date().toISOString().slice(0,10);
+  store.set("mogas-panel-clientes",all);
+  return {ok:true, msg:`✅ Recibidos los alimentos de ${cli.f.nombre||c}: ${cli.f.noGusta.length} que no le gustan y ${cli.f.intolAlim.length} con intolerancia. Ya están en su ficha. Guarda y envíale el enlace nuevo de su dieta.`, codigo:c};
+}
+
 /* =========== PANEL DEL NUTRICIONISTA =========== */
 function panel(){
   document.getElementById("app").classList.add("ancho");
@@ -975,8 +1042,9 @@ function panel(){
           <label>¿En qué momento del día?<input id="p_atrm" value="${esc(ENTREVISTA.atrMomento||"")}" placeholder="p. ej. por la tarde al llegar a casa"></label></div>
         <label>¿Con qué alimentos?<input id="p_atra" value="${esc(ENTREVISTA.atrAlimentos||"")}" placeholder="p. ej. dulces, pan, frutos secos"></label>
         <label>¿Le gustan los cereales integrales?${sel("p_integ",["","si","no","indif"],ENTREVISTA.integrales||"",["—","Sí","No","Le da igual"])}</label>
-        <h3>Alimentos que no le gustan</h3>
-        <p class="note">Toca los que <b>no</b> le gustan: no le saldrán en la dieta. Los que no puede comer por sus intolerancias o alergias salen ya marcados.</p>
+        <h3>Alimentos que no le gustan o no tolera</h3>
+        <p class="note">Toca un alimento una vez si <b>no le gusta</b> (👎) y otra vez si es <b>intolerante o le sienta mal</b> (🚫). Una tercera vez lo deja como estaba. Ninguno de los marcados le saldrá en la dieta. Los que ya quedan fuera por sus intolerancias o alergias salen con 🔒.</p>
+        <label class="check"><input type="checkbox" id="p_pedir" ${FICHA.pedirAlimentos?"checked":""}> Cliente online: que los marque él al abrir su enlace (después te envía la respuesta)</label>
         <div id="p_alim"></div>
         <h3>Observaciones</h3>
         <label>Resumen libre<textarea id="p_etexto" rows="6" placeholder="Objetivos, historial, otros detalles…">${esc(ENTREVISTA.texto||"")}</textarea></label>
@@ -1091,10 +1159,11 @@ function panel(){
   $("p_reloj").onchange=()=>{ $("p_relojk").hidden=!$("p_reloj").checked; leerE(); pintarCalc(); };
   document.querySelectorAll(".entrev input, .entrev select, .entrev textarea").forEach(x=>{ if(!x.closest("#p_deps")) x.addEventListener("input",()=>{ leerE(); if(x.id==="p_kdesc") pintarCalc(); }); });
   pintarDeps();
-  const pintarAlim=()=>{ const R=alimRestr(), ng=new Set(FICHA.noGusta||[]);
-    $("p_alim").innerHTML=Object.entries(ALIMENTOS).map(([g,l])=>`<div class="alg"><b>${esc(g)}</b><div class="chips">${l.map(a=>R[a]?`<span class="chip bloq" title="${esc(R[a])}">🚫 ${esc(a)}</span>`:`<button type="button" class="chip nog${ng.has(a)?" on":""}" data-a="${esc(a)}">${esc(a)}</button>`).join("")}</div></div>`).join("")
-      + `<p class="note" id="p_alimn">${ng.size?`${ng.size} marcados como «no le gusta».`:"Ninguno marcado."}</p>`;
-    $("p_alim").querySelectorAll(".nog").forEach(b=>b.onclick=()=>{ const s=new Set(FICHA.noGusta||[]); s.has(b.dataset.a)?s.delete(b.dataset.a):s.add(b.dataset.a); FICHA.noGusta=[...s]; pintarAlim(); }); };
+  const pintarAlim=()=>{ const y=window.scrollY, pa=$("p_alim").closest(".panel"), py=pa?pa.scrollTop:0;
+    $("p_alim").innerHTML=alimLeyenda()+alimRejilla()+`<p class="note" id="p_alimn">${alimResumen()}</p>`;
+    $("p_alim").querySelectorAll(".al3").forEach(b=>b.onclick=()=>{ alimCiclo(b.dataset.a); pintarAlim(); });
+    if(pa) pa.scrollTop=py; window.scrollTo(0,y); };
+  $("p_pedir").onchange=()=>{ FICHA.pedirAlimentos=$("p_pedir").checked; };
   pintarAlim();
   $("p_restr").addEventListener("click",()=>setTimeout(pintarAlim,0));
   $("addinc").onclick=()=>{INCREMENTOS.push({id:"r"+Date.now(),nombre:"Nueva actividad",def:"",tipo:"hc",destino:"Cena",cant:1});pintarIncs();};
@@ -1132,19 +1201,24 @@ function panel(){
   pintarCalc();pintarRep();pintarIncs();
 }
 
-function panelInicio(){
+function panelInicio(aviso){
   document.getElementById("app").classList.add("ancho");
   PREVIEW=false;
   const all=misClientes(), cods=Object.keys(all).sort((a,b)=>String(all[a].f.nombre).localeCompare(String(all[b].f.nombre)));
   app.innerHTML=`
     <header class="notr"><img class="brandlogo" src="${LOGO_FULL_WHITE}" alt="MOGAS"><span class="sep"></span><div><div class="t">Panel del nutricionista</div><div class="s">Tus clientes</div></div><button type="button" class="hbtn" id="psalir">Salir</button></header>
     <div class="panel notr">
+      ${aviso?`<section class="avisoimp"><p>${esc(aviso)}</p></section>`:""}
       <section><button id="nuevo" class="big">➕ Nuevo cliente</button></section>
       <section id="pvs"></section>
       <section><h2>Clientes guardados en este dispositivo</h2>
-        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}${all[c].e&&all[c].e.texto&&all[c].e.texto.trim()?" · 📝 entrevista":""}</small></div>
+        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}${all[c].e&&all[c].e.texto&&all[c].e.texto.trim()?" · 📝 entrevista":""}${all[c].alimRecibido?` · 🥦 alimentos recibidos ${esc(all[c].alimRecibido)}`:all[c].f&&all[c].f.pedirAlimentos?" · 🥦 esperando sus alimentos":""}</small></div>
           <button type="button" data-a="ed" data-c="${esc(c)}">Editar</button><button type="button" class="x" data-a="del" data-c="${esc(c)}" title="Borrar">✕</button></div>`).join("")
           :`<p class="note">Aún no has creado ningún cliente.</p>`}
+      </section>
+      <section><h2>📥 Recibir respuesta de un cliente</h2>
+        <p class="note">Cuando un cliente online marca sus alimentos, te envía un enlace. Si al abrirlo no se ha guardado solo, pégalo aquí.</p>
+        <div class="linkbox"><input id="imp_txt" placeholder="Pega aquí el enlace del cliente"><div class="linkbtns"><button type="button" id="imp_ok">📥 Recibir</button></div><p class="note" id="imp_res"></p></div>
       </section>
       <section><h2>¿Cómo funciona?</h2>
         <p class="note">1. Crea el cliente y rellena su ficha. 2. Pulsa «Guardar y crear enlace». 3. Envíale el enlace por WhatsApp: al abrirlo tendrá su asistente con su dieta.<br><br>
@@ -1153,6 +1227,7 @@ function panelInicio(){
     </div>`;
   const $=id=>document.getElementById(id);
   $("psalir").onclick=()=>{ store.del("mogas-modo"); login(); };
+  $("imp_ok").onclick=async()=>{ const r=await alimImportar($("imp_txt").value); if(r.ok) panelInicio(r.msg); else $("imp_res").textContent=r.msg; };
   panelVS($("pvs"));
   $("nuevo").onclick=()=>{ ENTREVISTA={fecha:new Date().toISOString().slice(0,10), texto:""}; aplicarDatos({f:{...JSON.parse(JSON.stringify(FICHA_BASE)), nombre:"", codigo:""}}); panel(); };
   app.querySelectorAll(".cli button").forEach(b=>b.onclick=()=>{ const c=b.dataset.c;
@@ -1177,6 +1252,7 @@ function start(){
   document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>irTab(b.dataset.t));
   irTab(TAB);
   vsBajar();
+  if(FICHA.pedirAlimentos && !PREVIEW && !store.get("mogas-alim-hecho-"+FICHA.codigo)){ if(TAB!=="dieta") irTab("dieta"); chat.innerHTML=""; misAlimentos(true); }
 }
 function chatHola(){
   const rs=restr();
@@ -1208,7 +1284,8 @@ const SECCIONES = [
     {t:"🥗 Montar mi comida o cena", f:montarInicio},
     {t:"🔄 Cambiar un alimento", f:cambiar},
     {t:"📊 Tabla de hidratos", f:()=>tablaHC(1)},
-    {t:"🍝 Buscar una receta", f:receta}]},
+    {t:"🍝 Buscar una receta", f:receta},
+    {t:"🥦 Mis alimentos (no me gustan / intolerancias)", f:()=>misAlimentos()}]},
   {id:"deporte", ico:"🏃", t:"Entreno y deporte", sub:"Ajustes por entreno, cambios de horario, tiradas y carreras", items:()=>[
     {t:"💪 He entrenado / caminado más hoy", f:actividad},
     {t:"⏰ Hoy entreno a otra hora", f:otraHora},
@@ -2623,6 +2700,12 @@ function apuntarMenu(){
       history.replaceState(null,"",location.pathname); start(); return; }
     catch(e){ history.replaceState(null,"",location.pathname); login(); document.getElementById("err").textContent="El enlace no es válido o está incompleto. Pide a tu nutricionista que te lo vuelva a enviar."; return; }
   }
+  window.addEventListener("hashchange",()=>{ if(/^#(d=|r=|panel$)/.test(location.hash)) location.reload(); });
+  const r = location.hash.match(/^#r=([A-Za-z0-9_\-]+)$/);
+  if(r){ const h=location.hash; history.replaceState(null,"",location.pathname);
+    if(store.get("mogas-modo")==="nutri"){ const res=await alimImportar(h); panelInicio(res.msg); return; }
+    login(); document.getElementById("err").textContent="Este enlace es para tu nutricionista: ábrelo desde su panel («📥 Recibir respuesta de un cliente»)."; return; }
+  if(location.hash==="#panel"){ history.replaceState(null,"",location.pathname); store.set("mogas-modo","nutri"); panelInicio(); return; }
   if(store.get("mogas-modo")==="nutri"){ panelInicio(); return; }
   const mia=store.get("mogas-dieta"); if(mia && mia.f && !store.get("mogas-fuera")){ aplicarDatos(mia); start(); return; }
   let c=null; try{c=localStorage.getItem("mogas-codigo")}catch(e){} if(c && cargarCliente(c)) start(); else login();
