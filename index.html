@@ -352,10 +352,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.24.0"></script>
-<script src="i18n-vs.js?v=2.24.0"></script>
-<script src="i18n-alim.js?v=2.24.0"></script>
-<script src="recetas-esp.js?v=2.24.0"></script>
+<script src="i18n.js?v=2.25.0"></script>
+<script src="i18n-vs.js?v=2.25.0"></script>
+<script src="i18n-alim.js?v=2.25.0"></script>
+<script src="recetas-esp.js?v=2.25.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -527,7 +527,11 @@ const FICHA = {
   dias: [],           // tipos de día (fitness / resistencia): [{id,n,aj:{comida:raciones},batido}]
   diasAuto: true,     // true = los tipos de día se generan solos según perfil y comidas
   batidoG: 30,        // gramos de proteína en polvo del batido post-entreno (fitness)
-  recetas: {}         // {comida:[ids]} desayunos/meriendas elegidos; si falta la comida, se eligen solos
+  recetas: {},        // {comida:[ids]} desayunos/meriendas elegidos; si falta la comida, se eligen solos
+  protGkg: 0,         // g de proteína por kg al día (0 = el de su perfil)
+  cenaSinHC: false,   // cena sin hidratos (lleva un 15 % más de proteína)
+  postrePrincipal: true, // postre en comida y cena
+  platoAuto: true     // comida y cena calculadas solas (si hay peso)
 };
 
 /* ---- REPARTO DE CALORÍAS ENTRE COMIDAS ---- */
@@ -841,7 +845,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.24.0";
+const APP_VERSION = "2.25.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -938,7 +942,17 @@ function dietaParaDoc(){
   if(FICHA.comidas.includes("Segundo desayuno")) cajas.push([{k:"h",t:`Segundo desayuno${fj("Segundo desayuno")}:`,first:true},...(recetasDoc("Segundo desayuno")||[{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" o ")}]),{k:"total",kcal:kcalDe("Segundo desayuno")}]);
   // Comida y cena
   const principales=["Comida","Cena"].filter(n=>FICHA.comidas.includes(n));
-  if(principales.length){
+  const autoP = FICHA.platoAuto && FICHA.peso>0;
+  if(autoP) principales.forEach(n=>{ const P=platoPrincipal(n); if(!P) return; const o=(a,pref)=>a.map((t,i)=>({k:"o",p:pref==="l"?`${LETRAS[i]}- `:"",t:ad(t)}));
+    cajas.push([{k:"h",t:`${n}${fj(n)}`,extra:"- Escoger una opción de cada grupo:",first:true},
+      {k:"l",t:"Hidratos de carbono:",azul:P.cenaSinHC?"Esta cena va sin hidratos":(integrales()?"Escoger una opción (mejor integrales). Crudo = pesado en seco; cocido = ya cocinado y escurrido":"Escoger una opción. Crudo = pesado en seco; cocido = ya cocinado y escurrido")},...o(P.hc,"l"),
+      ...(P.incEnt>0?[{k:"tb",t:`*Días de entreno de fuerza: +${String(P.incEnt).replace(".",",")} ${P.incEnt>1?"raciones":"ración"} de HC (p. ej. ${P.hcEnt} en total)`}]:[]),
+      {k:"l",t:"Verduras:",azul:""},{k:"t",t:P.verd},
+      {k:"l",t:`Proteínas (≈${P.prot} g):`,azul:`Escoger una opción del grupo 1 (pesar en crudo) o ${P.n2} del grupo 2`},{k:"t",t:"Grupo 1: "+P.g1.map(x=>ad(x.t)).join(" / ")},{k:"t",t:"Grupo 2: "+P.g2.map(ad).join(" / ")},
+      {k:"l",t:"Extras:",azul:P.extraEnt?"1 opción obligatoria + otra los días de entreno":"1 opción obligatoria"},{k:"t",t:P.extras.map(ad).join(" / ")},
+      ...(P.postre?[{k:"l",t:"Postre:",azul:"Escoger una opción"},{k:"t",t:P.postre.map(ad).join(" / ")}]:[]),
+      {k:"tb",t:"+5 gr de AOVE",before:120},{k:"tb",t:"+vinagre de manzana o sidra o módena al gusto"},{k:"total",kcal:P.T}]); });
+  if(principales.length && !autoP){
     const totales = principales.map(n=>`${n} ${kcalDe(n)}`).join(" · ");
     const grupoHC=[{k:"l",t:"Hidratos de carbono:",azul:"Escoger una de las siguientes opciones de HC (pesar en crudo siempre que se pueda)"},...opciones(HC.filter(h=>ok(h.n)).map(h=>hcTxt(h)))];
     const grupoVerd=[{k:"l",t:"VERDURAS entre 200 y 300 gr (a peso):",azul:""},{k:"t",t:"Cualquier verdura u hortaliza, una sola o mezcladas. Crudas, hervidas, al vapor, al horno o en air fryer. Nunca fritas ni salteadas en aceite."}];
@@ -1057,50 +1071,50 @@ async function enlaceCliente(){ return location.origin + location.pathname + "#d
    Recetas tipo MOGAS. Las cantidades se recalculan para las kcal de esa comida de cada cliente.
    k = kcal por 100 g / 100 ml, o por unidad si u="ud". fijo = no se escala (especias, levadura). */
 const ING = {
-  avena:     {es:"copos de avena", ca:"flocs de civada", en:"rolled oats", u:"g", k:372},
-  harinaAv:  {es:"harina de avena", ca:"farina de civada", en:"oat flour", u:"g", k:375},
-  cremaArroz:{es:"crema de arroz", ca:"crema d'arròs", en:"cream of rice", u:"g", k:365},
-  bebAvena:  {es:"bebida de avena sin azúcares añadidos", ca:"beguda de civada sense sucres afegits", en:"unsweetened oat drink", u:"ml", k:42},
-  platano:   {es:"plátano", ca:"plàtan", en:"banana", u:"g", k:94},
-  frutosRoj: {es:"frutos rojos (arándanos, fresas o frambuesas)", ca:"fruits vermells (nabius, maduixes o gerds)", en:"berries (blueberries, strawberries or raspberries)", u:"g", k:45},
-  cremaCac:  {es:"crema de cacahuete 100%", ca:"crema de cacauet 100%", en:"100% peanut butter", u:"g", k:610},
-  cacPolvo:  {es:"cacahuete en polvo desgrasado", ca:"cacauet en pols desgreixat", en:"defatted peanut powder", u:"g", k:420},
-  choco85:   {es:"chocolate negro 85%", ca:"xocolata negra 85%", en:"85% dark chocolate", u:"g", k:590},
-  proteina:  {es:"proteína en polvo", ca:"proteïna en pols", en:"protein powder", u:"g", k:380},
-  huevo:     {es:"huevo", es2:"huevos", ca:"ou", ca2:"ous", en:"egg", en2:"eggs", u:"ud", k:85},
-  huevoDuro: {es:"huevo duro", es2:"huevos duros", ca:"ou dur", ca2:"ous durs", en:"hard-boiled egg", en2:"hard-boiled eggs", u:"ud", k:85},
-  panBl:     {es:"pan", ca:"pa", en:"bread", u:"g", k:265},
-  panInt:    {es:"pan integral", ca:"pa integral", en:"wholemeal bread", u:"g", k:250},
-  aove:      {es:"aceite de oliva virgen extra", ca:"oli d'oliva verge extra", en:"extra virgin olive oil", u:"g", k:900},
-  pavo:      {es:"jamón cocido o pavo", ca:"pernil dolç o gall dindi", en:"cooked ham or turkey", u:"g", k:100},
-  serrano:   {es:"jamón serrano sin grasa, ibérico o lomo embuchado", ca:"pernil serrà sense greix, ibèric o llom embotit", en:"lean serrano or Iberian ham, or cured pork loin", u:"g", k:180},
-  quesoLight:{es:"loncha de queso light", es2:"lonchas de queso light", ca:"llesca de formatge light", ca2:"llesques de formatge light", en:"slice of light cheese", en2:"slices of light cheese", u:"ud", k:55},
-  aguacate:  {es:"aguacate", ca:"alvocat", en:"avocado", u:"g", k:160},
-  cottage:   {es:"queso cottage", ca:"formatge cottage", en:"cottage cheese", u:"g", k:98},
-  atun:      {es:"lata de atún al natural", es2:"latas de atún al natural", ca:"llauna de tonyina al natural", ca2:"llaunes de tonyina al natural", en:"can of tuna in water", en2:"cans of tuna in water", u:"ud", k:60},
-  salmonAh:  {es:"salmón ahumado", ca:"salmó fumat", en:"smoked salmon", u:"g", k:180},
-  yogSoja:   {es:"yogur de soja natural (125 g)", es2:"yogures de soja naturales (125 g)", ca:"iogurt de soja natural (125 g)", ca2:"iogurts de soja naturals (125 g)", en:"plain soy yogurt (125 g)", en2:"plain soy yogurts (125 g)", u:"ud", k:70},
-  yogProt:   {es:"yogur alto en proteína", ca:"iogurt alt en proteïna", en:"high-protein yogurt", u:"g", k:57},
-  frSecos:   {es:"frutos secos", ca:"fruits secs", en:"nuts", u:"g", k:610},
-  chia:      {es:"semillas de chía", ca:"llavors de xia", en:"chia seeds", u:"g", k:490},
-  kiwi:      {es:"kiwi", es2:"kiwis", ca:"kiwi", ca2:"kiwis", en:"kiwi", en2:"kiwis", u:"ud", k:45},
-  fruta:     {es:"pieza de fruta", es2:"piezas de fruta", ca:"peça de fruita", ca2:"peces de fruita", en:"piece of fruit", en2:"pieces of fruit", u:"ud", k:80},
-  tortitas:  {es:"tortita de arroz o maíz", es2:"tortitas de arroz o maíz", ca:"galeta d'arròs o blat de moro", ca2:"galetes d'arròs o blat de moro", en:"rice or corn cake", en2:"rice or corn cakes", u:"ud", k:28},
-  bebVeg:    {es:"bebida de avellanas y arroz, de avena o leche", ca:"beguda d'avellanes i arròs, de civada o llet", en:"hazelnut-rice or oat drink, or milk", u:"ml", k:55},
-  cereales:  {es:"cereales recomendados", ca:"cereals recomanats", en:"recommended cereal", u:"g", k:380},
-  claras:    {es:"claras de huevo", ca:"clares d'ou", en:"egg whites", u:"ml", k:50},
-  cacao:     {es:"cacao puro en polvo", ca:"cacau pur en pols", en:"pure cocoa powder", u:"g", k:350},
-  lecheDesn: {es:"leche desnatada o bebida vegetal", ca:"llet desnatada o beguda vegetal", en:"skimmed milk or plant-based drink", u:"ml", k:35},
-  griego:    {es:"yogur griego ligero", ca:"iogurt grec lleuger", en:"light Greek yogurt", u:"g", k:75},
-  yogNat:    {es:"yogur natural o proteico", ca:"iogurt natural o proteic", en:"plain or high-protein yogurt", u:"g", k:60},
-  panMolde:  {es:"pan de molde integral", ca:"pa de motlle integral", en:"wholemeal sliced bread", u:"g", k:250},
-  sandia:    {es:"sandía, melón o frutos rojos", ca:"síndria, meló o fruits vermells", en:"watermelon, melon or berries", u:"g", k:35},
-  castanas:  {es:"castaña pelada", es2:"castañas peladas", ca:"castanya pelada", ca2:"castanyes pelades", en:"peeled chestnut", en2:"peeled chestnuts", u:"ud", k:20},
+  avena:     {es:"copos de avena", ca:"flocs de civada", en:"rolled oats", u:"g", k:372, p:13},
+  harinaAv:  {es:"harina de avena", ca:"farina de civada", en:"oat flour", u:"g", k:375, p:13},
+  cremaArroz:{es:"crema de arroz", ca:"crema d'arròs", en:"cream of rice", u:"g", k:365, p:7},
+  bebAvena:  {es:"bebida de avena sin azúcares añadidos", ca:"beguda de civada sense sucres afegits", en:"unsweetened oat drink", u:"ml", k:42, p:0.5},
+  platano:   {es:"plátano", ca:"plàtan", en:"banana", u:"g", k:94, p:1.2},
+  frutosRoj: {es:"frutos rojos (arándanos, fresas o frambuesas)", ca:"fruits vermells (nabius, maduixes o gerds)", en:"berries (blueberries, strawberries or raspberries)", u:"g", k:45, p:0.8},
+  cremaCac:  {es:"crema de cacahuete 100%", ca:"crema de cacauet 100%", en:"100% peanut butter", u:"g", k:610, p:25},
+  cacPolvo:  {es:"cacahuete en polvo desgrasado", ca:"cacauet en pols desgreixat", en:"defatted peanut powder", u:"g", k:420, p:50},
+  choco85:   {es:"chocolate negro 85%", ca:"xocolata negra 85%", en:"85% dark chocolate", u:"g", k:590, p:10},
+  proteina:  {es:"proteína en polvo", ca:"proteïna en pols", en:"protein powder", u:"g", k:380, p:75},
+  huevo:     {es:"huevo", es2:"huevos", ca:"ou", ca2:"ous", en:"egg", en2:"eggs", u:"ud", k:85, p:7},
+  huevoDuro: {es:"huevo duro", es2:"huevos duros", ca:"ou dur", ca2:"ous durs", en:"hard-boiled egg", en2:"hard-boiled eggs", u:"ud", k:85, p:7},
+  panBl:     {es:"pan", ca:"pa", en:"bread", u:"g", k:265, p:9},
+  panInt:    {es:"pan integral", ca:"pa integral", en:"wholemeal bread", u:"g", k:250, p:10},
+  aove:      {es:"aceite de oliva virgen extra", ca:"oli d'oliva verge extra", en:"extra virgin olive oil", u:"g", k:900, p:0},
+  pavo:      {es:"jamón cocido o pavo", ca:"pernil dolç o gall dindi", en:"cooked ham or turkey", u:"g", k:100, p:18},
+  serrano:   {es:"jamón serrano sin grasa, ibérico o lomo embuchado", ca:"pernil serrà sense greix, ibèric o llom embotit", en:"lean serrano or Iberian ham, or cured pork loin", u:"g", k:180, p:30},
+  quesoLight:{es:"loncha de queso light", es2:"lonchas de queso light", ca:"llesca de formatge light", ca2:"llesques de formatge light", en:"slice of light cheese", en2:"slices of light cheese", u:"ud", k:55, p:6},
+  aguacate:  {es:"aguacate", ca:"alvocat", en:"avocado", u:"g", k:160, p:2},
+  cottage:   {es:"queso cottage", ca:"formatge cottage", en:"cottage cheese", u:"g", k:98, p:11},
+  atun:      {es:"lata de atún al natural", es2:"latas de atún al natural", ca:"llauna de tonyina al natural", ca2:"llaunes de tonyina al natural", en:"can of tuna in water", en2:"cans of tuna in water", u:"ud", k:60, p:14},
+  salmonAh:  {es:"salmón ahumado", ca:"salmó fumat", en:"smoked salmon", u:"g", k:180, p:23},
+  yogSoja:   {es:"yogur de soja natural (125 g)", es2:"yogures de soja naturales (125 g)", ca:"iogurt de soja natural (125 g)", ca2:"iogurts de soja naturals (125 g)", en:"plain soy yogurt (125 g)", en2:"plain soy yogurts (125 g)", u:"ud", k:70, p:5},
+  yogProt:   {es:"yogur alto en proteína", ca:"iogurt alt en proteïna", en:"high-protein yogurt", u:"g", k:57, p:10},
+  frSecos:   {es:"frutos secos", ca:"fruits secs", en:"nuts", u:"g", k:610, p:18},
+  chia:      {es:"semillas de chía", ca:"llavors de xia", en:"chia seeds", u:"g", k:490, p:17},
+  kiwi:      {es:"kiwi", es2:"kiwis", ca:"kiwi", ca2:"kiwis", en:"kiwi", en2:"kiwis", u:"ud", k:45, p:0.8},
+  fruta:     {es:"pieza de fruta", es2:"piezas de fruta", ca:"peça de fruita", ca2:"peces de fruita", en:"piece of fruit", en2:"pieces of fruit", u:"ud", k:80, p:0.8},
+  tortitas:  {es:"tortita de arroz o maíz", es2:"tortitas de arroz o maíz", ca:"galeta d'arròs o blat de moro", ca2:"galetes d'arròs o blat de moro", en:"rice or corn cake", en2:"rice or corn cakes", u:"ud", k:28, p:0.6},
+  bebVeg:    {es:"bebida de avellanas y arroz, de avena o leche", ca:"beguda d'avellanes i arròs, de civada o llet", en:"hazelnut-rice or oat drink, or milk", u:"ml", k:55, p:1},
+  cereales:  {es:"cereales recomendados", ca:"cereals recomanats", en:"recommended cereal", u:"g", k:380, p:8},
+  claras:    {es:"claras de huevo", ca:"clares d'ou", en:"egg whites", u:"ml", k:50, p:11},
+  cacao:     {es:"cacao puro en polvo", ca:"cacau pur en pols", en:"pure cocoa powder", u:"g", k:350, p:20},
+  lecheDesn: {es:"leche desnatada o bebida vegetal", ca:"llet desnatada o beguda vegetal", en:"skimmed milk or plant-based drink", u:"ml", k:35, p:3.4},
+  griego:    {es:"yogur griego ligero", ca:"iogurt grec lleuger", en:"light Greek yogurt", u:"g", k:75, p:8},
+  yogNat:    {es:"yogur natural o proteico", ca:"iogurt natural o proteic", en:"plain or high-protein yogurt", u:"g", k:60, p:5},
+  panMolde:  {es:"pan de molde integral", ca:"pa de motlle integral", en:"wholemeal sliced bread", u:"g", k:250, p:10},
+  sandia:    {es:"sandía, melón o frutos rojos", ca:"síndria, meló o fruits vermells", en:"watermelon, melon or berries", u:"g", k:35, p:0.6},
+  castanas:  {es:"castaña pelada", es2:"castañas peladas", ca:"castanya pelada", ca2:"castanyes pelades", en:"peeled chestnut", en2:"peeled chestnuts", u:"ud", k:20, p:0.5},
   tomLech:   {es:"Rodajas de tomate y lechuga", ca:"Rodanxes de tomàquet i enciam", en:"Tomato slices and lettuce", u:"", k:0, fijo:true},
-  miel:      {es:"miel", ca:"mel", en:"honey", u:"g", k:304},
-  pollo:     {es:"pechuga de pollo a la plancha", ca:"pit de pollastre a la planxa", en:"grilled chicken breast", u:"g", k:110},
-  tofu:      {es:"tofu firme marinado", ca:"tofu ferm marinat", en:"firm marinated tofu", u:"g", k:130},
-  hummus:    {es:"hummus ligero", ca:"hummus lleuger", en:"light hummus", u:"g", k:250},
+  miel:      {es:"miel", ca:"mel", en:"honey", u:"g", k:304, p:0.3},
+  pollo:     {es:"pechuga de pollo a la plancha", ca:"pit de pollastre a la planxa", en:"grilled chicken breast", u:"g", k:110, p:23},
+  tofu:      {es:"tofu firme marinado", ca:"tofu ferm marinat", en:"firm marinated tofu", u:"g", k:130, p:13},
+  hummus:    {es:"hummus ligero", ca:"hummus lleuger", en:"light hummus", u:"g", k:250, p:7},
   canela:    {es:"Canela al gusto", ca:"Canyella al gust", en:"Cinnamon to taste", u:"", k:0, fijo:true},
   levadura:  {es:"½ cucharadita de levadura química", ca:"½ culleradeta de llevat químic", en:"½ tsp baking powder", u:"", k:0, fijo:true}
 };
@@ -1166,7 +1180,7 @@ const RECETAS = [
 const RECETA = Object.fromEntries(RECETAS.map(r=>[r.id,r]));
 const COMIDAS_RECETA = ["Desayuno","Segundo desayuno","Merienda"];
 /* redondeo práctico: g y ml a 5 (ml de 100 en adelante a 10), unidades a la unidad (mínimo 1) */
-function redondear(u,q){ if(u==="ud") return Math.max(1,Math.round(q)); if(u==="ml") return q>=100?Math.round(q/10)*10:Math.max(5,Math.round(q/5)*5); return q<10?Math.max(1,Math.round(q)):Math.max(5,Math.round(q/5)*5); }
+function redondear(u,q){ if(u==="ud") return Math.max(1,Math.round(q)); return Math.max(1,redondo(q)); }
 const kcalIng = (id,q) => { const g=ING[id]; if(!g||g.fijo) return 0; return g.u==="ud" ? g.k*q : g.k*q/100; };
 const recetaKcal = (r, qs) => Math.round(r.i.reduce((a,[id,q],j)=>a+kcalIng(id, qs?qs[j]:q),0));
 /* cantidades para llegar a T kcal; el aceite y las especias no se escalan */
@@ -1250,6 +1264,109 @@ function recetasComidaHTML(comida){
 })();
 
 
+
+/* =========== COMIDA Y CENA AUTOMÁTICAS ===========
+   Proteína del día según perfil y peso; desayunos y meriendas aportan la suya; el resto va a comida y cena.
+   Grupos: hidratos (lo que queda de kcal) · verduras · proteína (grupo 1 o grupo 2) · extra · postre · 5 g de AOVE. */
+const PROT_GKG = {salud:2.2, fit_def:2.2, fit_vol:1.9, resist:2.0};
+const protGkg = () => FICHA.protGkg>0 ? FICHA.protGkg : (PROT_GKG[FICHA.perfil]||2);
+const protIng = (id,q) => { const g=ING[id]; if(!g||g.fijo) return 0; return g.u==="ud" ? (g.p||0)*q : (g.p||0)*q/100; };
+function protComida(c){ // proteína estimada de un desayuno, segundo desayuno, merienda o pre-cama
+  const T=kcalComida(c); if(!T) return 0;
+  if(COMIDAS_RECETA.includes(c)){ const L=recetasPara(c,T); if(L.length){ const v=L.map(r=>{ const e=escalar(r,T); return r.i.reduce((a,[id],j)=>a+protIng(id,e.qs[j]),0); }); return v.reduce((a,b)=>a+b,0)/v.length; } }
+  return T*0.15/4;
+}
+/* Grupo 1 (pesar en crudo): proteína y kcal por 100 g */
+const PROT1 = [
+  {n:"pechuga de pollo o pavo a la plancha", p:23, k:110},
+  {n:"pescado blanco (merluza, bacalao, lenguado…)", p:18, k:80},
+  {n:"sepia, calamar, pulpo o langostinos a la plancha", p:16, k:80},
+  {n:"ternera magra (bistec o picada magra)", p:21, k:130},
+  {n:"lomo de cerdo retirando la grasa", p:22, k:130},
+  {n:"hamburguesa de ternera o pollo", p:17, k:165},
+  {n:"pescado azul (salmón, atún…), 1 día a la semana", p:20, k:180},
+  {n:"Heura o bocados vegetales marinados", p:19, k:165},
+  {n:"tofu firme", p:13, k:125}
+];
+/* Grupo 2 (sin cocinar, ideal ensaladas): proteína y kcal de cada opción */
+const PROT2 = [
+  {n:"1 lata de atún al natural (56 g escurrido)", p:14, k:60}, {n:"1 huevo duro", p:7, k:75},
+  {n:"1 tarrina de queso fresco de Burgos desnatado (62 g)", p:7, k:45}, {n:"60 g de lonchas de pavo o jamón dulce", p:11, k:60},
+  {n:"30 g de jamón serrano sin grasa", p:9, k:60}, {n:"70 g de pechuga de pollo a la plancha", p:16, k:77},
+  {n:"30 g de salmón ahumado", p:7, k:55}, {n:"80 g de gambas cocidas", p:14, k:65},
+  {n:"½ mozzarella light (60 g)", p:11, k:100}, {n:"35 g de queso feta", p:5, k:90}
+];
+const EXTRAS = ["60 g de aguacate","15 g de frutos secos","20 g de semillas","1 lata de aceitunas rellenas (50 g)","30 g de jamón ibérico","30 g de mayonesa light","100 g de tomate frito","10 g más de AOVE","15 g de chocolate 85%"];
+const KCAL_EXTRA = 90, KCAL_VERD = 60, KCAL_AOVE5 = 45, KCAL_POSTRE = 80;
+const enDeficit = () => FICHA.objetivo==="deficit";
+const integrales = () => enDeficit() && ENTREVISTA_INTEGRALES()!=="no";
+function ENTREVISTA_INTEGRALES(){ try{ return (typeof ENTREVISTA!=="undefined" && ENTREVISTA && ENTREVISTA.integrales) || FICHA.integrales || ""; }catch(e){ return FICHA.integrales||""; } }
+function postres(){ return enDeficit()
+  ? ["1 pieza de fruta (o 200 g de sandía, melón o piña)","1 yogur desnatado o 1 yogur griego ligero","1 kéfir desnatado","1 yogur proteico desnatado"]
+  : ["1 pieza de fruta (o 200 g de sandía, melón o piña)","1 yogur natural o griego ligero con 80 g de frutos rojos","1 yogur proteico","15 g de chocolate 85%","1 kéfir con 10 g de miel"]; }
+/* HC de la tabla, en texto claro: crudo y cocido, y el peso de pan y fajitas */
+function hcLinea(h,r){
+  const n=h.n.split(" (")[0], nl=n.charAt(0).toLowerCase()+n.slice(1);
+  if(h.n.startsWith("Tortilla")){ const g=g5(45*r), u=Math.max(1,Math.round(g/40)); return `${g} g de tortillas de trigo (fajitas): ${u===1?"1 fajita":`${u} fajitas`} de unos 40 g`; }
+  if(h.fijo) return `${g5(parseInt(h.fijo)*r)} g de ${nl}`;
+  if(!h.cocido) return `${g5(h.crudo*r)} g de ${nl} (en crudo)`;
+  return `${g5(h.crudo*r)} g de ${nl} en crudo (= ${g5(h.cocido*r)} g cocido)`;
+}
+function hcLista(){
+  let L=HC.filter(h=>!h.n.startsWith("Copos") && !prohibido(h.n));
+  if(integrales()) L=L.filter(h=>!["Arroz blanco o basmati","Pasta","Pan blanco"].includes(h.n));
+  return L;
+}
+function platoPrincipal(c){
+  const T=kcalComida(c); if(!T) return null;
+  const principales=["Comida","Cena"].filter(x=>FICHA.comidas.includes(x));
+  const cenaSinHC = c==="Cena" && FICHA.cenaSinHC;
+  const otras=FICHA.comidas.filter(x=>!principales.includes(x)).reduce((a,x)=>a+protComida(x),0);
+  let protDia = FICHA.peso>0 ? FICHA.peso*protGkg() : null, prot;
+  if(protDia){ const resto=Math.max(0,protDia-otras), n=principales.length||1;
+    // reparto igual; si la cena va sin hidratos, lleva un 15 % más
+    const pesoC = x => (x==="Cena" && FICHA.cenaSinHC) ? 1.15 : 1, tot=principales.reduce((a,x)=>a+pesoC(x),0)||1;
+    prot = resto*pesoC(c)/tot; }
+  else prot = T*0.33/4.8;
+  const nExtra = 1, conPostre = FICHA.postrePrincipal!==false;
+  // que siempre quepa algo de hidrato (salvo cena sin hidratos)
+  const fijoK = KCAL_VERD + KCAL_AOVE5 + nExtra*KCAL_EXTRA + (conPostre?KCAL_POSTRE:0);
+  // tope por comida: que quepa al menos ½ ración de hidratos (salvo cena sin hidratos); comida y cena llevan la misma proteína
+  const capDe = x => { const sh = x==="Cena" && FICHA.cenaSinHC; return (kcalComida(x) - fijoK - (sh?0:RACION_HC/2))/4.8 / ((x==="Cena"&&FICHA.cenaSinHC)?1.15:1); };
+  const capComun = Math.min(...principales.map(capDe)) * (cenaSinHC?1.15:1);
+  const protPedida = prot;
+  prot=Math.max(20,Math.min(75,prot,capComun));
+  const kProt = prot*4.8;
+  let kHC = cenaSinHC ? 0 : T - kProt - KCAL_VERD - KCAL_AOVE5 - nExtra*KCAL_EXTRA - (conPostre?KCAL_POSTRE:0);
+  const r = Math.max(0, Math.round(kHC/RACION_HC*4)/4);
+  const incEnt = (()=>{ if(!esFitness()) return 0; const d=diasCliente().find(x=>x.id==="fuerza"); return d ? (d.aj[c]||0) : 0; })();
+  const g1 = PROT1.filter(o=>!prohibido(o.n)).map(o=>({g:redondo(prot/o.p*100), o})).filter(x=>x.g<=260 || x.o.p>=16).map(x=>({t:`${x.g} g de ${x.o.n}`}));
+  // tortilla: huevos enteros y claras (hasta 4 huevos y 6 claras)
+  const nh = Math.max(2,Math.min(4,Math.round(prot*0.55/6.5))), cl = Math.min(6,Math.max(0,Math.round((prot-nh*6.5)/3.6)));
+  if(!prohibido("huevo")) g1.push({t:`tortilla de ${nh} huevos${cl?` + ${cl} claras`:""}`});
+  const n2 = Math.max(2,Math.min(5,Math.round(prot/10)));
+  return {c, T, prot:Math.round(prot), protPedida:Math.round(protPedida), r, incEnt, cenaSinHC,
+    hc: r ? hcLista().map(h=>hcLinea(h,r)) : [], hcEnt: incEnt>0 ? hcLista().slice(0,1).map(h=>hcLinea(h,r+incEnt))[0] : "",
+    verd: esFitness()&&FICHA.objetivo==="superavit" ? "100–200 g de verduras crudas, hervidas, al vapor, al horno o en airfryer (sin pasarte de volumen: llenan mucho)." : "200–300 g de verduras a peso: crudas, hervidas, al vapor, al horno o en airfryer. Nunca fritas ni salteadas con aceite.",
+    g1, n2, g2: PROT2.filter(o=>!prohibido(o.n)).map(o=>o.n),
+    extras: EXTRAS.filter(x=>!prohibido(x)), nExtra, extraEnt: esFitness(),
+    postre: conPostre ? postres().filter(x=>!prohibido(x)) : null};
+}
+function platoHTML(P){
+  const li=a=>`<ul>${a.map(x=>`<li>${esc(adaptarTexto(x))}</li>`).join("")}</ul>`;
+  return `<span class="note">Elige una opción de cada grupo. Ya está calculado para tus ${P.T} kcal.</span>
+<b>🍚 Hidratos</b>
+${P.cenaSinHC?`<span class="note">Esta cena va sin hidratos.</span>`:`${integrales()?`<span class="note">Mejor integrales.</span>`:""}${li(P.hc)}${P.incEnt>0?`<span class="note">Los días de entreno de fuerza: <b>+${fr(P.incEnt)} ${P.incEnt>1?"raciones":"ración"}</b> <span>(por ejemplo,</span> <span>${esc(P.hcEnt)}</span> <span>en total).</span></span>`:""}`}
+<b>🥦 Verduras</b>
+<span class="note">${esc(P.verd)}</span>
+<b>🍗 Proteína</b> <small>(≈${P.prot} g de proteína)</small>
+<span class="note">Una opción del grupo 1, pesada en crudo:</span>${li(P.g1.map(x=>x.t))}<span class="note">O ${P.n2} opciones del grupo 2 (sin cocinar, ideal para ensaladas; puedes repetir):</span>${li(P.g2)}
+<b>🥑 Extra</b>
+<span class="note">${P.extraEnt?"1 opción, y otra más los días de entreno:":"1 opción:"}</span>${li(P.extras)}
+${P.postre?`<b>🍎 Postre</b>
+<span class="note">1 opción:</span>${li(P.postre)}`:""}<span class="note">+ 5 g de AOVE pesado y vinagre al gusto.</span>`;
+}
+
 /* =========== RECETAS ESPECIALES (Excel de recetas) ===========
    Para un día especial: fotos, cantidades recalculadas a las kcal de su comida o cena y paso a paso. */
 const ESP = () => window.RECETAS_ESP || [];
@@ -1260,7 +1377,7 @@ function espEscalar(r,T){
   const base=espKcal(r), f=Math.min(3,Math.max(0.4,T/base));
   const L=r.ing.map(([n,g,k,nota])=>{ const nm=espNombre(n), nt=nota&&!/\d/.test(nota)&&nota.length>2&&!/^no$/i.test(nota)?` (${nota.toLowerCase()})`:"";
     if(!g) return {t:/^\d/.test(nm)?nm:`${nm}${nt?nt:" al gusto"}`, k:0};
-    const q=g*f<10?Math.max(1,Math.round(g*f)):Math.round(g*f/5)*5;
+    const q=Math.max(1,redondo(g*f));
     const hv=/huevo/i.test(n)&&!/clara/i.test(n) ? ` (≈${Math.max(1,Math.round(q/60))} ${Math.max(1,Math.round(q/60))===1?"huevo":"huevos"})` : "";
     const nmx=/^AOVE$/i.test(nm)?"aceite de oliva virgen extra":(/^[A-ZÁÉÍÓÚÑ][a-záéíóúñü]/.test(nm)?nm.charAt(0).toLowerCase()+nm.slice(1):nm);
     return {t:`${q} g de ${nmx}${hv}${nt}`, k:q*k/100}; });
@@ -1426,6 +1543,11 @@ function panel(){
         <label>¿Cuándo tiene más hambre?${sel("p_ham",Object.keys(HAMBRE),FICHA.hambre,Object.values(HAMBRE))}</label>
         <label class="check"><input type="checkbox" id="p_sinman" ${FICHA.sinHambreManana?"checked":""}> No tiene hambre al levantarse</label>
         <div id="rep"></div>
+        <h3>Comida y cena</h3>
+        <div class="pgrid"><label>Proteína al día (g por kg de peso)<input id="p_pgkg" type="number" inputmode="decimal" step="0.1" min="1" max="3" value="${FICHA.protGkg||""}" placeholder="${String(protGkg()).replace(".",",")} (su perfil)"></label></div>
+        <label class="check"><input type="checkbox" id="p_csh" ${FICHA.cenaSinHC?"checked":""}> Cena sin hidratos (lleva un 15 % más de proteína)</label>
+        <label class="check"><input type="checkbox" id="p_postre" ${FICHA.postrePrincipal!==false?"checked":""}> Postre en comida y cena</label>
+        <p class="note" id="p_protres"></p>
         <h3>Desayunos, segundos desayunos y meriendas</h3>
         <p class="note">Las cantidades se recalculan solas para las kcal de cada comida. Si no eliges ninguna, la app propone las que mejor encajan (marcadas con «auto»).</p>
         <div id="p_recs"></div>
@@ -1465,6 +1587,11 @@ function panel(){
       <div><span>${c.signo<0?"Déficit":c.signo>0?"Superávit":"Ajuste"}</span><b>${c.signo<0?"−":c.signo>0?"+":""}${c.signo?FICHA.ajuste:0} kcal</b></div><div class="tot"><span>Objetivo diario</span><b>${c.obj} kcal → ${c.objR} kcal</b></div>
       <p class="note" style="margin:6px 0 0">${conTiposDia()?"Esta es su dieta base (su día medio). Cada tipo de día suma o resta hidratos (sección 4).":"Solo se suma en días fuera de lo común (sección 5) o con muchísimos más pasos de lo habitual."}</p>`;
     const pf=FICHA.perfil;
+    if(FICHA.peso>0 && $("p_protres")){ const C=["Comida","Cena"].filter(x=>FICHA.comidas.includes(x)).map(platoPrincipal).filter(Boolean);
+      const otras=FICHA.comidas.filter(x=>x!=="Comida"&&x!=="Cena").reduce((a,x)=>a+protComida(x),0), tot=Math.round(otras+C.reduce((a,P)=>a+P.prot,0)), obj=Math.round(FICHA.peso*protGkg());
+      const recort=C.some(P=>P.prot<P.protPedida-1);
+      $("p_protres").innerHTML=`Proteína del día: <b>${tot} g</b> (${(tot/FICHA.peso).toFixed(1).replace(".",",")} g/kg · ${Math.round(tot*4/kcalObj()*100)} % de las kcal) · objetivo ${obj} g.${recort?` <span class="warn">Con ${kcalObj()} kcal no cabe toda: he dejado al menos ½ ración de hidratos en comida y cena. Sube las kcal o baja los g/kg si quieres.</span>`:""}`; }
+    else if($("p_protres")) $("p_protres").textContent="Pon su peso (sección 1) para calcular la proteína de comida y cena.";
     $("l_obj").style.display = pf==="resist" ? "" : "none";
     $("l_ajt").textContent = FICHA.objetivo==="superavit" ? "Kcal de superávit" : "Kcal de déficit";
     $("p_ajn").textContent = pf==="salud" ? `Déficit habitual entre 300 y 500 kcal. Máximo ${DEFICIT_MAX_SALUD} kcal.` : pf==="fit_vol" ? "Superávit moderado para ganar músculo con poca grasa." : pf==="fit_def" ? "Déficit para la fase de definición." : "";};
@@ -1549,9 +1676,12 @@ function panel(){
     if(FICHA.comidas.includes(c)){if(FICHA.comidas.length<=2)return;FICHA.comidas=FICHA.comidas.filter(x=>x!==c);}else FICHA.comidas.push(c);
     b.classList.toggle("on",FICHA.comidas.includes(c));FICHA.reparto=null;pintarRep();});
   ["p_ent","p_ham","p_sinman"].forEach(id=>$(id).addEventListener("change",()=>{FICHA.reparto=null;pintarRep();}));
+  $("p_pgkg").onchange=e=>{ const v=+String(e.target.value).replace(",","."); FICHA.protGkg = v>=1&&v<=3.5 ? v : 0; pintarCalc(); };
+  $("p_csh").onchange=e=>{ FICHA.cenaSinHC=e.target.checked; pintarCalc(); };
+  $("p_postre").onchange=e=>{ FICHA.postrePrincipal=e.target.checked; pintarCalc(); };
   $("p_perfil").querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{ const k=b.dataset.p, P=PERFILES[k]; if(k===FICHA.perfil) return;
     FICHA.perfil=k; FICHA.objetivo=P.obj; FICHA.ajuste=P.aj; FICHA.diasAuto=true; FICHA.dias=[];
-    $("p_obj").value=P.obj; $("p_aj").value=P.aj;
+    $("p_obj").value=P.obj; $("p_aj").value=P.aj; $("p_pgkg").placeholder=String(PROT_GKG[k]).replace(".",",")+" (su perfil)";
     $("p_perfil").querySelectorAll(".pcard").forEach(x=>x.classList.toggle("on",x===b)); pintarCalc(); pintarRep(); });
   ["p_tmb","p_factor","p_obj","p_aj","p_peso","p_pmedia"].forEach(id=>$(id).addEventListener("input",()=>{pintarCalc();pintarRep();}));
   const pintarDeps=()=>{ $("p_deps").innerHTML=(ENTREVISTA.deportes||[]).map((d,i)=>`<div class="dep inc"><div class="row"><input class="d_n" value="${esc(d.d||"")}" placeholder="Deporte (p. ej. fuerza, running, pádel)" aria-label="Deporte"><select class="d_t" aria-label="Tipo"><option value="fuerza"${d.tipo==="fuerza"?" selected":""}>Fuerza</option><option value="cardio"${d.tipo==="cardio"?" selected":""}>Cardio</option><option value="mixto"${d.tipo==="mixto"?" selected":""}>Mixto</option></select><button type="button" class="del" data-i="${i}" aria-label="Quitar">✕</button></div>
@@ -2063,6 +2193,7 @@ function verTipoDia(d){
 function verComida(c){
   const cm=COMIDA_DE[c.id], kReal = cm && FICHA.comidas.includes(cm) ? kcalComida(cm) : c.kcal;
   let h=`<b>${esc(c.nombre)}</b>${franja(cm)?` · 🕐 ${franja(cm)}`:""} · ≈${kReal} kcal`;
+  if((cm==="Comida"||cm==="Cena") && FICHA.platoAuto && FICHA.peso>0){ const P=platoPrincipal(cm); if(P){ bot(h+"\n"+platoHTML(P)); opts([{t:"🍽️ Montarla paso a paso", f:montarInicio},{t:"📋 Ver otra comida", f:verDieta}]); return; } }
   const rec = COMIDAS_RECETA.includes(cm) ? recetasComidaHTML(cm) : "";
   if(rec){ bot(h+"\n"+rec); opts([{t:"📋 Ver otra comida", f:verDieta}]); return; }
   if(c.texto) h+=`\n${esc(c.texto)}`;
@@ -2160,7 +2291,9 @@ function actividad(){
   nada.onclick=()=>{w.remove();me("Día tranquilo");setTimeout(()=>ajusteDia([]),250);};
   w.append(ok,nada);chat.appendChild(w);scroll();
 }
-const g5=x=>Math.max(5,Math.round(x/5)*5);
+/* redondeo amable: el número más redondo (100, 50, 10, 5, 1) sin moverse más de un 5 % */
+function redondo(x){ if(!(x>0)) return 0; for(const st of [100,50,10,5,1]){ const v=Math.round(x/st)*st; if(v>0 && Math.abs(v-x)<=0.05*x) return v; } return Math.round(x); }
+const g5=x=>Math.max(5,redondo(x));
 function ejemplosHC(r){
   const pick=["Arroz blanco o basmati","Pasta","Quinoa","Patata (hervida u horno)","Pan blanco"].map(n=>HC.find(h=>h.n===n));
   return pick.map(h=>h.fijo ? `${g5(55*r)} g de pan` : h.cocido ? `${g5(h.crudo*r)} g de ${h.n.split(" (")[0].toLowerCase()} en crudo (${g5(h.cocido*r)} g cocido)` : `${g5(h.crudo*r)} g de ${h.n.toLowerCase()}`);

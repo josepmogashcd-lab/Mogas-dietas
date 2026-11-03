@@ -90,3 +90,52 @@ if(!window.I18N) return;
 I18N.ca = I18N.ca || {}; I18N.en = I18N.en || {};
 Object.entries(T).forEach(([es,[ca,en]])=>{ I18N.ca[es]=ca; I18N.en[es]=en; });
 })();
+/* Comida y cena automáticas: textos generados (CA · EN) */
+(function(){
+if(!window.I18N) return;
+const A=(es,ca,en)=>{ I18N.ca[es]=ca; I18N.en[es]=en; };
+const P1={"pechuga de pollo o pavo a la plancha":["pit de pollastre o gall dindi a la planxa","grilled chicken or turkey breast"],
+ "pescado blanco (merluza, bacalao, lenguado…)":["peix blanc (lluç, bacallà, llenguado…)","white fish (hake, cod, sole…)"],
+ "sepia, calamar, pulpo o langostinos a la plancha":["sípia, calamar, pop o llagostins a la planxa","grilled cuttlefish, squid, octopus or prawns"],
+ "ternera magra (bistec o picada magra)":["vedella magra (bistec o picada magra)","lean beef (steak or lean mince)"],
+ "lomo de cerdo retirando la grasa":["llom de porc sense el greix","pork loin, fat trimmed"],
+ "hamburguesa de ternera o pollo":["hamburguesa de vedella o pollastre","beef or chicken burger"],
+ "pescado azul (salmón, atún…), 1 día a la semana":["peix blau (salmó, tonyina…), 1 dia a la setmana","oily fish (salmon, tuna…), once a week"],
+ "Heura o bocados vegetales marinados":["Heura o daus vegetals marinats","Heura or marinated plant-based bites"],"tofu firme":["tofu ferm","firm tofu"]};
+Object.entries(P1).forEach(([es,[ca,en]])=>A(`# g de ${es}`,`# g de ${ca}`,`# g ${en}`));
+A("tortilla de # huevos + # claras","truita de # ous + # clares","omelette with # eggs + # egg whites");A("tortilla de # huevos","truita de # ous","omelette with # eggs");
+const P2={"# lata de atún al natural (# g escurrido)":["# llauna de tonyina al natural (# g escorreguda)","# can of tuna in water (# g drained)"],"# huevo duro":["# ou dur","# hard-boiled egg"],
+ "# tarrina de queso fresco de Burgos desnatado (# g)":["# terrina de mató o formatge fresc desnatat (# g)","# tub of low-fat fresh Burgos cheese (# g)"],"# g de lonchas de pavo o jamón dulce":["# g de llesques de gall dindi o pernil dolç","# g sliced turkey or cooked ham"],
+ "# g de jamón serrano sin grasa":["# g de pernil serrà sense greix","# g lean serrano ham"],"# g de pechuga de pollo a la plancha":["# g de pit de pollastre a la planxa","# g grilled chicken breast"],
+ "# g de salmón ahumado":["# g de salmó fumat","# g smoked salmon"],"# g de gambas cocidas":["# g de gambes cuites","# g cooked prawns"],"# mozzarella light (# g)":["# mozzarella light (# g)","# light mozzarella (# g)"],"# g de queso feta":["# g de formatge feta","# g feta cheese"]};
+Object.entries(P2).forEach(([es,[ca,en]])=>A(es,ca,en));
+const EX={"# g de aguacate":["# g d'alvocat","# g avocado"],"# g de frutos secos":["# g de fruits secs","# g nuts"],"# g de semillas":["# g de llavors","# g seeds"],"# lata de aceitunas rellenas (# g)":["# llauna d'olives farcides (# g)","# can of stuffed olives (# g)"],
+ "# g de jamón ibérico":["# g de pernil ibèric","# g Iberian ham"],"# g de mayonesa light":["# g de maionesa light","# g light mayonnaise"],"# g de tomate frito":["# g de tomàquet fregit","# g tomato sauce"],"# g más de AOVE":["# g més d'oli d'oliva verge extra","# g more extra virgin olive oil"],"# g de chocolate #%":["# g de xocolata #%","# g #% chocolate"]};
+Object.entries(EX).forEach(([es,[ca,en]])=>A(es,ca,en));
+const PO={"# pieza de fruta (o # g de sandía, melón o piña)":["# peça de fruita (o # g de síndria, meló o pinya)","# piece of fruit (or # g watermelon, melon or pineapple)"],"# yogur desnatado o # yogur griego ligero":["# iogurt desnatat o # iogurt grec lleuger","# low-fat yogurt or # light Greek yogurt"],
+ "# kéfir desnatado":["# quefir desnatat","# low-fat kefir"],"# yogur proteico desnatado":["# iogurt proteic desnatat","# low-fat high-protein yogurt"],"# yogur natural o griego ligero con # g de frutos rojos":["# iogurt natural o grec lleuger amb # g de fruits vermells","# plain or light Greek yogurt with # g berries"],
+ "# yogur proteico":["# iogurt proteic","# high-protein yogurt"],"# kéfir con # g de miel":["# quefir amb # g de mel","# kefir with # g honey"]};
+Object.entries(PO).forEach(([es,[ca,en]])=>A(es,ca,en));
+const HCN={"arroz blanco o basmati":["arròs blanc o basmati","white or basmati rice"],"arroz integral":["arròs integral","brown rice"],"pasta":["pasta","pasta"],"pasta integral":["pasta integral","wholegrain pasta"],"cuscús":["cuscús","couscous"],"quinoa":["quinoa","quinoa"],"bulgur":["bulgur","bulgur"],"mijo":["mill","millet"],"trigo sarraceno":["fajol","buckwheat"],"lentejas":["llenties","lentils"],"garbanzos":["cigrons","chickpeas"],"alubias / judías":["mongetes","beans"],"guisantes":["pèsols","peas"],"patata":["patata","potato"],"boniato":["moniato","sweet potato"]};
+Object.entries(HCN).forEach(([es,[ca,en]])=>{ const de=/^[aeiouàèéíòóú]/i.test(ca)?"d'":"de ";
+  A(`# g de ${es} en crudo (= # g cocido)`,`# g ${de}${ca} en cru (= # g cuit)`,`# g ${en}, raw (= # g cooked)`);
+  A(`# g de ${es} (en crudo)`,`# g ${de}${ca} (en cru)`,`# g ${en} (raw)`); });
+A("# g de pan blanco","# g de pa blanc","# g white bread");A("# g de pan integral","# g de pa integral","# g wholemeal bread");
+A("# g de tortillas de trigo (fajitas): # fajita de unos # g","# g de truites de blat (fajitas): # fajita d'uns # g","# g wheat tortillas (wraps): # wrap of about # g");
+A("# g de tortillas de trigo (fajitas): # fajitas de unos # g","# g de truites de blat (fajitas): # fajitas d'uns # g","# g wheat tortillas (wraps): # wraps of about # g");
+[["Elige una opción de cada grupo. Ya está calculado para tus # kcal.","Tria una opció de cada grup. Ja està calculat per a les teves # kcal.","Choose one option from each group. It's already worked out for your # kcal."],
+ ["🍚 Hidratos","🍚 Hidrats","🍚 Carbs"],["Esta cena va sin hidratos.","Aquest sopar va sense hidrats.","This dinner has no carbs."],["Mejor integrales.","Millor integrals.","Wholegrain is best."],
+ ["🥦 Verduras","🥦 Verdures","🥦 Vegetables"],["🍗 Proteína","🍗 Proteïna","🍗 Protein"],["(≈# g de proteína)","(≈# g de proteïna)","(≈# g protein)"],
+ ["Una opción del grupo 1, pesada en crudo:","Una opció del grup 1, pesada en cru:","One option from group 1, weighed raw:"],
+ ["O # opciones del grupo 2 (sin cocinar, ideal para ensaladas; puedes repetir):","O # opcions del grup 2 (sense cuinar, ideal per a amanides; pots repetir):","Or # options from group 2 (no cooking, ideal for salads; you can repeat):"],
+ ["🥑 Extra","🥑 Extra","🥑 Extra"],["1 opción, y otra más los días de entreno:","1 opció, i una altra els dies d'entrenament:","1 option, plus another on training days:"],["1 opción:","1 opció:","1 option:"],
+ ["🍎 Postre","🍎 Postres","🍎 Dessert"],["+ # g de AOVE pesado y vinagre al gusto.","+ # g d'oli d'oliva verge extra pesat i vinagre al gust.","+ # g extra virgin olive oil, weighed, and vinegar to taste."],
+ ["#–# g de verduras crudas, hervidas, al vapor, al horno o en airfryer (sin pasarte de volumen: llenan mucho).","100–200 g de verdures crues, bullides, al vapor, al forn o a la fregidora d'aire (sense passar-te de volum: omplen molt).","100–200 g of vegetables, raw, boiled, steamed, oven-baked or air-fried (don't overdo the volume: they're very filling)."],
+ ["#–# g de verduras a peso: crudas, hervidas, al vapor, al horno o en airfryer. Nunca fritas ni salteadas con aceite.","#–# g de verdures a pes: crues, bullides, al vapor, al forn o a la fregidora d'aire. Mai fregides ni saltejades amb oli.","#–# g of vegetables by weight: raw, boiled, steamed, oven-baked or air-fried. Never fried or sautéed in oil."],
+ ["Los días de entreno de fuerza:","Els dies d'entrenament de força:","On strength training days:"],["(por ejemplo,","(per exemple,","(for example,"],["en total).","en total).","in total)."],
+ ["Una opción del grupo #, pesada en crudo:","Una opció del grup #, pesada en cru:","One option from group #, weighed raw:"],["O # opciones del grupo # (sin cocinar, ideal para ensaladas; puedes repetir):","O # opcions del grup # (sense cuinar, ideal per a amanides; pots repetir):","Or # options from group # (no cooking, ideal for salads; you can repeat):"],
+ ["# opción, y otra más los días de entreno:","# opció, i una altra els dies d'entrenament:","# option, plus another on training days:"],["# opción:","# opció:","# option:"],
+ ["# g de pescado azul (salmón, atún…), # día a la semana","# g de peix blau (salmó, tonyina…), # dia a la setmana","# g oily fish (salmon, tuna…), # day a week"],
+ ["🥗 Comida","🥗 Dinar","🥗 Lunch"],["Ganancia muscular · # kcal/día","Guany muscular · # kcal/dia","Muscle gain · # kcal/day"],["Mantenimiento · # kcal/día","Manteniment · # kcal/dia","Maintenance · # kcal/day"]
+].forEach(([es,ca,en])=>A(es,ca,en));
+})();
