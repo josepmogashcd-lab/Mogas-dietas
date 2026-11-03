@@ -356,10 +356,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.29.0"></script>
-<script src="i18n-vs.js?v=2.29.0"></script>
-<script src="i18n-alim.js?v=2.29.0"></script>
-<script src="recetas-esp.js?v=2.29.0"></script>
+<script src="i18n.js?v=2.29.1"></script>
+<script src="i18n-vs.js?v=2.29.1"></script>
+<script src="i18n-alim.js?v=2.29.1"></script>
+<script src="recetas-esp.js?v=2.29.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -870,7 +870,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.29.0";
+const APP_VERSION = "2.29.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1237,7 +1237,7 @@ const REGLAS = {
   platano:{pasos:PLATANO.map(x=>x[0])},
   yogProt:{pasos:[125,200,250]}, griego:{pasos:[125,200,250]}, yogNat:{pasos:[125,200,250]},
   bebAvena:{max:300}, bebVeg:{max:300}, lecheDesn:{max:300}, bebBatido:{max:300}, claras:{paso:10,max:200},
-  tortitas:{fija:4},
+  tortitas:{pasos:[2,4]},   // medio paquete o el paquete entero
   proteina:{max:35, min:15}, frSecos:{max:()=>enDeficit()?20:30, min:10}, chia:{max:15}, cremaCac:{max:20}, choco85:{max:20}, miel:{max:20}, cacao:{max:10}, cacPolvo:{max:20},
   frutosRoj:{paso:10,max:150}, aguacate:{max:70}, cottage:{max:75}, serrano:{max:90}, pavo:{max:100}, salmonAh:{max:60}, pollo:{max:100}, tofu:{max:120}, hummus:{max:40},
   avena:{max:90}, panMolde:{max:100}, harinaAv:{max:100}, cremaArroz:{max:90}, cereales:{max:90},
