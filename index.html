@@ -339,9 +339,9 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.22.0"></script>
-<script src="i18n-vs.js?v=2.22.0"></script>
-<script src="i18n-alim.js?v=2.22.0"></script>
+<script src="i18n.js?v=2.22.1"></script>
+<script src="i18n-vs.js?v=2.22.1"></script>
+<script src="i18n-alim.js?v=2.22.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -644,8 +644,17 @@ const kcalObj = () => calculo().objR;
 const RACION_HC = 145, KCAL_PRECAMA = 250;
 const DESTINOS = ["Desayuno","Comida","Cena","Comida + cena (repartido)","Merienda","Pre-cama"];
 let INCREMENTOS = [
-  {id:"c_larga", nombre:"🏃 Entreno o tirada muy larga", def:"fuera de lo habitual", tipo:"hc", destino:"Comida + cena (repartido)", cant:2}
+  {id:"c_larga", nombre:"🏃 Entreno o tirada muy larga", def:"fuera de lo habitual", tipo:"hc", destino:"Comida + cena (repartido)", cant:2, aj:{Comida:1, Cena:1}, precama:false}
 ];
+/* Raciones de hidratos por comida de una regla (las reglas antiguas tenían un solo destino) */
+function incAj(r){
+  if(r.aj && typeof r.aj==="object") return r.aj;
+  if(r.tipo==="toma") return {};
+  if(String(r.destino||"").startsWith("Comida + cena")) return {Comida:(+r.cant||0)/2, Cena:(+r.cant||0)/2};
+  return {[r.destino||"Cena"]:+r.cant||0};
+}
+const incTotal = r => Object.values(incAj(r)).reduce((a,b)=>a+(+b||0),0);
+const incPrecama = r => !!(r.precama || r.tipo==="toma");
 /* ---- PERFILES DE CLIENTE ---- */
 const PERFILES = {
   salud:  {ico:"❤️", t:"Salud · sobrepeso u obesidad", sub:"Pérdida de grasa con un déficit sostenido en el tiempo", obj:"deficit", aj:400},
@@ -816,7 +825,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.22.0";
+const APP_VERSION = "2.22.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -933,6 +942,10 @@ function dietaParaDoc(){
   if(D.length){ const desc=d=>{ const p=Object.entries(d.aj).sort((a,b)=>POS[a[0]]-POS[b[0]]).map(([c,r])=>`${c} ${r>0?"+":"−"}${String(Math.abs(r)).replace(".",",")} ${Math.abs(r)>1?"raciones":"ración"} de HC`);
       if(d.batido) p.push(`batido post-entreno (${FICHA.batidoG} g de proteína)`); const ex=extraDia(d); return `${d.n.replace(/^\S+\s/,"")}: ${p.length?p.join(" · "):"igual que la base"} → ${kc+ex} Kcal`; };
     cajas.push([{k:"h",t:"Según el tipo de día:",first:true},{k:"t",t:"Tu dieta base es tu día medio. Según el entreno del día, suma o resta raciones de hidratos (1 ración = 145 Kcal, ver tabla de hidratos):"},...D.map(d=>({k:"o",p:"•  ",t:desc(d)}))]); }
+  const IX=INCREMENTOS.filter(r=>incTotal(r)||incPrecama(r));
+  if(IX.length) cajas.push([{k:"h",t:"Días fuera de lo común:",first:true},{k:"t",t:"Solo los días de entreno muy largo o fuera de lo habitual. Decídelo por la noche o a la mañana siguiente:"},
+    ...IX.map(r=>{ const p=Object.entries(incAj(r)).filter(([,v])=>+v).sort((a,b)=>POS[a[0]]-POS[b[0]]).map(([c,v])=>`${c} +${String(v).replace(".",",")} ${v>1?"raciones":"ración"} de HC`); if(incPrecama(r)&&!FICHA.comidas.includes("Pre-cama")) p.push("pre-cama");
+      return {k:"o",p:"•  ",t:`${r.nombre.replace(/^\S+\s/,"")}${r.def?` (${r.def})`:""}: ${p.join(" · ")}`}; })]);
   cajas.push([{k:"h",t:"Indicaciones:",first:true},...INDICACIONES.filter(ok).map(t=>({k:"o",p:"•  ",t:ad(t)}))]);
   return {titulo:`MENÚ DIARIO ${FICHA.nombre.toUpperCase()} (${obj} ${meses[hoy.getMonth()]} ${String(hoy.getFullYear()).slice(2)})`, datos, cajas};
 }
@@ -1001,7 +1014,8 @@ function aplicarDatos(d){
   const f = (d&&d.f)||{}, base = JSON.parse(JSON.stringify(FICHA_BASE));
   Object.keys(FICHA).forEach(k=>delete FICHA[k]);
   Object.keys(base).forEach(k=>{ const v=f[k]; FICHA[k] = (v!==undefined && (base[k]===null || v===null || typeof v===typeof base[k])) ? v : base[k]; });
-  const inc = Array.isArray(d&&d.i) ? d.i.filter(r=>r&&typeof r==="object").map(r=>({id:String(r.id||"r"+Math.random()), nombre:String(r.nombre||""), def:String(r.def||""), tipo:r.tipo==="toma"?"toma":"hc", destino:String(r.destino||"Cena"), cant:+r.cant||0}))
+  const inc = Array.isArray(d&&d.i) ? d.i.filter(r=>r&&typeof r==="object").map(r=>({id:String(r.id||"r"+Math.random()), nombre:String(r.nombre||""), def:String(r.def||""), tipo:r.tipo==="toma"?"toma":"hc", destino:String(r.destino||"Cena"), cant:+r.cant||0,
+      aj:Object.fromEntries(Object.entries(incAj(r)).filter(([c,v])=>TODAS_COMIDAS.includes(c)&&+v).map(([c,v])=>[c,+v])), precama:incPrecama(r)}))
                                      : JSON.parse(JSON.stringify(INC_BASE));
   INCREMENTOS.length=0; inc.forEach(r=>INCREMENTOS.push(r));
 }
@@ -1175,23 +1189,22 @@ function panel(){
     $("l_obj").style.display = pf==="resist" ? "" : "none";
     $("l_ajt").textContent = FICHA.objetivo==="superavit" ? "Kcal de superávit" : "Kcal de déficit";
     $("p_ajn").textContent = pf==="salud" ? `Déficit habitual entre 300 y 500 kcal. Máximo ${DEFICIT_MAX_SALUD} kcal.` : pf==="fit_vol" ? "Superávit moderado para ganar músculo con poca grasa." : pf==="fit_def" ? "Déficit para la fase de definición." : "";};
-  const pintarIncs=()=>{$("incs").innerHTML=INCREMENTOS.map((r,i)=>`
-    <div class="inc" data-i="${i}">
-      <input class="i_nom" value="${esc(r.nombre)}" aria-label="Actividad">
-      <input class="i_def" value="${esc(r.def)}" aria-label="Cuándo cuenta">
-      <div class="row">${sel("","hc toma".split(" "),r.tipo,["Hidratos","Pre-cama"]).replace('<select id=""','<select class="i_tipo"')}
-        <input class="i_cant" type="number" step="0.5" min="0.5" value="${r.cant}" ${r.tipo==="toma"?"style='display:none'":""} aria-label="Raciones">
-        ${sel("",DESTINOS,r.destino).replace('<select id=""','<select class="i_dest"')}
-        <button class="del" title="Quitar">✕</button></div>
-    </div>`).join("");
-    $("incs").querySelectorAll(".inc").forEach(el=>{const i=+el.dataset.i,r=INCREMENTOS[i];
-      el.querySelector(".i_nom").oninput=e=>r.nombre=e.target.value;
-      el.querySelector(".i_def").oninput=e=>r.def=e.target.value;
-      el.querySelector(".i_cant").oninput=e=>r.cant=+e.target.value||0;
-      el.querySelector(".i_dest").onchange=e=>r.destino=e.target.value;
-      el.querySelector(".i_tipo").onchange=e=>{r.tipo=e.target.value;if(r.tipo==="toma")r.destino="Pre-cama";pintarIncs();};
-      el.querySelector(".del").onclick=()=>{INCREMENTOS.splice(i,1);pintarIncs();};
-    });};
+  const pintarIncs=()=>{ const cs=[...FICHA.comidas].sort((a,b)=>POS[a]-POS[b]), conPC=!FICHA.comidas.includes("Pre-cama");
+    INCREMENTOS.forEach(r=>{ r.aj={...incAj(r)}; r.precama=incPrecama(r); r.tipo="hc"; });
+    $("incs").innerHTML = INCREMENTOS.length ? `<div class="dtab"><table class="rep dias"><tr><th>Día fuera de lo común</th>${cs.map(c=>`<th>${esc(c)}</th>`).join("")}${conPC?"<th>Pre-cama</th>":""}<th>Total</th><th></th></tr>
+      ${INCREMENTOS.map((r,i)=>{ const k=Math.round(incTotal(r)*RACION_HC)+(conPC&&r.precama?KCAL_PRECAMA:0);
+        return `<tr data-i="${i}"><td><input class="dn i_nom" value="${esc(r.nombre)}" aria-label="Nombre"><input class="dn i_def" value="${esc(r.def)}" placeholder="Cuándo cuenta (p. ej. más de 3 h)" aria-label="Cuándo cuenta"></td>
+        ${cs.map(c=>`<td><input type="number" class="da" step="0.5" data-c="${esc(c)}" value="${r.aj[c]||""}" placeholder="0"></td>`).join("")}
+        ${conPC?`<td class="cb"><input type="checkbox" class="ipc" ${r.precama?"checked":""} title="Añadir pre-cama (≈${KCAL_PRECAMA} kcal)"></td>`:""}
+        <td class="dt"><b>+${k}</b><small>kcal</small></td><td><button type="button" class="del" title="Quitar">✕</button></td></tr>`; }).join("")}</table></div>`
+      : `<p class="note">Sin reglas.</p>`;
+    $("incs").querySelectorAll("tr[data-i]").forEach(tr=>{ const r=INCREMENTOS[+tr.dataset.i];
+      tr.querySelector(".i_nom").oninput=e=>r.nombre=e.target.value;
+      tr.querySelector(".i_def").oninput=e=>r.def=e.target.value;
+      const tot=()=>{ const k=Math.round(incTotal(r)*RACION_HC)+(conPC&&r.precama?KCAL_PRECAMA:0); tr.querySelector(".dt b").textContent="+"+k; };
+      tr.querySelectorAll(".da").forEach(inp=>inp.onchange=e=>{ const v=Math.round((+String(e.target.value).replace(",","."))*2)/2||0; if(v) r.aj[e.target.dataset.c]=v; else delete r.aj[e.target.dataset.c]; tot(); });
+      const pc=tr.querySelector(".ipc"); if(pc) pc.onchange=()=>{ r.precama=pc.checked; tot(); };
+      tr.querySelector(".del").onclick=()=>{ INCREMENTOS.splice(+tr.dataset.i,1); pintarIncs(); }; }); };
   const pintarRep=()=>{
     FICHA.entreno=$("p_ent").value;FICHA.hambre=$("p_ham").value;FICHA.sinHambreManana=$("p_sinman").checked;
     const R=reparto(), auto=!FICHA.reparto, kc=kcalObj(), {pre,post}=prePost();
@@ -1210,7 +1223,7 @@ function panel(){
       ${avisos.map(a=>`<p class="aviso">${a}</p>`).join("")}`;
     $("rep").querySelectorAll("input.pct").forEach(inp=>inp.onchange=e=>{FICHA.reparto={...reparto(),[e.target.dataset.c]:+e.target.value||0};pintarRep();});
     $("rep").querySelectorAll("input.fr0, input.fr1").forEach(inp=>inp.onchange=e=>{ const c=e.target.dataset.c, F={...(FICHA.franjas||{})}, v=[...(F[c]||["",""])]; v[e.target.classList.contains("fr0")?0:1]=e.target.value; F[c]=v; FICHA.franjas=F; });
-    pintarDias();
+    pintarDias(); if(typeof pintarIncs==="function" && $("incs").children.length) pintarIncs();
     if($("autorep"))$("autorep").onclick=()=>{FICHA.reparto=null;pintarRep();};
   };
 
@@ -1223,13 +1236,15 @@ function panel(){
       ${D.map((d,i)=>`<tr data-i="${i}"><td><input class="dn" value="${esc(d.n)}" aria-label="Nombre"></td>${cs.map(c=>`<td><input type="number" class="da" step="0.5" data-c="${esc(c)}" value="${d.aj[c]||""}" placeholder="0"></td>`).join("")}${esFitness()?`<td class="cb"><input type="checkbox" class="db" ${d.batido?"checked":""}></td>`:""}<td class="dt"><b>${extraDia(d)>=0?"+":"−"}${Math.abs(extraDia(d))}</b><small>${kc+extraDia(d)} kcal</small></td></tr>`).join("")}</table></div>
       ${esFitness()?`<label>Batido post-entreno: proteína en polvo (g)<input id="p_batg" type="number" inputmode="numeric" value="${FICHA.batidoG||30}"><small class="note">≈${kcalBatido()} kcal, con agua, al acabar de entrenar.</small></label>`:""}
       <div class="drow">${rel?`<button type="button" class="ghost" id="p_dreloj">⌚ Proponer con los datos de su reloj</button>`:""}${FICHA.diasAuto?"":`<button type="button" class="ghost" id="p_dauto">↺ Volver a los valores por defecto</button>`}</div>
-      ${FICHA.diasAuto?`<p class="note">Valores por defecto de MOGAS. Si cambias algo, se guarda para este cliente.</p>`:""}`;
+      ${FICHA.diasAuto?`<p class="note dauto">Valores por defecto de MOGAS. Si cambias algo, se guarda para este cliente.</p>`:""}`;
     const fija=()=>{ if(FICHA.diasAuto){ FICHA.dias=JSON.parse(JSON.stringify(diasCliente())); FICHA.diasAuto=false; } };
     box.querySelectorAll("tr[data-i]").forEach(tr=>{ const i=+tr.dataset.i;
       tr.querySelector(".dn").onchange=e=>{ fija(); FICHA.dias[i].n=e.target.value; };
-      tr.querySelectorAll(".da").forEach(inp=>inp.onchange=e=>{ fija(); const v=Math.round((+String(e.target.value).replace(",","."))*2)/2||0; if(v) FICHA.dias[i].aj[e.target.dataset.c]=v; else delete FICHA.dias[i].aj[e.target.dataset.c]; pintarDias(); });
-      const cb=tr.querySelector(".db"); if(cb) cb.onchange=()=>{ fija(); FICHA.dias[i].batido=cb.checked; pintarDias(); }; });
-    if($("p_batg")) $("p_batg").onchange=e=>{ FICHA.batidoG=Math.max(0,Math.round(+e.target.value)||0); pintarDias(); };
+      const tot=()=>{ const d=FICHA.dias[i], ex=extraDia(d); tr.querySelector(".dt").innerHTML=`<b>${ex>=0?"+":"−"}${Math.abs(ex)}</b><small>${kc+ex} kcal</small>`;
+        const n=box.querySelector(".dauto"); if(n) n.remove(); };
+      tr.querySelectorAll(".da").forEach(inp=>inp.onchange=e=>{ fija(); const v=Math.round((+String(e.target.value).replace(",","."))*2)/2||0; if(v) FICHA.dias[i].aj[e.target.dataset.c]=v; else delete FICHA.dias[i].aj[e.target.dataset.c]; tot(); });
+      const cb=tr.querySelector(".db"); if(cb) cb.onchange=()=>{ fija(); FICHA.dias[i].batido=cb.checked; tot(); }; });
+    if($("p_batg")) $("p_batg").onchange=e=>{ FICHA.batidoG=Math.max(0,Math.round(+e.target.value)||0); box.querySelectorAll("tr[data-i]").forEach(tr=>{ const d=diasCliente()[+tr.dataset.i]; const ex=extraDia(d); tr.querySelector(".dt").innerHTML=`<b>${ex>=0?"+":"−"}${Math.abs(ex)}</b><small>${kc+ex} kcal</small>`; }); const sm=e.target.parentNode.querySelector("small"); if(sm) sm.textContent=`≈${kcalBatido()} kcal, con agua, al acabar de entrenar.`; };
     if($("p_dauto")) $("p_dauto").onclick=()=>{ FICHA.diasAuto=true; FICHA.dias=[]; pintarDias(); };
     if($("p_dreloj")) $("p_dreloj").onclick=()=>{ fija(); const med=E.kcalMedia||E.kcalDesc, {pre,post}=prePost();
       const pon=(id,kcal)=>{ const d=FICHA.dias.find(x=>x.id===id); if(!d||!kcal) return; const r=Math.round((kcal-med)/RACION_HC*2)/2; d.aj={};
@@ -1263,7 +1278,7 @@ function panel(){
   $("p_pedir").onchange=()=>{ FICHA.pedirAlimentos=$("p_pedir").checked; };
   pintarAlim();
   $("p_restr").addEventListener("click",()=>setTimeout(pintarAlim,0));
-  $("addinc").onclick=()=>{INCREMENTOS.push({id:"r"+Date.now(),nombre:"Nueva actividad",def:"",tipo:"hc",destino:"Cena",cant:1});pintarIncs();};
+  $("addinc").onclick=()=>{INCREMENTOS.push({id:"r"+Date.now(),nombre:"Nuevo día fuera de lo común",def:"",tipo:"hc",destino:"Cena",cant:0,aj:{},precama:false});pintarIncs();};
   const valido=()=>{leer();
     if(!FICHA.nombre.trim()){ $("p_nombre").focus(); $("saveres").innerHTML=`<p class="warn">Falta el nombre del cliente.</p>`; return false; }
     if(!/^[A-Z0-9-]{3,20}$/.test($("p_codigo").value.trim().toUpperCase())){ $("p_codigo").focus(); $("saveres").innerHTML=`<p class="warn">El código debe tener entre 3 y 20 letras o números, sin espacios.</p>`; return false; }
@@ -1863,21 +1878,20 @@ function ajusteDia(sel){
   }
   const porComida={}; let precama=false;
   sel.forEach(r=>{
-    if(r.tipo==="toma"){precama=true;return;}
-    if(r.destino.startsWith("Comida + cena")){porComida["Comida"]=(porComida["Comida"]||0)+r.cant/2;porComida["Cena"]=(porComida["Cena"]||0)+r.cant/2;}
-    else porComida[r.destino]=(porComida[r.destino]||0)+r.cant;
+    if(incPrecama(r)) precama=true;
+    Object.entries(incAj(r)).forEach(([c,v])=>{ if(+v) porComida[c]=(porComida[c]||0)+(+v); });
   });
   if(precama && FICHA.comidas.includes("Pre-cama")) precama=false; // ya lo tiene cada día
   const totalR=Object.values(porComida).reduce((a,b)=>a+b,0);
   if(!totalR && !precama){bot(`Hoy <b>sigue tu dieta tal cual</b> (${kcalObj()} kcal): tu pre-cama ya está incluido cada día.`);opts([]);return;}
   const extra=Math.round(totalR*RACION_HC)+(precama?KCAL_PRECAMA:0);
   let h=`💪 <b>Tu ajuste de hoy</b> (+${extra} kcal → ${kcalObj()+extra} kcal en total)`;
-  DESTINOS.forEach(d=>{const r=porComida[d];if(!r)return;
-    h+=`<div class="plate"><div><span>${esc(d)}</span><span><b>+${fr(r)} ${r>1?"raciones":"ración"} de hidratos</b> (≈${Math.round(r*RACION_HC)} kcal)</span></div></div><span class="note">Por ejemplo, añade:</span><ul>${ejemplosHC(r).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;});
+  TODAS_COMIDAS.forEach(d=>{const r=porComida[d];if(!r)return;
+    h+=`<div class="plate"><div><span>${esc(d)}</span><span><b>+${fr(r)} ${r>1?"raciones":"ración"} de hidratos</b> (≈${Math.round(r*RACION_HC)} kcal)</span></div></div><span class="note">Por ejemplo, añade:</span><ul>${ejemplosComida(d,r).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;});
   if(precama) h+=`<div class="plate"><div><span>Pre-cama</span><span><b>Hoy te toca</b> (≈${KCAL_PRECAMA} kcal)</span></div></div><ul>${GRUPOS.precama.opciones.map(o=>`<li>${esc(o)}</li>`).join("")}</ul>`;
   h+=`<span class="note">Cualquier hidrato de tu tabla vale: mismas raciones, el que prefieras.</span>`;
   bot(h);
-  opts(DESTINOS.filter(d=>porComida[d]).map(d=>{const r=porComida[d];return {t:`📊 Todas las opciones: +${fr(r)} en ${d.toLowerCase()}`, f:()=>tablaHC(r,`Añade en ${d.toLowerCase()}: +${fr(r)} ${r>1?"raciones":"ración"} de hidratos`)}}));
+  opts(TODAS_COMIDAS.filter(d=>porComida[d]).map(d=>{const r=porComida[d];return {t:`📊 Todas las opciones: +${fr(r)} en ${d.toLowerCase()}`, f:()=>tablaHC(r,`Añade en ${d.toLowerCase()}: +${fr(r)} ${r>1?"raciones":"ración"} de hidratos`)}}));
 }
 
 /* --- Cambio de horario de entreno (solo para hoy) --- */
@@ -2058,7 +2072,8 @@ function eventoHoy(tipo,cuando){
   bot(h);
   const larga=INCREMENTOS.find(r=>r.id==="c_larga");
   // si es por la tarde, la comida ya ha pasado: todo el incremento va a la cena
-  const inc = larga && cuando==="tarde" ? {...larga, destino:"Cena"} : larga;
+  // si es por la tarde, lo de las comidas que ya han pasado va a la cena
+  const inc = larga && cuando==="tarde" ? (()=>{ const a={...incAj(larga)}, ya=["Desayuno","Segundo desayuno","Comida"]; let m=0; ya.forEach(c=>{ if(a[c]){ m+=a[c]; delete a[c]; } }); if(m) a.Cena=(a.Cena||0)+m; return {...larga, aj:a}; })() : larga;
   opts([{t:"🥤 Qué tomar durante el entreno", f:intraInicio}, ...(inc?[{t:"🍽️ Ver mi ajuste después de la tirada", f:()=>ajusteDia([inc])}]:[])]);
 }
 
@@ -2093,7 +2108,7 @@ function intraPrio(dep,h,k){
 function intraPlan(dep,h,k,prio){
   const gasto = k || Math.round(KCAL_HORA[dep]*h/50)*50;
   const larga = INCREMENTOS.find(r=>r.id==="c_larga");
-  const post = h>=1.5 && larga ? Math.round(larga.cant*RACION_HC) : 0;
+  const post = h>=1.5 && larga ? Math.round(incTotal(larga)*RACION_HC) : 0;
   const horasToma = Math.max(0, h-0.5); // se empieza a tomar a los 30–45 min
   let gh=0, porque="";
   if(h<1.25){ gh=0; }
@@ -2127,7 +2142,7 @@ function intraPlan(dep,h,k,prio){
     }
     m+=`<span class="note">💡 <b>Por qué no conviene llegar con un déficit enorme:</b> después de un entreno largo sin comer nada, el hambre se dispara y es fácil acabar comiendo mucho más de lo que has gastado. Con un déficit moderado sigues perdiendo grasa y llegas a casa con un hambre normal.</span>`;
   }
-  if(post) m+=`\n<span class="note">Ya está contado tu ajuste normal de tirada larga (+${fr(larga.cant)} raciones de hidratos después).</span>`;
+  if(post) m+=`\n<span class="note">Ya está contado tu ajuste normal de tirada larga (+${fr(incTotal(larga))} raciones de hidratos después).</span>`;
   bot(m);
   const b=[];
   if(post) b.push({t:"🍽️ Ver mi ajuste de después",f:()=>ajusteDia([larga])});
