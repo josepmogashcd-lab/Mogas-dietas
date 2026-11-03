@@ -356,10 +356,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.28.0"></script>
-<script src="i18n-vs.js?v=2.28.0"></script>
-<script src="i18n-alim.js?v=2.28.0"></script>
-<script src="recetas-esp.js?v=2.28.0"></script>
+<script src="i18n.js?v=2.29.0"></script>
+<script src="i18n-vs.js?v=2.29.0"></script>
+<script src="i18n-alim.js?v=2.29.0"></script>
+<script src="recetas-esp.js?v=2.29.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -895,7 +895,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.28.0";
+const APP_VERSION = "2.29.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1139,7 +1139,7 @@ const store = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 const misClientes = () => store.get("mogas-panel-clientes") || {};
-function guardarCliente(){ const all=misClientes(); all[FICHA.codigo]={...datosActuales(), e:{...ENTREVISTA}, fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
+function guardarCliente(){ const all=misClientes(); all[FICHA.codigo]={...(all[FICHA.codigo]||{}), ...datosActuales(), e:{...ENTREVISTA}, fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
 async function enlaceCliente(){ return location.origin + location.pathname + "#d=" + await empaquetar(datosActuales()); }
 
 
@@ -1652,6 +1652,89 @@ async function alimImportar(texto){
   return {ok:true, msg:`✅ Recibidos los alimentos de ${cli.f.nombre||c}: ${cli.f.noGusta.length} que no le gustan y ${cli.f.intolAlim.length} con intolerancia. Ya están en su ficha. Guarda y envíale el enlace nuevo de su dieta.`, codigo:c};
 }
 
+
+/* =========== GOOGLE DRIVE DEL NUTRICIONISTA ===========
+   Cada cliente tiene su carpeta (nombre y apellidos) dentro de «MOGAS · Clientes»:
+   la dieta en Word, la dieta en Google Docs (editable), la dieta en PDF y el resumen de la entrevista.
+   Permiso «drive.file»: la app solo ve las carpetas y archivos que crea ella. */
+const GDRIVE = { clientId: "", raiz: "MOGAS · Clientes" };   // clientId: ID de cliente OAuth de Google Cloud (no es secreto)
+const gOn = () => !!GDRIVE.clientId;
+let GTOKEN=null, GEXP=0, GTC=null;
+function gLoad(){ return new Promise((res,rej)=>{ if(window.google&&google.accounts&&google.accounts.oauth2) return res();
+  const sc=document.createElement("script"); sc.src="https://accounts.google.com/gsi/client"; sc.onload=()=>res(); sc.onerror=()=>rej(new Error("No se ha podido cargar Google")); document.head.appendChild(sc); }); }
+function gToken(interactivo=true){
+  if(GTOKEN && Date.now()<GEXP-60000) return Promise.resolve(GTOKEN);
+  return gLoad().then(()=>new Promise((res,rej)=>{
+    GTC=google.accounts.oauth2.initTokenClient({client_id:GDRIVE.clientId, scope:"https://www.googleapis.com/auth/drive.file", prompt:store.get("mogas-gdrive-ok")?"":"consent",
+      callback:r=>{ if(r.error) return rej(new Error(r.error)); GTOKEN=r.access_token; GEXP=Date.now()+r.expires_in*1000; store.set("mogas-gdrive-ok",1); res(GTOKEN); },
+      error_callback:e=>rej(new Error(e&&e.type==="popup_closed"?"Has cerrado la ventana de Google":"No se ha podido conectar con Google")) });
+    GTC.requestAccessToken(); }));
+}
+async function gApi(url,{method="GET",body,headers={},raw}={}){
+  const t=await gToken(); const r=await fetch(url.startsWith("http")?url:"https://www.googleapis.com/drive/v3/"+url,{method,body,headers:{Authorization:"Bearer "+t,...headers}});
+  if(!r.ok){ const tx=await r.text(); throw new Error(`Google Drive ${r.status}: ${tx.slice(0,160)}`); }
+  return raw ? r : (r.status===204 ? null : r.json());
+}
+const gq = s => String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+async function gBuscar(nombre,padre,mime){ const q=`name='${gq(nombre)}' and '${padre}' in parents and trashed=false`+(mime?` and mimeType='${mime}'`:"");
+  const j=await gApi("files?q="+encodeURIComponent(q)+"&fields=files(id,name,webViewLink)"); return (j.files||[])[0]||null; }
+async function gCarpeta(nombre,padre){ const f=await gBuscar(nombre,padre,"application/vnd.google-apps.folder"); if(f) return f;
+  return gApi("files?fields=id,name,webViewLink",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:nombre,mimeType:"application/vnd.google-apps.folder",parents:[padre]})}); }
+async function gRaiz(){
+  const id=store.get("mogas-gdrive-raiz");
+  if(id){ try{ const f=await gApi(`files/${id}?fields=id,name,webViewLink,trashed`); if(!f.trashed) return f; }catch(e){} }
+  const f=await gCarpeta(GDRIVE.raiz,"root"); store.set("mogas-gdrive-raiz",f.id); return f;
+}
+/* sube (o sustituye) un archivo; destino = tipo de Google al que convertir (p. ej. Google Docs) */
+async function gSubir(nombre,padre,blob,mime,destino){
+  const ya=await gBuscar(nombre,padre); if(ya) await gApi(`files/${ya.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({trashed:true})});
+  const fd=new FormData(); fd.append("metadata",new Blob([JSON.stringify({name:nombre,mimeType:destino||mime,parents:[padre]})],{type:"application/json"})); fd.append("file",new Blob([blob],{type:mime}));
+  return gApi("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",{method:"POST",body:fd});
+}
+const DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+/* resumen de la entrevista y de la ficha, para verlo todo de un vistazo */
+function resumenEntrevistaHTML(){
+  const E=ENTREVISTA||{}, c=calculo(), R=reparto(), cs=[...FICHA.comidas].sort((a,b)=>POS[a]-POS[b]);
+  const edad = E.nac ? Math.floor((Date.now()-new Date(E.nac))/(365.25*864e5)) : null;
+  const fila=(k,v)=> v===undefined||v===null||v===""||(Array.isArray(v)&&!v.length) ? "" : `<tr><td style="padding:4px 10px 4px 0;color:#657e52;font-weight:600;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0">${Array.isArray(v)?v.map(esc).join(", "):esc(String(v))}</td></tr>`;
+  const tabla=(t,filas)=>{ const f=filas.join(""); return f?`<h2 style="color:#657e52;font-size:15px;margin:18px 0 6px;border-bottom:2px solid #93b482">${esc(t)}</h2><table style="border-collapse:collapse;font-size:12px">${f}</table>`:""; };
+  const P=["Comida","Cena"].filter(x=>FICHA.comidas.includes(x)).map(x=>FICHA.peso>0?platoPrincipal(x):null).filter(Boolean);
+  const protDia = FICHA.peso>0 ? Math.round(FICHA.comidas.filter(x=>x!=="Comida"&&x!=="Cena").reduce((a,x)=>a+protComida(x),0)+P.reduce((a,p)=>a+p.prot,0)) : null;
+  const atr={no:"No",aveces:"A veces",si:"Sí, a menudo"}[E.atracon]||"";
+  const D=diasCliente();
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Montserrat,Arial,sans-serif;color:#333">
+<h1 style="color:#657e52;font-size:20px;margin:0 0 4px">Resumen de la entrevista · ${esc(FICHA.nombre)}</h1>
+<p style="color:#888;font-size:11px;margin:0 0 10px">MOGAS · Nutrició i Entrenament · ${esc(E.fecha||new Date().toISOString().slice(0,10))} · Código ${esc(FICHA.codigo)}</p>
+${tabla("Datos",[fila("Perfil",PERFILES[FICHA.perfil]&&PERFILES[FICHA.perfil].t),fila("Sexo",FICHA.sexo),fila("Edad",edad!=null?edad+" años":""),fila("Altura",E.altura?E.altura+" cm":""),fila("Peso",FICHA.peso?String(FICHA.peso).replace(".",",")+" kg":""),fila("Fuma",FICHA.fumador?"Sí":""),fila("Entrenos por semana",FICHA.entrenosSemana),fila("Pasos",`${FICHA.pasosMedia?`media actual ${fmtN(FICHA.pasosMedia)} · `:""}objetivo ${fmtN(FICHA.pasosObjetivo||0)}`)])}
+${tabla("Calorías y proteína",[fila("TMB",FICHA.tmb+" kcal"),fila("Factor de actividad",String(FICHA.factor).replace(".",",")),fila("Mantenimiento",c.mant+" kcal"),fila(c.signo<0?"Déficit":c.signo>0?"Superávit":"Ajuste",c.signo?FICHA.ajuste+" kcal":"—"),fila("Objetivo diario",kcalObj()+" kcal"),fila("Proteína",protDia?`${protDia} g/día (${(protDia/FICHA.peso).toFixed(1).replace(".",",")} g/kg)`:"")])}
+${tabla("Comidas y horarios",cs.map(x=>fila(x,`${franja(x)?franja(x)+" · ":""}${R[x]}% · ${kcalComida(x)} kcal`)).concat([fila("Entreno",ENTRENOS[FICHA.entreno]&&ENTRENOS[FICHA.entreno].t),fila("Más hambre",HAMBRE[FICHA.hambre]),fila("Sin hambre al levantarse",FICHA.sinHambreManana?"Sí":""),fila("Cena sin hidratos",FICHA.cenaSinHC?"Sí":""),fila("Integrales",{si:"Sí",no:"No"}[FICHA.integrales]||"Según el perfil")]))}
+${D.length?tabla("Tipos de día",D.map(d=>fila(d.n.replace(/^\S+\s/,""),`${Object.entries(d.aj).map(([k,v])=>`${k} ${v>0?"+":"−"}${String(Math.abs(v)).replace(".",",")}`).join(" · ")||"igual"}${d.batido?" · batido":""} → ${kcalObj()+extraDia(d)} kcal`))):""}
+${tabla("Intolerancias y alimentos",[fila("Intolerancias / dieta",restr().map(r=>r.t)),fila("Otras",FICHA.otrasRestricciones),fila("No le gustan",FICHA.noGusta||[]),fila("Intolerancia o le sientan mal",FICHA.intolAlim||[])])}
+${tabla("Salud",[fila("Analíticas",E.analitica),fila("Medicación",E.medicacion)])}
+${tabla("Hábitos",[fila("Atracones",atr),fila("Momento",E.atrMomento),fila("Con qué alimentos",E.atrAlimentos)])}
+${tabla("Compra",[fila("Supermercado habitual",E.super),fila("Supermercado secundario",E.super2),fila("Notas",E.superOtro)])}
+${E.texto&&E.texto.trim()?`<h2 style="color:#657e52;font-size:15px;margin:18px 0 6px;border-bottom:2px solid #93b482">Observaciones</h2><p style="font-size:12px;white-space:pre-wrap">${esc(E.texto)}</p>`:""}
+</body></html>`;
+}
+/* crea o actualiza la carpeta del cliente con sus 4 archivos */
+async function guardarEnDrive(out){
+  const nombre=(FICHA.nombre||FICHA.codigo).trim(), say=t=>{ if(out) out.innerHTML=`<p class="note">${t}</p>`; };
+  say("📁 Conectando con Google Drive…"); await gToken();
+  const raiz=await gRaiz(); say("📁 Creando la carpeta del cliente…");
+  const dir=await gCarpeta(nombre,raiz.id);
+  const titulo=dietaParaDoc().titulo, base=`Dieta ${nombre}`;
+  say("📄 Generando la dieta…"); const bytes=await docxBytes();
+  await gSubir(`${base}.docx`,dir.id,bytes,DOCX_MIME);
+  const gdoc=await gSubir(`${base} (editable)`,dir.id,bytes,DOCX_MIME,"application/vnd.google-apps.document");
+  say("📄 Creando el PDF…"); const pdf=await (await gApi(`files/${gdoc.id}/export?mimeType=application/pdf`,{raw:true})).blob();
+  await gSubir(`${base}.pdf`,dir.id,pdf,"application/pdf");
+  say("📝 Creando el resumen de la entrevista…");
+  await gSubir(`Resumen de la entrevista ${nombre}`,dir.id,new Blob([resumenEntrevistaHTML()],{type:"text/html"}),"text/html","application/vnd.google-apps.document");
+  const all=misClientes(); if(all[FICHA.codigo]){ all[FICHA.codigo].drive={id:dir.id,url:dir.webViewLink,fecha:new Date().toISOString().slice(0,10)}; store.set("mogas-panel-clientes",all); }
+  if(out) out.innerHTML=`<p class="ok">✅ Guardado en Google Drive: carpeta «${esc(nombre)}» con la dieta en Word, editable y PDF, y el resumen de la entrevista.</p><a class="doclink" href="${esc(dir.webViewLink)}" target="_blank" rel="noopener">📁 Abrir la carpeta de ${esc(nombre)}</a>`;
+  return dir;
+}
+
 /* =========== PANEL DEL NUTRICIONISTA =========== */
 function panel(){
   if(!FICHA.integrales && (ENTREVISTA.integrales==="si"||ENTREVISTA.integrales==="no")) FICHA.integrales=ENTREVISTA.integrales;
@@ -1761,7 +1844,7 @@ function panel(){
         <label class="check"><input type="checkbox" id="p_intest" ${FICHA.intestinoEntrenado?"checked":""}> Tiene el intestino entrenado (tolera más de 90 g/h)</label>
         <p class="note">El cliente puede cambiar la prioridad en cada entreno desde el chat (por ejemplo, rendimiento el día de carrera).</p>
       </details>
-      <div class="actions"><div id="saveres"></div><button id="save">💾 Guardar y crear enlace para el cliente</button><button id="preview" class="doc">👀 Ver como cliente</button><button id="gendoc" class="doc">📄 Generar dieta (documento Word / Google Docs)</button><div id="docres" class="docres"></div></div>
+      <div class="actions"><div id="saveres"></div><button id="save">💾 Guardar y crear enlace para el cliente</button><button id="preview" class="doc">👀 Ver como cliente</button><button id="gdrive" class="doc">📁 Guardar en Google Drive (carpeta del cliente)</button><div id="gdres" class="docres"></div><button id="gendoc" class="doc">📄 Descargar la dieta en Word</button><div id="docres" class="docres"></div></div>
     </div>`;
   const $=id=>document.getElementById(id);
   const leerE=()=>{ FICHA.integrales=$("p_integ").value;
@@ -1922,6 +2005,7 @@ function panel(){
       else { $("save").disabled=true; try{ const tk=await nubeCliente(); if(tk) FICHA.token=tk; else nubeMsg=`<p class="warn">⚠️ Tu sesión ha caducado: vuelve a entrar en la base de datos y guarda otra vez.</p>`; }
         catch(e){ nubeMsg=`<p class="warn">⚠️ No se ha podido registrar en la base de datos (${esc(e.message)}). Inténtalo otra vez.</p>`; } $("save").disabled=false; } }
     guardarCliente();
+    if(gOn() && store.get("mogas-gdrive-ok")) guardarEnDrive($("gdres")).catch(e=>{ $("gdres").innerHTML=`<p class="warn">No se ha podido guardar en Google Drive: ${esc(e.message)}. Pulsa «Guardar en Google Drive» para reintentarlo.</p>`; });
     const url=await enlaceCliente();
     $("saveres").innerHTML=`<div class="linkbox"><p class="ok">✅ Guardado. Envía este enlace a ${esc(FICHA.nombre)}:</p>
       <input readonly id="linkurl" value="${esc(url)}">
@@ -1940,6 +2024,12 @@ function panel(){
     const ta=$("p_etexto"); ta.value = ta.value.trim() ? ta.value.trim()+"\n\n"+t : t; if(!$("p_efecha").value) $("p_efecha").value=new Date().toISOString().slice(0,10); leerE(); e.target.value=""; };
   leerE();
   $("gendoc").onclick=()=>{leer(); generarDoc($("gendoc"),$("docres"));};
+  $("gdrive").onclick=async()=>{ if(!valido()) return;
+    if(!gOn()){ $("gdres").innerHTML=`<p class="warn">Falta conectar la app con tu Google Drive (un ID de Google Cloud). Pídeselo a Claude: es un paso que solo se hace una vez.</p>`; return; }
+    const b=$("gdrive"); b.disabled=true; const tk=gToken().catch(e=>e);   // pedir permiso dentro del clic
+    try{ const r=await tk; if(r instanceof Error) throw r; guardarCliente(); await guardarEnDrive($("gdres")); }
+    catch(e){ $("gdres").innerHTML=`<p class="warn">No se ha podido guardar en Google Drive: ${esc(e.message)}</p>`; }
+    b.disabled=false; };
   pintarCalc();pintarRep();pintarIncs();
 }
 
@@ -1954,7 +2044,7 @@ function panelInicio(aviso){
       <section><button id="nuevo" class="big">➕ Nuevo cliente</button></section>
       <section id="pvs"></section>
       <section><h2>Clientes guardados en este dispositivo</h2>
-        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}${all[c].e&&all[c].e.texto&&all[c].e.texto.trim()?" · 📝 entrevista":""}${all[c].alimRecibido?` · 🥦 alimentos recibidos ${esc(all[c].alimRecibido)}`:all[c].f&&all[c].f.pedirAlimentos?" · 🥦 esperando sus alimentos":""}</small></div>
+        ${cods.length?cods.map(c=>`<div class="cli"><div><b>${esc(all[c].f.nombre||c)}</b><small>Código ${esc(c)} · ${esc(all[c].fecha||"")}${all[c].e&&all[c].e.texto&&all[c].e.texto.trim()?" · 📝 entrevista":""}${all[c].drive?` · <a href="${esc(all[c].drive.url)}" target="_blank" rel="noopener">📁 Drive</a>`:""}${all[c].alimRecibido?` · 🥦 alimentos recibidos ${esc(all[c].alimRecibido)}`:all[c].f&&all[c].f.pedirAlimentos?" · 🥦 esperando sus alimentos":""}</small></div>
           <button type="button" data-a="ed" data-c="${esc(c)}">Editar</button><button type="button" class="x" data-a="del" data-c="${esc(c)}" title="Borrar">✕</button></div>`).join("")
           :`<p class="note">Aún no has creado ningún cliente.</p>`}
       </section>
