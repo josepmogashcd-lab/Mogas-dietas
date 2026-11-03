@@ -356,10 +356,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.30.0"></script>
-<script src="i18n-vs.js?v=2.30.0"></script>
-<script src="i18n-alim.js?v=2.30.0"></script>
-<script src="recetas-esp.js?v=2.30.0"></script>
+<script src="i18n.js?v=2.31.0"></script>
+<script src="i18n-vs.js?v=2.31.0"></script>
+<script src="i18n-alim.js?v=2.31.0"></script>
+<script src="recetas-esp.js?v=2.31.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -531,7 +531,8 @@ const FICHA = {
   dias: [],           // tipos de día (fitness / resistencia): [{id,n,aj:{comida:raciones},batido}]
   diasAuto: true,     // true = los tipos de día se generan solos según perfil y comidas
   batidoG: 30,        // gramos de proteína en polvo del batido post-entreno (siempre 30 g)
-  batidoPost: false,  // batido post-entreno en su dieta base (perfiles sin tipos de día; en fitness se marca por tipo de día)
+  suplementos: null,  // quiere suplementación: true | false | null (= sí en fitness, no en el resto)
+  batidoPost: null,   // batido post-entreno en su dieta base (null = sí si toma suplementación; en fitness se marca por tipo de día)
   batidoLiq: "auto",  // con qué se mezcla: auto (según objetivo) | agua | almendras | desnatada | entera
   batidoMl: 300,      // ml de líquido del batido
   recetas: {},        // {comida:[ids]} desayunos/meriendas elegidos; si falta la comida, se eligen solos
@@ -737,7 +738,8 @@ function diasDefecto(){
       aj[c]=(aj[c]||0)+v; });
     return {id:d.id, n:d.n, aj, batido: esFitness() ? !!d.batido : false}; });
 }
-const diasCliente = () => conTiposDia() ? ((FICHA.dias&&FICHA.dias.length&&!FICHA.diasAuto) ? FICHA.dias : diasDefecto()) : [];
+const diasCliente = () => { if(!conTiposDia()) return []; const L=(FICHA.dias&&FICHA.dias.length&&!FICHA.diasAuto) ? FICHA.dias : diasDefecto();
+  return conSuple() ? L : L.map(d=>({...d, batido:false})); };   // sin suplementación, ningún día lleva batido
 /* Batido post-entreno: 30 g de proteína. Definición: agua (o, si caben más kcal, bebida de almendras o leche desnatada).
    Volumen: leche entera o bebida de avena, de avellanas y arroz o de coco. Mantenimiento: leche desnatada. */
 const BATIDO_LIQ = {
@@ -749,7 +751,10 @@ const kcalBatido = () => Math.round(((FICHA.batidoG||0)*KCAL_BATIDO_G + batidoMl
 const batidoTxt = () => `${FICHA.batidoG||30} g de proteína en polvo + ${batidoMl()} ml de ${BATIDO_LIQ[batidoLiqId()].t}`;
 const entrena = () => FICHA.entreno && ENTRENOS[FICHA.entreno] && ENTRENOS[FICHA.entreno].pos!==null;
 /* en la dieta base (no fitness) el batido va incluido en las kcal del día: las comidas se reparten lo que queda */
-const batidoBase = () => (!esFitness() && FICHA.batidoPost && entrena()) ? kcalBatido() : 0;
+const conSuple = () => FICHA.suplementos ?? esFitness();
+const SUPLE = ["proteina","cremaArroz","cacPolvo"];   // ingredientes de suplementación
+const batidoOn = () => conSuple() && (FICHA.batidoPost ?? true);
+const batidoBase = () => (!esFitness() && batidoOn() && entrena()) ? kcalBatido() : 0;
 const kcalMenus = () => kcalObj() - batidoBase();
 const extraDia = d => Math.round(Object.values(d.aj||{}).reduce((a,b)=>a+b,0)*RACION_HC) + (d.batido?kcalBatido():0);
 const franja = c => { const f=(FICHA.franjas||{})[c]; return f&&f[0]&&f[1] ? `${f[0]}–${f[1]}` : f&&f[0] ? f[0] : ""; };
@@ -886,7 +891,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.30.0";
+const APP_VERSION = "2.31.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -990,6 +995,7 @@ function dietaParaDoc(){
   const datos=[...(PERFILES[FICHA.perfil]?[["Perfil:",PERFILES[FICHA.perfil].t]]:[]),["TMB=",`${FICHA.tmb} Kcal`],["Factor de actividad=",String(FICHA.factor).replace(".",",")],["Kcal Totales Mantenimiento:",`${c.mant} Kcal`]];
   if(c.signo) datos.push([c.signo<0?"Déficit calórico=":"Superávit calórico=",`${c.signo<0?"-":"+"}${FICHA.ajuste} Kcal`]);
   datos.push(["Total Kcal Objetivo=",String(kc)]);
+  datos.push(["Suplementación:",conSuple()?"Sí":"No"]);
   if(restr().length||FICHA.otrasRestricciones) datos.push(["Adaptada a:",[...restr().map(r=>r.t.toLowerCase()),FICHA.otrasRestricciones].filter(Boolean).join(", ")]);
   const cajas=[[{k:"h",t:"Equivalencia de fruta:",first:true},{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" / ")}]];
   // Cafés + desayuno / segundo desayuno
@@ -1318,12 +1324,16 @@ function lineaIng(id,q){ const g=ING[id]; if(g.fijo) return g.es;
   if(id==="platano"){ const p=PLATANO.find(x=>x[0]===q); if(p) return p[1]; }
   if(g.u==="ud") return `${q} ${q===1?g.es:(g.es2||g.es)}`;
   return `${q} ${g.u} de ${g.es}`; }
-const recetaOk = r => !r.i.some(([id])=>prohibido(ING[id].es)) && !prohibido(r.n);
+const llevaSuple = r => r.i.some(([id])=>SUPLE.includes(id));
+const recetaOk = r => !r.i.some(([id])=>prohibido(ING[id].es)) && !prohibido(r.n) && (conSuple() || !llevaSuple(r));
 /* recetas de una comida: las que ha elegido el nutricionista o, si no ha elegido, las que mejor encajan con sus kcal */
 function recetasPara(comida, T){
   const sel=(FICHA.recetas||{})[comida];
   if(Array.isArray(sel)) return sel.map(id=>RECETA[id]).filter(Boolean).filter(recetaOk);
-  return RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.6&&x.f<=1.7).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).slice(0,3).map(x=>x.r);
+  const C=RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.6&&x.f<=1.7).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).map(x=>x.r);
+  const top=C.slice(0,3);
+  if(conSuple() && top.length===3 && !top.some(llevaSuple)){ const s=C.find(llevaSuple); if(s) top[2]=s; }
+  return top;
 }
 const kcalComida = c => { const R=reparto(); return FICHA.comidas.includes(c) ? Math.round(kcalMenus()*R[c]/1000)*10 : 0; };
 function recetaHTML(r, T){ const e=escalar(r,T);
@@ -1637,6 +1647,8 @@ function panel(){
     <div class="panel notr">
       <section class="perfil"><h2>Perfil del cliente</h2>
         <div class="pcards" id="p_perfil">${Object.entries(PERFILES).map(([k,v])=>`<button type="button" class="pcard${FICHA.perfil===k?" on":""}" data-p="${k}"><span class="pi">${v.ico}</span><span><b>${esc(v.t)}</b><small>${esc(v.sub)}</small></span></button>`).join("")}</div>
+        <div class="chips" id="p_suple"><button type="button" class="chip${conSuple()?" on":""}" data-s="1">💊 Con suplementación</button><button type="button" class="chip${conSuple()?"":" on"}" data-s="0">Sin suplementación</button></div>
+        <p class="note">Con suplementación: batido post-entreno (30 g de proteína) y opciones con proteína en polvo o crema de arroz ya marcadas. Sin suplementación no salen.</p>
       </section>
       <section><h2>1. Datos del cliente</h2>
         <label>Nombre<input id="p_nombre" value="${esc(FICHA.nombre)}"></label>
@@ -1777,10 +1789,12 @@ function panel(){
       const pc=tr.querySelector(".ipc"); if(pc) pc.onchange=()=>{ r.precama=pc.checked; tot(); };
       tr.querySelector(".del").onclick=()=>{ INCREMENTOS.splice(+tr.dataset.i,1); pintarIncs(); }; }); };
   const pintarBat=()=>{ const box=$("p_batbox"); if(!box) return;
+    if($("p_suple")) $("p_suple").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",(x.dataset.s==="1")===conSuple()));
     if(!entrena()){ box.innerHTML=""; return; }
+    if(!conSuple()){ box.innerHTML=`<p class="note">Sin suplementación: no lleva batido post-entreno.</p>`; return; }
     const liqs=["auto",...Object.keys(BATIDO_LIQ)], auto=BATIDO_LIQ[(()=>{const v=FICHA.batidoLiq; FICHA.batidoLiq="auto"; const r=batidoLiqId(); FICHA.batidoLiq=v; return r;})()].t;
-    box.innerHTML=`${esFitness()?`<p class="note">🥤 El batido post-entreno se marca en los <b>tipos de día</b> (columna «Batido»).</p>`:`<label class="check"><input type="checkbox" id="p_bat" ${FICHA.batidoPost?"checked":""}> Batido post-entreno al acabar de entrenar (${FICHA.batidoG||30} g de proteína)</label>`}
-      ${esFitness()||FICHA.batidoPost?`<div class="drow"><label>Mezclado con${sel("p_batliq",liqs,FICHA.batidoLiq||"auto",liqs.map(k=>k==="auto"?`Según objetivo (${auto})`:BATIDO_LIQ[k].t.charAt(0).toUpperCase()+BATIDO_LIQ[k].t.slice(1)))}</label>
+    box.innerHTML=`${esFitness()?`<p class="note">🥤 El batido post-entreno se marca en los <b>tipos de día</b> (columna «Batido»).</p>`:`<label class="check"><input type="checkbox" id="p_bat" ${batidoOn()?"checked":""}> Batido post-entreno al acabar de entrenar (${FICHA.batidoG||30} g de proteína)</label>`}
+      ${esFitness()||batidoOn()?`<div class="drow"><label>Mezclado con${sel("p_batliq",liqs,FICHA.batidoLiq||"auto",liqs.map(k=>k==="auto"?`Según objetivo (${auto})`:BATIDO_LIQ[k].t.charAt(0).toUpperCase()+BATIDO_LIQ[k].t.slice(1)))}</label>
       <label>ml<input id="p_batml" type="number" inputmode="numeric" step="50" min="150" max="500" value="${batidoMl()}"></label></div>
       <p class="note">≈${kcalBatido()} kcal: ${esc(batidoTxt())}.${!esFitness()?" Va incluido en sus kcal del día: las comidas se reparten el resto.":""}${FICHA.objetivo==="deficit"?" En definición: agua; si caben más kcal, bebida de almendras (15 kcal/100 ml) o leche desnatada.":FICHA.objetivo==="superavit"?" En volumen: leche entera o bebida de avena, de avellanas y arroz o de coco.":""}</p>`:""}`;
     if($("p_bat")) $("p_bat").onchange=e=>{ FICHA.batidoPost=e.target.checked; pintarRep(); };
@@ -1827,9 +1841,9 @@ function panel(){
     const D=diasCliente(), cs=[...FICHA.comidas].sort((a,b)=>POS[a]-POS[b]), kc=kcalObj(), E=ENTREVISTA;
     const rel = E.reloj && (E.kcalMedia||E.kcalDesc) && (E.kcalEnt||E.kcalLargo);
     box.innerHTML=`<p class="note">Su dieta base (${kc} kcal) es su <b>día medio</b>. En cada tipo de día pon las raciones de hidratos que suma (+) o resta (−) en cada comida. 1 ración = ${RACION_HC} kcal. El cliente elige cada día qué día es y le sale su dieta ajustada.</p>
-      <div class="dtab"><table class="rep dias"><tr><th>Tipo de día</th>${cs.map(c=>`<th>${esc(c)}</th>`).join("")}${esFitness()?"<th>Batido</th>":""}<th>Total</th></tr>
-      ${D.map((d,i)=>`<tr data-i="${i}"><td><input class="dn" value="${esc(d.n)}" aria-label="Nombre"></td>${cs.map(c=>`<td><input type="number" class="da" step="0.5" data-c="${esc(c)}" value="${d.aj[c]||""}" placeholder="0"></td>`).join("")}${esFitness()?`<td class="cb"><input type="checkbox" class="db" ${d.batido?"checked":""}></td>`:""}<td class="dt"><b>${extraDia(d)>=0?"+":"−"}${Math.abs(extraDia(d))}</b><small>${kc+extraDia(d)} kcal</small></td></tr>`).join("")}</table></div>
-      ${esFitness()?`<label>Batido post-entreno: proteína en polvo (g)<input id="p_batg" type="number" inputmode="numeric" value="${FICHA.batidoG||30}"><small class="note">≈${kcalBatido()} kcal: ${esc(batidoTxt())}, al acabar de entrenar.</small></label>`:""}
+      <div class="dtab"><table class="rep dias"><tr><th>Tipo de día</th>${cs.map(c=>`<th>${esc(c)}</th>`).join("")}${esFitness()&&conSuple()?"<th>Batido</th>":""}<th>Total</th></tr>
+      ${D.map((d,i)=>`<tr data-i="${i}"><td><input class="dn" value="${esc(d.n)}" aria-label="Nombre"></td>${cs.map(c=>`<td><input type="number" class="da" step="0.5" data-c="${esc(c)}" value="${d.aj[c]||""}" placeholder="0"></td>`).join("")}${esFitness()&&conSuple()?`<td class="cb"><input type="checkbox" class="db" ${d.batido?"checked":""}></td>`:""}<td class="dt"><b>${extraDia(d)>=0?"+":"−"}${Math.abs(extraDia(d))}</b><small>${kc+extraDia(d)} kcal</small></td></tr>`).join("")}</table></div>
+      ${esFitness()&&conSuple()?`<label>Batido post-entreno: proteína en polvo (g)<input id="p_batg" type="number" inputmode="numeric" value="${FICHA.batidoG||30}"><small class="note">≈${kcalBatido()} kcal: ${esc(batidoTxt())}, al acabar de entrenar.</small></label>`:""}
       <div class="drow">${rel?`<button type="button" class="ghost" id="p_dreloj">⌚ Proponer con los datos de su reloj</button>`:""}${FICHA.diasAuto?"":`<button type="button" class="ghost" id="p_dauto">↺ Volver a los valores por defecto</button>`}</div>
       ${FICHA.diasAuto?`<p class="note dauto">Valores por defecto de MOGAS. Si cambias algo, se guarda para este cliente.</p>`:""}`;
     const fija=()=>{ if(FICHA.diasAuto){ FICHA.dias=JSON.parse(JSON.stringify(diasCliente())); FICHA.diasAuto=false; } };
@@ -1859,6 +1873,8 @@ function panel(){
   $("p_pgkg").onchange=e=>{ const v=+String(e.target.value).replace(",","."); FICHA.protGkg = v>=1&&v<=3.5 ? v : 0; pintarCalc(); };
   $("p_csh").onchange=e=>{ FICHA.cenaSinHC=e.target.checked; pintarCalc(); };
   $("p_postre").onchange=e=>{ FICHA.postrePrincipal=e.target.checked; pintarCalc(); };
+  $("p_suple").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ FICHA.suplementos=b.dataset.s==="1"; FICHA.batidoPost=null;
+    $("p_suple").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b)); pintarCalc(); pintarRep(); });
   $("p_perfil").querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{ const k=b.dataset.p, P=PERFILES[k]; if(k===FICHA.perfil) return;
     FICHA.perfil=k; FICHA.objetivo=P.obj; FICHA.ajuste=P.aj; FICHA.diasAuto=true; FICHA.dias=[];
     $("p_obj").value=P.obj; $("p_aj").value=P.aj; $("p_pgkg").placeholder=String(PROT_GKG[k]).replace(".",",")+" (su perfil)";
