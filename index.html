@@ -217,6 +217,9 @@
   .espimg{width:100%;border-radius:12px;display:block;margin-bottom:8px;aspect-ratio:4/3;object-fit:cover}
   .espq{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;margin-top:8px}
   .vegopts{background:var(--brand-2);border-radius:10px;padding:8px 10px;margin:8px 0}.vegopts .check{margin:4px 0}
+  details.psec{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px}
+  details.psec>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px}details.psec>summary::-webkit-details-marker{display:none}
+  details.psec>summary h2{margin:0;font-size:16px}details.psec>summary small{color:var(--muted)}details.psec[open]>summary{margin-bottom:10px}
   .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
   .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
   .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
@@ -353,10 +356,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.26.0"></script>
-<script src="i18n-vs.js?v=2.26.0"></script>
-<script src="i18n-alim.js?v=2.26.0"></script>
-<script src="recetas-esp.js?v=2.26.0"></script>
+<script src="i18n.js?v=2.27.0"></script>
+<script src="i18n-vs.js?v=2.27.0"></script>
+<script src="i18n-alim.js?v=2.27.0"></script>
+<script src="recetas-esp.js?v=2.27.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -533,8 +536,10 @@ const FICHA = {
   cenaSinHC: false,   // cena sin hidratos (lleva un 15 % más de proteína)
   postrePrincipal: true, // postre en comida y cena
   platoAuto: true,    // comida y cena calculadas solas (si hay peso)
-  vegCome: {}         // dieta vegetal: {huevo, lacteos, pescado} lo que sí come
+  vegCome: {},        // dieta vegetal: {huevo, lacteos, pescado} lo que sí come
+  integrales: ""      // "" según perfil · "si" · "no"
 };
+const SUPERS = ["","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo"];
 
 /* ---- REPARTO DE CALORÍAS ENTRE COMIDAS ---- */
 const TODAS_COMIDAS = ["Desayuno","Segundo desayuno","Comida","Merienda","Cena","Pre-cama"];
@@ -865,7 +870,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.26.0";
+const APP_VERSION = "2.27.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1222,7 +1227,7 @@ const recetaOk = r => !r.i.some(([id])=>prohibido(ING[id].es)) && !prohibido(r.n
 function recetasPara(comida, T){
   const sel=(FICHA.recetas||{})[comida];
   if(Array.isArray(sel)) return sel.map(id=>RECETA[id]).filter(Boolean).filter(recetaOk);
-  return RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.6&&x.f<=1.7).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).slice(0,4).map(x=>x.r);
+  return RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.6&&x.f<=1.7).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).slice(0,3).map(x=>x.r);
 }
 const kcalComida = c => { const R=reparto(); return FICHA.comidas.includes(c) ? Math.round(kcalObj()*R[c]/1000)*10 : 0; };
 function recetaHTML(r, T){ const e=escalar(r,T);
@@ -1330,7 +1335,7 @@ const PROT2 = [
 const EXTRAS = ["60 g de aguacate","15 g de frutos secos","20 g de semillas","1 lata de aceitunas rellenas (50 g)","30 g de jamón ibérico","30 g de mayonesa light","100 g de tomate frito","10 g más de AOVE","15 g de chocolate 85%"];
 const KCAL_EXTRA = 90, KCAL_VERD = 60, KCAL_AOVE5 = 45, KCAL_POSTRE = 80;
 const enDeficit = () => FICHA.objetivo==="deficit";
-const integrales = () => enDeficit() && ENTREVISTA_INTEGRALES()!=="no";
+const integrales = () => FICHA.integrales==="si" ? true : FICHA.integrales==="no" ? false : enDeficit();
 function ENTREVISTA_INTEGRALES(){ try{ return (typeof ENTREVISTA!=="undefined" && ENTREVISTA && ENTREVISTA.integrales) || FICHA.integrales || ""; }catch(e){ return FICHA.integrales||""; } }
 function postres(){ return enDeficit()
   ? ["1 pieza de fruta (o 200 g de sandía, melón o piña)","1 yogur desnatado o 1 yogur griego ligero","1 kéfir desnatado","1 yogur proteico desnatado"]
@@ -1346,6 +1351,7 @@ function hcLinea(h,r){
 function hcLista(){
   let L=HC.filter(h=>!h.n.startsWith("Copos") && !prohibido(h.n));
   if(integrales()) L=L.filter(h=>!["Arroz blanco o basmati","Pasta","Pan blanco"].includes(h.n));
+  else L=L.filter(h=>!["Arroz integral","Pasta integral","Pan integral"].includes(h.n));
   return L;
 }
 function platoPrincipal(c){
@@ -1378,7 +1384,9 @@ function platoPrincipal(c){
   const n2 = Math.max(2,Math.min(5,Math.round(prot/10)));
   return {c, T, prot:Math.round(prot), protPedida:Math.round(protPedida), r, incEnt, cenaSinHC,
     hc: r ? hcLista().map(h=>hcLinea(h,r)) : [], hcEnt: incEnt>0 ? hcLista().slice(0,1).map(h=>hcLinea(h,r+incEnt))[0] : "",
-    verd: esFitness()&&FICHA.objetivo==="superavit" ? "100–200 g de verduras crudas, hervidas, al vapor, al horno o en airfryer (sin pasarte de volumen: llenan mucho)." : "200–300 g de verduras a peso: crudas, hervidas, al vapor, al horno o en airfryer. Nunca fritas ni salteadas con aceite.",
+    verd: FICHA.objetivo==="superavit" ? "Mínimo 50–100 g de verduras (crudas, hervidas, al vapor, al horno o en airfryer) para tener vitaminas y minerales. Ojo con la saciedad: no te pases de volumen, que lo importante es que te comas todos los hidratos y toda la proteína."
+      : enDeficit() ? "200–300 g de verduras a peso: crudas, hervidas, al vapor, al horno o en airfryer. Nunca fritas ni salteadas con aceite. La verdura es clave para la saciedad."
+      : "150–250 g de verduras a peso: crudas, hervidas, al vapor, al horno o en airfryer. Nunca fritas ni salteadas con aceite.",
     g1, n2, g2: [...PROT2, ...(vegetal()?PROT2_VEG:[])].filter(o=>!prohibido(o.n)).map(o=>o.n),
     extras: EXTRAS.filter(x=>!prohibido(x)), nExtra, extraEnt: esFitness(),
     postre: conPostre ? [...new Set(postres().filter(x=>!prohibido(x)).map(adaptarTexto))] : null};
@@ -1490,6 +1498,7 @@ async function alimImportar(texto){
 
 /* =========== PANEL DEL NUTRICIONISTA =========== */
 function panel(){
+  if(!FICHA.integrales && (ENTREVISTA.integrales==="si"||ENTREVISTA.integrales==="no")) FICHA.integrales=ENTREVISTA.integrales;
   document.getElementById("app").classList.add("ancho");
   const sel=(id,vals,cur,labels)=>`<select id="${id}">${vals.map((v,i)=>`<option value="${esc(v)}"${String(v)===String(cur)?" selected":""}>${esc(labels?labels[i]:v)}</option>`).join("")}</select>`;
   const factores=[...Array(21)].map((_,i)=>Math.round((1.2+i*0.05)*100)/100);
@@ -1501,57 +1510,12 @@ function panel(){
       <section class="perfil"><h2>Perfil del cliente</h2>
         <div class="pcards" id="p_perfil">${Object.entries(PERFILES).map(([k,v])=>`<button type="button" class="pcard${FICHA.perfil===k?" on":""}" data-p="${k}"><span class="pi">${v.ico}</span><span><b>${esc(v.t)}</b><small>${esc(v.sub)}</small></span></button>`).join("")}</div>
       </section>
-      <section class="entrev"><h2>📝 Entrevista presencial</h2>
-        <p class="note">Todo lo de este bloque se queda en tu panel: el cliente no lo ve ni viaja en su enlace (salvo el peso y la media de pasos, que se usan para sus calorías).</p>
-        <div class="pgrid">
-          <label>Fecha de la entrevista<input id="p_efecha" type="date" value="${esc(ENTREVISTA.fecha||"")}"></label>
-          <label>Fecha de nacimiento<input id="p_nac" type="date" value="${esc(ENTREVISTA.nac||"")}"><small id="p_edad" class="note"></small></label>
-          <label>Altura (cm)<input id="p_alt" type="number" inputmode="numeric" value="${ENTREVISTA.altura||""}"></label>
-          <label>Peso (kg, Tanita)<input id="p_peso" type="number" inputmode="decimal" step="0.1" value="${FICHA.peso||""}"></label>
-        </div>
-        <h3>Salud</h3>
-        <p class="note">Alergias, intolerancias y sensibilidades: márcalas en «1. Datos del cliente» (adaptan la dieta).</p>
-        <label>Parámetros alterados en analíticas<textarea id="p_anal" rows="2" placeholder="p. ej. colesterol LDL alto, ferritina baja, glucosa…">${esc(ENTREVISTA.analitica||"")}</textarea></label>
-        <label>Medicación a tener en cuenta<textarea id="p_med" rows="2" placeholder="p. ej. levotiroxina en ayunas, metformina…">${esc(ENTREVISTA.medicacion||"")}</textarea></label>
-        <h3>Compra</h3>
-        <div class="pgrid"><label>Supermercado habitual${sel("p_super",["","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo","Otro"],ENTREVISTA.super||"",["—","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo","Otro"])}</label>
-          <label>Otro / varios<input id="p_super2" value="${esc(ENTREVISTA.superOtro||"")}"></label></div>
-        <h3>Deporte</h3>
-        <div id="p_deps"></div><button type="button" class="ghost" id="p_depadd">➕ Añadir deporte</button>
-        <div class="pgrid">
-          <label>Hora de entreno entre semana<input id="p_hsem" type="time" value="${esc(ENTREVISTA.horaSemana||"")}"></label>
-          <label>Hora de entreno en fin de semana<input id="p_hfin" type="time" value="${esc(ENTREVISTA.horaFinde||"")}"></label>
-        </div>
-        <h3>Gasto diario y pasos</h3>
-        <label class="check"><input type="checkbox" id="p_reloj" ${ENTREVISTA.reloj?"checked":""}> Tiene reloj de actividad de calidad</label>
-        <div class="pgrid" id="p_relojk"${ENTREVISTA.reloj?"":" hidden"}>
-          <label>Kcal totales día sin entreno<input id="p_kdesc" type="number" inputmode="numeric" value="${ENTREVISTA.kcalDesc||""}"></label>
-          <label>Kcal totales día de entreno<input id="p_kent" type="number" inputmode="numeric" value="${ENTREVISTA.kcalEnt||""}"></label>
-          <label>Kcal totales día de entreno muy largo<input id="p_klargo" type="number" inputmode="numeric" value="${ENTREVISTA.kcalLargo||""}"></label>
-          <label>Media de kcal al día<input id="p_kmedia" type="number" inputmode="numeric" value="${ENTREVISTA.kcalMedia||""}"></label>
-        </div>
-        <label>Media de pasos al día (oficial o del reloj)<input id="p_pmedia" type="number" inputmode="numeric" value="${FICHA.pasosMedia||""}"></label>
-        <h3>Comidas y hambre</h3>
-        <div class="pgrid" id="p_horas">${TODAS_COMIDAS.map(c=>`<label>Hora: ${esc(c)}<input type="time" data-c="${esc(c)}" value="${esc((ENTREVISTA.horarios||{})[c]||"")}"></label>`).join("")}</div>
-        <label>Cómo reparte las comidas<textarea id="p_rtxt" rows="2" placeholder="p. ej. desayuno pequeño, comida fuerte, cena tarde…">${esc(ENTREVISTA.repartoTxt||"")}</textarea></label>
-        <p class="note">El momento de más hambre se marca en «3. Comidas y reparto».</p>
-        <div class="pgrid"><label>¿Atracones?${sel("p_atr",["","no","aveces","si"],ENTREVISTA.atracon||"",["—","No","A veces","Sí, a menudo"])}</label>
-          <label>¿En qué momento del día?<input id="p_atrm" value="${esc(ENTREVISTA.atrMomento||"")}" placeholder="p. ej. por la tarde al llegar a casa"></label></div>
-        <label>¿Con qué alimentos?<input id="p_atra" value="${esc(ENTREVISTA.atrAlimentos||"")}" placeholder="p. ej. dulces, pan, frutos secos"></label>
-        <label>¿Le gustan los cereales integrales?${sel("p_integ",["","si","no","indif"],ENTREVISTA.integrales||"",["—","Sí","No","Le da igual"])}</label>
-        <h3>Alimentos que no le gustan o no tolera</h3>
-        <p class="note">Toca un alimento una vez si <b>no le gusta</b> (👎) y otra vez si es <b>intolerante o le sienta mal</b> (🚫). Una tercera vez lo deja como estaba. Ninguno de los marcados le saldrá en la dieta. Los que ya quedan fuera por sus intolerancias o alergias salen con 🔒.</p>
-        <label class="check"><input type="checkbox" id="p_pedir" ${FICHA.pedirAlimentos?"checked":""}> Cliente online: que los marque él al abrir su enlace (después te envía la respuesta)</label>
-        <div id="p_alim"></div>
-        <h3>Observaciones</h3>
-        <label>Resumen libre<textarea id="p_etexto" rows="6" placeholder="Objetivos, historial, otros detalles…">${esc(ENTREVISTA.texto||"")}</textarea></label>
-        <div class="erow"><label class="filebtn">📎 Cargar archivo (.txt)<input id="p_efile" type="file" accept=".txt,.md,text/plain" hidden></label><span class="note" id="p_ecount"></span></div>
-      </section>
       <section><h2>1. Datos del cliente</h2>
         <label>Nombre<input id="p_nombre" value="${esc(FICHA.nombre)}"></label>
         <label>Código de acceso<input id="p_codigo" value="${esc(FICHA.codigo)}" placeholder="p. ej. ISA24" autocapitalize="characters"></label>
         <label>Sexo${sel("p_sexo",["Mujer","Hombre"],FICHA.sexo)}</label>
-        <label>Objetivo de pasos diarios<input id="p_pasos" type="number" inputmode="numeric" value="${FICHA.pasosObjetivo}"></label>
+        <div class="pgrid"><label>Objetivo de pasos diarios<input id="p_pasos" type="number" inputmode="numeric" value="${FICHA.pasosObjetivo}"></label>
+          <label>Media de pasos al día ahora (app Salud o reloj)<input id="p_pmedia" type="number" inputmode="numeric" value="${FICHA.pasosMedia||""}"></label></div>
         <label>Entrenos pautados por semana<input id="p_entsem" type="number" inputmode="numeric" min="1" max="14" value="${FICHA.entrenosSemana||3}"></label>
         <label class="check"><input type="checkbox" id="p_fumador" ${FICHA.fumador?"checked":""}> Fuma (verá su contador de días sin fumar y el tabaco contará en su Vital Score)</label>
         <p class="note" style="margin-top:6px">Intolerancias, alergias y sensibilidades:</p>
@@ -1562,7 +1526,36 @@ function panel(){
           <label class="check"><input type="checkbox" data-v="pescado" ${(FICHA.vegCome||{}).pescado?"checked":""}> Pescado</label></div>
         <label>Otras (texto libre)<input id="p_otras" value="${esc(FICHA.otrasRestricciones)}" placeholder="p. ej. no le gusta el pescado azul"></label>
       </section>
-      <section><h2>2. Calorías</h2>
+      <section class="entrev"><h2>2. Entrevista</h2>
+        <p class="note">Esta información se queda en tu panel: el cliente no la ve (salvo el peso, que se usa para su proteína).</p>
+        <div class="pgrid">
+          <label>Fecha de la entrevista<input id="p_efecha" type="date" value="${esc(ENTREVISTA.fecha||"")}"></label>
+          <label>Fecha de nacimiento<input id="p_nac" type="date" value="${esc(ENTREVISTA.nac||"")}"><small id="p_edad" class="note"></small></label>
+          <label>Altura (cm)<input id="p_alt" type="number" inputmode="numeric" value="${ENTREVISTA.altura||""}"></label>
+          <label>Peso (kg, Tanita)<input id="p_peso" type="number" inputmode="decimal" step="0.1" value="${FICHA.peso||""}"></label>
+        </div>
+        <h3>Salud</h3>
+        <p class="note">Alergias, intolerancias y dieta vegetal: márcalas en «1. Datos del cliente» (adaptan la dieta).</p>
+        <label>Parámetros alterados en analíticas<textarea id="p_anal" rows="2" placeholder="p. ej. colesterol LDL alto, ferritina baja, glucosa…">${esc(ENTREVISTA.analitica||"")}</textarea></label>
+        <label>Medicación a tener en cuenta<textarea id="p_med" rows="2" placeholder="p. ej. levotiroxina en ayunas, metformina…">${esc(ENTREVISTA.medicacion||"")}</textarea></label>
+        <h3>Compra</h3>
+        <div class="pgrid"><label>Supermercado habitual${sel("p_super",SUPERS,ENTREVISTA.super||"",SUPERS.map(x=>x||"—"))}</label>
+          <label>Supermercado secundario${sel("p_super3",SUPERS,ENTREVISTA.super2||"",SUPERS.map(x=>x||"—"))}</label></div>
+        <label>Notas de compra (no se usan para la lista)<input id="p_super2" value="${esc(ENTREVISTA.superOtro||"")}" placeholder="p. ej. compra en el mercado del barrio"></label>
+        <h3>Hábitos</h3>
+        <div class="pgrid"><label>¿Atracones?${sel("p_atr",["","no","aveces","si"],ENTREVISTA.atracon||"",["—","No","A veces","Sí, a menudo"])}</label>
+          <label>¿En qué momento del día?<input id="p_atrm" value="${esc(ENTREVISTA.atrMomento||"")}" placeholder="p. ej. por la tarde al llegar a casa"></label></div>
+        <label>¿Con qué alimentos?<input id="p_atra" value="${esc(ENTREVISTA.atrAlimentos||"")}" placeholder="p. ej. dulces, pan, frutos secos"></label>
+        <label>¿Le gustan los cereales integrales?${sel("p_integ",["","si","no"],FICHA.integrales||"",["— Según el perfil (integrales en pérdida de grasa, normales en volumen)","Sí: poner integrales","No: poner normales"])}</label>
+        <h3>Alimentos que no le gustan o no tolera</h3>
+        <p class="note">Toca un alimento una vez si <b>no le gusta</b> (👎) y otra vez si es <b>intolerante o le sienta mal</b> (🚫). Una tercera vez lo deja como estaba. Ninguno de los marcados le saldrá en la dieta. Los que ya quedan fuera por sus intolerancias o alergias salen con 🔒.</p>
+        <label class="check"><input type="checkbox" id="p_pedir" ${FICHA.pedirAlimentos?"checked":""}> Cliente online: que los marque él al abrir su enlace (después te envía la respuesta)</label>
+        <div id="p_alim"></div>
+        <h3>Observaciones</h3>
+        <label>Resumen libre<textarea id="p_etexto" rows="6" placeholder="Objetivos, historial, otros detalles…">${esc(ENTREVISTA.texto||"")}</textarea></label>
+        <div class="erow"><label class="filebtn">📎 Cargar archivo (.txt)<input id="p_efile" type="file" accept=".txt,.md,text/plain" hidden></label><span class="note" id="p_ecount"></span></div>
+      </section>
+      <section><h2>3. Calorías</h2>
         <label>Tasa metabólica basal (kcal)<input id="p_tmb" type="number" inputmode="numeric" value="${FICHA.tmb}"></label>
         <label>Factor de actividad (gasto medio estimado de su semana)${sel("p_factor",factores,FICHA.factor,fLab)}</label>
         <p class="note">Lo estimas tú con la entrevista o el cuestionario. Ya incluye sus entrenos y pasos habituales.</p>
@@ -1571,8 +1564,8 @@ function panel(){
         <p class="note" id="p_ajn"></p>
         <div class="calc" id="calc"></div>
       </section>
-      <section><h2>3. Comidas y reparto</h2>
-        <p class="note">Marca las comidas que hará el cliente.</p>
+      <section><h2>4. Comidas, horarios y reparto</h2>
+        <p class="note">Marca las comidas que hará el cliente. En la tabla pones la franja horaria de cada una (la verá el cliente) y el reparto de kcal.</p>
         <div class="chips" id="p_comidas">${TODAS_COMIDAS.map(c=>`<button type="button" class="chip${FICHA.comidas.includes(c)?" on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
         <label>¿Cuándo entrena?${sel("p_ent",Object.keys(ENTRENOS),FICHA.entreno,Object.values(ENTRENOS).map(e=>e.t))}</label>
         <label>¿Cuándo tiene más hambre?${sel("p_ham",Object.keys(HAMBRE),FICHA.hambre,Object.values(HAMBRE))}</label>
@@ -1587,28 +1580,36 @@ function panel(){
         <p class="note">Las cantidades se recalculan solas para las kcal de cada comida. Si no eliges ninguna, la app propone las que mejor encajan (marcadas con «auto»).</p>
         <div id="p_recs"></div>
       </section>
-      <section id="s_dias"><h2>4. Tipos de día</h2><div id="p_dias"></div></section>
-      <section><h2>5. Días fuera de lo común</h2>
+      <section id="s_dias"><h2>5. Tipos de día</h2>
+        <div id="p_relojbox"><h3>Gasto con su reloj</h3>
+        <label class="check"><input type="checkbox" id="p_reloj" ${ENTREVISTA.reloj?"checked":""}> Tiene reloj de actividad de calidad</label>
+        <div class="pgrid" id="p_relojk"${ENTREVISTA.reloj?"":" hidden"}>
+          <label>Kcal totales día de descanso<input id="p_kdesc" type="number" inputmode="numeric" value="${ENTREVISTA.kcalDesc||""}"></label>
+          <label>Kcal totales día de entreno normal<input id="p_kent" type="number" inputmode="numeric" value="${ENTREVISTA.kcalEnt||""}"></label>
+          <label>Kcal totales día de tirada o entreno muy largo<input id="p_klargo" type="number" inputmode="numeric" value="${ENTREVISTA.kcalLargo||""}"></label>
+          <label>Media de kcal al día<input id="p_kmedia" type="number" inputmode="numeric" value="${ENTREVISTA.kcalMedia||""}"></label>
+        </div><p class="note">Con estos datos, el botón «⌚ Proponer con los datos de su reloj» calcula las raciones de cada tipo de día.</p></div>
+        <div id="p_dias"></div></section>
+      <section><h2>6. Días fuera de lo común</h2>
         <p class="note">Solo para días excepcionales: entrenos o tiradas muy largas fuera de lo habitual. Lo decide el cliente por la noche o a la mañana siguiente. Los días con muchísimos más pasos de lo habitual se ajustan solos al apuntar los pasos. 1 ración de hidratos = ${RACION_HC} kcal. Pre-cama = ${KCAL_PRECAMA} kcal.</p>
         <div id="incs"></div>
         <button class="ghost" id="addinc">+ Añadir regla</button>
       </section>
-      <section><h2>6. Entrenos largos (intraentreno)</h2>
+      <details class="psec" id="s_intra"${FICHA.perfil==="resist"?" open":""}><summary><h2>7. Entrenos largos (intraentreno)</h2><small>${FICHA.perfil==="resist"?"":"toca para abrir"}</small></summary>
         <label>Prioridad por defecto${sel("p_prio",["grasa","rendimiento"],FICHA.prioridad,["Perder grasa (llegar con algo de déficit)","Rendimiento"])}</label>
         <label>Déficit extra máximo tras un entreno largo (kcal)<input id="p_defmax" type="number" inputmode="numeric" value="${FICHA.deficitMaxSesion}"></label>
         <label>Gasto de entreno ya incluido en el factor de actividad (kcal)<input id="p_incl" type="number" inputmode="numeric" value="${FICHA.entrenoIncluido}"></label>
         <label class="check"><input type="checkbox" id="p_intest" ${FICHA.intestinoEntrenado?"checked":""}> Tiene el intestino entrenado (tolera más de 90 g/h)</label>
         <p class="note">El cliente puede cambiar la prioridad en cada entreno desde el chat (por ejemplo, rendimiento el día de carrera).</p>
-      </section>
+      </details>
       <div class="actions"><div id="saveres"></div><button id="save">💾 Guardar y crear enlace para el cliente</button><button id="preview" class="doc">👀 Ver como cliente</button><button id="gendoc" class="doc">📄 Generar dieta (documento Word / Google Docs)</button><div id="docres" class="docres"></div></div>
     </div>`;
   const $=id=>document.getElementById(id);
-  const leerE=()=>{ const deps=[...document.querySelectorAll("#p_deps .dep")].map(r=>({d:r.querySelector(".d_n").value, tipo:r.querySelector(".d_t").value, dias:+r.querySelector(".d_d").value||0, horas:+r.querySelector(".d_h").value||0, kcal:+r.querySelector(".d_k").value||0}));
-    const hor={}; document.querySelectorAll("#p_horas input").forEach(i=>{ if(i.value) hor[i.dataset.c]=i.value; });
-    ENTREVISTA={fecha:$("p_efecha").value, texto:$("p_etexto").value, nac:$("p_nac").value, altura:+$("p_alt").value||0, analitica:$("p_anal").value, medicacion:$("p_med").value,
-      super:$("p_super").value, superOtro:$("p_super2").value, deportes:deps, horaSemana:$("p_hsem").value, horaFinde:$("p_hfin").value,
+  const leerE=()=>{ FICHA.integrales=$("p_integ").value;
+    ENTREVISTA={...ENTREVISTA, fecha:$("p_efecha").value, texto:$("p_etexto").value, nac:$("p_nac").value, altura:+$("p_alt").value||0, analitica:$("p_anal").value, medicacion:$("p_med").value,
+      super:$("p_super").value, super2:$("p_super3").value, superOtro:$("p_super2").value,
       reloj:$("p_reloj").checked, kcalDesc:+$("p_kdesc").value||0, kcalEnt:+$("p_kent").value||0, kcalLargo:+$("p_klargo").value||0, kcalMedia:+$("p_kmedia").value||0,
-      horarios:hor, repartoTxt:$("p_rtxt").value, atracon:$("p_atr").value, atrMomento:$("p_atrm").value, atrAlimentos:$("p_atra").value, integrales:$("p_integ").value};
+      atracon:$("p_atr").value, atrMomento:$("p_atrm").value, atrAlimentos:$("p_atra").value, integrales:$("p_integ").value};
     const ed=$("p_edad"); if(ed){ const n=ENTREVISTA.nac?new Date(ENTREVISTA.nac):null; ed.textContent = n&&!isNaN(n) ? Math.floor((Date.now()-n)/(365.25*864e5))+" años" : ""; } const n=ENTREVISTA.texto.trim()?ENTREVISTA.texto.trim().split(/\s+/).length:0; $("p_ecount").textContent=n?`${n} palabras`:""; };
   const leer=()=>{leerE();FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.fumador=$("p_fumador").checked;FICHA.peso=+String($("p_peso").value).replace(",",".")||0;FICHA.pasosMedia=Math.round(+$("p_pmedia").value)||0;FICHA.entrenosSemana=Math.max(1,Math.round(+$("p_entsem").value)||3);FICHA.otrasRestricciones=$("p_otras").value.trim();
     FICHA.tmb=+$("p_tmb").value||0;FICHA.factor=+$("p_factor").value;FICHA.objetivo=$("p_obj").value;FICHA.ajuste=Math.max(0,+$("p_aj").value||0); if(FICHA.perfil==="salud" && FICHA.ajuste>DEFICIT_MAX_SALUD){ FICHA.ajuste=DEFICIT_MAX_SALUD; $("p_aj").value=DEFICIT_MAX_SALUD; }
@@ -1681,7 +1682,7 @@ function panel(){
     box.querySelectorAll("[data-auto]").forEach(b=>b.onclick=()=>{ const R={...(FICHA.recetas||{})}; delete R[b.dataset.auto]; FICHA.recetas=R; pintarRecs(); });
   };
   const pintarDias=()=>{ const box=$("p_dias"), sec=$("s_dias"); if(!box) return;
-    if(!conTiposDia()){ sec.hidden=true; box.innerHTML=""; return; } sec.hidden=false;
+    if(!conTiposDia()){ sec.hidden=true; box.innerHTML=""; return; } sec.hidden=false; if($("p_relojbox")) $("p_relojbox").hidden = FICHA.perfil!=="resist";
     const D=diasCliente(), cs=[...FICHA.comidas].sort((a,b)=>POS[a]-POS[b]), kc=kcalObj(), E=ENTREVISTA;
     const rel = E.reloj && (E.kcalMedia||E.kcalDesc) && (E.kcalEnt||E.kcalLargo);
     box.innerHTML=`<p class="note">Su dieta base (${kc} kcal) es su <b>día medio</b>. En cada tipo de día pon las raciones de hidratos que suma (+) o resta (−) en cada comida. 1 ración = ${RACION_HC} kcal. El cliente elige cada día qué día es y le sale su dieta ajustada.</p>
@@ -1720,16 +1721,11 @@ function panel(){
   $("p_perfil").querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{ const k=b.dataset.p, P=PERFILES[k]; if(k===FICHA.perfil) return;
     FICHA.perfil=k; FICHA.objetivo=P.obj; FICHA.ajuste=P.aj; FICHA.diasAuto=true; FICHA.dias=[];
     $("p_obj").value=P.obj; $("p_aj").value=P.aj; $("p_pgkg").placeholder=String(PROT_GKG[k]).replace(".",",")+" (su perfil)";
-    $("p_perfil").querySelectorAll(".pcard").forEach(x=>x.classList.toggle("on",x===b)); pintarCalc(); pintarRep(); });
+    $("p_perfil").querySelectorAll(".pcard").forEach(x=>x.classList.toggle("on",x===b)); if(k==="resist") $("s_intra").open=true; pintarCalc(); pintarRep(); });
   ["p_tmb","p_factor","p_obj","p_aj","p_peso","p_pmedia"].forEach(id=>$(id).addEventListener("input",()=>{pintarCalc();pintarRep();}));
-  const pintarDeps=()=>{ $("p_deps").innerHTML=(ENTREVISTA.deportes||[]).map((d,i)=>`<div class="dep inc"><div class="row"><input class="d_n" value="${esc(d.d||"")}" placeholder="Deporte (p. ej. fuerza, running, pádel)" aria-label="Deporte"><select class="d_t" aria-label="Tipo"><option value="fuerza"${d.tipo==="fuerza"?" selected":""}>Fuerza</option><option value="cardio"${d.tipo==="cardio"?" selected":""}>Cardio</option><option value="mixto"${d.tipo==="mixto"?" selected":""}>Mixto</option></select><button type="button" class="del" data-i="${i}" aria-label="Quitar">✕</button></div>
-      <div class="row"><label>Días/sem<input class="d_d" type="number" inputmode="numeric" value="${d.dias||""}"></label><label>Horas/sesión<input class="d_h" type="number" inputmode="decimal" step="0.25" value="${d.horas||""}"></label><label>Kcal/sesión<input class="d_k" type="number" inputmode="numeric" value="${d.kcal||""}"></label></div></div>`).join("") || `<p class="note">Sin deportes apuntados.</p>`;
-    $("p_deps").querySelectorAll(".del").forEach(b=>b.onclick=()=>{ leerE(); ENTREVISTA.deportes.splice(+b.dataset.i,1); pintarDeps(); });
-    $("p_deps").querySelectorAll("input,select").forEach(x=>x.addEventListener("input",leerE)); };
-  $("p_depadd").onclick=()=>{ leerE(); ENTREVISTA.deportes=(ENTREVISTA.deportes||[]).concat({d:"",tipo:"fuerza"}); pintarDeps(); };
-  $("p_reloj").onchange=()=>{ $("p_relojk").hidden=!$("p_reloj").checked; leerE(); pintarCalc(); };
-  document.querySelectorAll(".entrev input, .entrev select, .entrev textarea").forEach(x=>{ if(!x.closest("#p_deps")) x.addEventListener("input",()=>{ leerE(); if(x.id==="p_kdesc") pintarCalc(); }); });
-  pintarDeps();
+  $("p_reloj").onchange=()=>{ $("p_relojk").hidden=!$("p_reloj").checked; leerE(); pintarDias(); };
+  document.querySelectorAll(".entrev input, .entrev select, .entrev textarea, #p_relojbox input").forEach(x=>x.addEventListener("input",()=>{ leerE(); if(x.closest("#p_relojbox")) pintarDias(); if(x.id==="p_integ") pintarCalc(); }));
+  $("p_integ").addEventListener("change",()=>{ leerE(); pintarCalc(); });
   const pintarAlim=()=>{ const y=window.scrollY, pa=$("p_alim").closest(".panel"), py=pa?pa.scrollTop:0;
     $("p_alim").innerHTML=alimLeyenda()+alimRejilla()+`<p class="note" id="p_alimn">${alimResumen()}</p>`;
     $("p_alim").querySelectorAll(".al3").forEach(b=>b.onclick=()=>{ alimCiclo(b.dataset.a); pintarAlim(); });
