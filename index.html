@@ -283,6 +283,7 @@
   .vstog button.on{background:var(--brand-dark);color:#fff}
   .vstog.cuatro{grid-template-columns:repeat(4,1fr)}.vstog.cuatro button{font-size:12px;padding:0 2px;line-height:1.15}
   .vslab{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--brand-dark)}
+  .vsque{font-size:12.5px;line-height:1.4;color:var(--muted);text-align:center;margin:4px 6px 6px;max-width:320px}
   .vscard .ringv b{font-size:60px;letter-spacing:-.03em}.vscard .ringv small{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
   .vsband{display:inline-block;font-size:15px;font-weight:700;padding:5px 14px;border-radius:999px}
   .vstrend{font-size:13px;font-weight:600;color:var(--brand-dark)}
@@ -357,10 +358,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.31.1"></script>
-<script src="i18n-vs.js?v=2.31.1"></script>
-<script src="i18n-alim.js?v=2.31.1"></script>
-<script src="recetas-esp.js?v=2.31.1"></script>
+<script src="i18n.js?v=2.32.0"></script>
+<script src="i18n-vs.js?v=2.32.0"></script>
+<script src="i18n-alim.js?v=2.32.0"></script>
+<script src="recetas-esp.js?v=2.32.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -896,7 +897,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.31.1";
+const APP_VERSION = "2.32.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3246,6 +3247,7 @@ function vsHome(){
     <div class="vscard">
       <div class="vstog cuatro" role="group"><button type="button" data-p="dia" class="${VS_PER==="dia"?"on":""}">${vsDiaRef()?"Ayer":"Hoy"}</button><button type="button" data-p="semana" class="${VS_PER==="semana"?"on":""}">7 días</button><button type="button" data-p="mes" class="${VS_PER==="mes"?"on":""}">30 días</button><button type="button" data-p="total" class="${VS_PER==="total"?"on":""}">Desde el inicio</button></div>
       <div class="vslab">VITAL SCORE</div>
+      <p class="vsque">No mide tu salud ni tu peso de hoy: mide tus hábitos. Es la nota de lo que está en tus manos (comer bien, moverte, dormir y evitar el alcohol y el tabaco) para llegar a tener un cuerpo sano.</p>
       ${anillo(r.score,210,22,r.score==null?`<b>—</b>`:`<b>${r.score}</b><small>de 100</small>`)}
       ${b?`<span class="vsband" style="background:${b.track};color:${b.text}">${b.n}</span>`:`<p class="vsvacio">Contesta tu primer cuestionario para ver tu Vital Score.</p>`}
       ${trend?`<div class="vstrend">${trend}</div>`:""}
