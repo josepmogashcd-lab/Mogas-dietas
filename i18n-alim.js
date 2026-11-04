@@ -179,3 +179,6 @@ A("Dieta vegetal: proteínas de soja, tofu, tempeh, seitán, Heura y legumbres. 
  ["# g de quinoa cocida (aporta más hidrato que proteína)","# g de quinoa cuita (aporta més hidrat que proteïna)","# g cooked quinoa (more carbs than protein)"],
  ["# g de Heura o bocados vegetales","# g d'Heura o daus vegetals","# g Heura or plant-based bites"],["# g de soja texturizada (pesada en seco)","# g de soja texturitzada (pesada en sec)","# g textured soy (weighed dry)"]
 ].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [["Ayer","Ahir","Yesterday"],["Hoy","Avui","Today"],["# días","# dies","# days"],["▲ # puntos vs. el día anterior","▲ # punts vs. el dia anterior","▲ # points vs. the day before"],["▼ # puntos vs. el día anterior","▼ # punts vs. el dia anterior","▼ # points vs. the day before"],["Igual que el día anterior","Igual que el dia anterior","Same as the day before"],
+["▲ # puntos vs. los # días anteriores","▲ # punts vs. els # dies anteriors","▲ # points vs. the previous # days"],["▼ # puntos vs. los # días anteriores","▼ # punts vs. els # dies anteriors","▼ # points vs. the previous # days"],["Igual que los # días anteriores","Igual que els # dies anteriors","Same as the previous # days"]
+].forEach(([es,ca,en])=>{ if(!(es in I18N.ca)){ I18N.ca[es]=ca; I18N.en[es]=en; } }); })();

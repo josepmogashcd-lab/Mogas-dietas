@@ -281,6 +281,7 @@
   .vstog{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--brand-2);border-radius:12px}
   .vstog button{font:inherit;font-size:13px;font-weight:600;border:0;border-radius:9px;min-height:38px;background:none;color:var(--grey);cursor:pointer}
   .vstog button.on{background:var(--brand-dark);color:#fff}
+  .vstog.cuatro{grid-template-columns:repeat(4,1fr)}.vstog.cuatro button{font-size:12px;padding:0 2px;line-height:1.15}
   .vslab{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--brand-dark)}
   .vscard .ringv b{font-size:60px;letter-spacing:-.03em}.vscard .ringv small{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
   .vsband{display:inline-block;font-size:15px;font-weight:700;padding:5px 14px;border-radius:999px}
@@ -356,10 +357,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.29.0"></script>
-<script src="i18n-vs.js?v=2.29.0"></script>
-<script src="i18n-alim.js?v=2.29.0"></script>
-<script src="recetas-esp.js?v=2.29.0"></script>
+<script src="i18n.js?v=2.30.0"></script>
+<script src="i18n-vs.js?v=2.30.0"></script>
+<script src="i18n-alim.js?v=2.30.0"></script>
+<script src="recetas-esp.js?v=2.30.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -895,7 +896,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.29.0";
+const APP_VERSION = "2.30.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3110,9 +3111,13 @@ function vsDiasLocal(desde, hasta){
   return [...fs].sort().map(f=>{ const n=alcDia(f); return {f, p:puntosDia(V[f]||{}, f), alc:n, conf:!!(V[f]&&V[f].alcOk), q:!!V[f], pen:penDe(V[f]||{}, n).total}; });
 }
 const diasEntre = (a,b) => Math.round((deISO(b)-deISO(a))/864e5)+1;
+/* día del Vital Score diario: hoy si ya ha contestado el cuestionario; si no, ayer */
+const vsDiaRef = () => vsDatos()[fechaISO()] ? 0 : 1;
 function vsPeriodo(tipo, atras=0){
+  if(tipo==="dia") atras += vsDiaRef();
   const fin=fechaISO(sumarDias(new Date(),-atras)), ini=vsInicio();
-  let desde = tipo==="mes" ? fechaISO(sumarDias(deISO(fin),-29)) : ini;
+  const nDias = {dia:1, semana:7, mes:30}[tipo];
+  let desde = nDias ? fechaISO(sumarDias(deISO(fin),-(nDias-1))) : ini;
   if(desde<ini) desde=ini; if(fin<desde) return {score:null, pil:{}, n:0};
   const dias=vsDiasLocal(desde,fin), V=vsDatos(), hayDatos=dias.some(d=>d.q) || Object.keys(entDatos()).length;
   return vsCalcular(dias, diasEntre(desde,fin), FICHA.fumador, {fuerza: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaEnt(), desde, fin) : null});
@@ -3196,7 +3201,8 @@ function vsHome(){
   const box=document.getElementById("vs"); if(!box) return;
   const r=vsPeriodo(VS_PER), c=contadores(), V=vsDatos(), hoy=fechaISO(), ayer=fechaISO(sumarDias(new Date(),-1));
   let trend="";
-  if(r.score!=null && VS_PER==="mes"){ const p=vsPeriodo("mes",30); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. los 30 días anteriores` : d<0?`▼ ${-d} puntos vs. los 30 días anteriores` : `Igual que los 30 días anteriores`; } }
+  const TR={dia:[1,"el día anterior"], semana:[7,"los 7 días anteriores"], mes:[30,"los 30 días anteriores"]}[VS_PER];
+  if(r.score!=null && TR){ const p=vsPeriodo(VS_PER,TR[0]); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. ${TR[1]}` : d<0?`▼ ${-d} puntos vs. ${TR[1]}` : `Igual que ${TR[1]}`; } }
   const cnt=(ico,tit,n,rec)=>`<div class="vsc"><div class="vsct">${ico}<span>${tit}</span></div><div class="vscn"><b>${n}</b> <span>${n===1?"día":"días"}</span></div><small>Récord: ${rec} días</small></div>`;
   const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno"];
   const SA=serieAdic(), ult=SA.length?SA[SA.length-1]:null, ia=ult?ult.idx:null, ib=ia!=null?adicBanda(ia):null;
@@ -3214,7 +3220,7 @@ function vsHome(){
   box.innerHTML=`
     <div class="vscnt${FICHA.fumador?" dos":""}">${FICHA.fumador?cnt(ICO.fumar,"SIN FUMAR",c.cf,c.rf):""}${cnt(ICO.alcohol,"SIN ALCOHOL",c.ca,c.ra)}</div>
     <div class="vscard">
-      <div class="vstog" role="group"><button type="button" data-p="mes" class="${VS_PER==="mes"?"on":""}">Últimos 30 días</button><button type="button" data-p="total" class="${VS_PER==="total"?"on":""}">Desde el inicio</button></div>
+      <div class="vstog cuatro" role="group"><button type="button" data-p="dia" class="${VS_PER==="dia"?"on":""}">${vsDiaRef()?"Ayer":"Hoy"}</button><button type="button" data-p="semana" class="${VS_PER==="semana"?"on":""}">7 días</button><button type="button" data-p="mes" class="${VS_PER==="mes"?"on":""}">30 días</button><button type="button" data-p="total" class="${VS_PER==="total"?"on":""}">Desde el inicio</button></div>
       <div class="vslab">VITAL SCORE</div>
       ${anillo(r.score,210,22,r.score==null?`<b>—</b>`:`<b>${r.score}</b><small>de 100</small>`)}
       ${b?`<span class="vsband" style="background:${b.track};color:${b.text}">${b.n}</span>`:`<p class="vsvacio">Contesta tu primer cuestionario para ver tu Vital Score.</p>`}
