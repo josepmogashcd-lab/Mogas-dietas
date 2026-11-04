@@ -357,10 +357,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.31.0"></script>
-<script src="i18n-vs.js?v=2.31.0"></script>
-<script src="i18n-alim.js?v=2.31.0"></script>
-<script src="recetas-esp.js?v=2.31.0"></script>
+<script src="i18n.js?v=2.31.1"></script>
+<script src="i18n-vs.js?v=2.31.1"></script>
+<script src="i18n-alim.js?v=2.31.1"></script>
+<script src="recetas-esp.js?v=2.31.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -896,7 +896,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.31.0";
+const APP_VERSION = "2.31.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3312,7 +3312,7 @@ function vsQPintar(arriba){
       + qg("verd","¿Has puesto verdura en la comida y en la cena?",[["2","En las dos"],["1","Solo en una"],["0","En ninguna"]],"g3")
       + qg("fruta","¿Cuántas piezas de fruta has comido?",[["0","Ninguna"],["1","1"],["2","2"],["3","3 o más"]],"g4")
       + qg("hc",FICHA.cenaSinHC?"¿Has comido la ración de hidratos de la comida?":"¿Has comido la ración de hidratos en comida y cena?",FICHA.cenaSinHC?[["ok","Sí, con su cantidad"],["ninguna","No"],["mas","Me he pasado de cantidad"]]:[["ok","En las dos, con su cantidad"],["una","Solo en una"],["ninguna","En ninguna"],["mas","Me he pasado de cantidad"]],"g2")
-      + qg("cant","¿Has controlado las cantidades y las grasas?",[["si","Sí, todo pesado"],["poco","Me he pasado un poco"],["mal","He perdido el control"]],"g1","Aceite pesado, frutos secos, aguacate, quesos… es donde más se escapan las calorías.")
+      + qg("cant","¿Has controlado las cantidades y las grasas?",[["si","Sí, de forma lógica y equilibrada"],["poco","Me he pasado un poco"],["mal","He perdido el control"]],"g1","Aceite pesado, frutos secos, aguacate, quesos… es donde más se escapan las calorías.")
       + qg("proteina","¿La proteína ha sido sin rebozar ni freír?",[["si","Sí"],["no","No"]],"g2")
       + (integrales()?qg("integ","¿El pan, la pasta, el arroz y los cereales han sido integrales?",[["si","Sí"],["medias","A medias"],["no","No"]],"g3"):"")
       + qg("proc","¿Has comido ultraprocesados?",[["0","Nada"],["1","1"],["2","2 o más"]],"g3","Productos con una etiqueta larga de ingredientes: bollería, precocinados, embutidos, salsas, snacks…")
