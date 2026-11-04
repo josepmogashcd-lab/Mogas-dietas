@@ -357,10 +357,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.30.0"></script>
-<script src="i18n-vs.js?v=2.30.0"></script>
-<script src="i18n-alim.js?v=2.30.0"></script>
-<script src="recetas-esp.js?v=2.30.0"></script>
+<script src="i18n.js?v=2.31.0"></script>
+<script src="i18n-vs.js?v=2.31.0"></script>
+<script src="i18n-alim.js?v=2.31.0"></script>
+<script src="recetas-esp.js?v=2.31.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -896,7 +896,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.30.0";
+const APP_VERSION = "2.31.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3015,7 +3015,7 @@ async function nube(path, {method="GET", body, token, prefer}={}){
 }
 
 const VS_PESOS = {dieta:35, alcohol:25, fuerza:10, tabaco:10, azucar:8, pasos:6, sueno:6};
-const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Fuerza", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
+const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Entreno", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
 const VS_BANDAS = [
   {max:20,  n:"Crítico",   ring:"#D93B30", text:"#B42318", track:"#FBE3E1"},
   {max:40,  n:"Bajo",      ring:"#EE8A1F", text:"#B54708", track:"#FDEBD6"},
@@ -3056,12 +3056,33 @@ function excesoAzucar(a){
 function penDe(a, alc){
   const tramo=(v,T)=>{ for(const [m,p] of T) if(v>=m) return p; return 0; };
   const pa=tramo(alc||0,PEN_ALC), pz=tramo(excesoAzucar(a||{}),PEN_AZ);
-  const pv = a && a.verdura==="no" ? 15 : 0, pp = a && a.proteina==="no" ? 8 : 0;   // fallos graves de dieta
-  return {alc:pa, az:pz, verd:pv, prot:pp, total:pa+pz+pv+pp};
+  // fallos graves de dieta (restan además de bajar la nota de dieta)
+  const pv = a && (a.verdura==="no" || a.verd==="0") ? 10 : 0, pp = a && a.proteina==="no" ? 5 : 0, pc = a && a.cant==="mal" ? 10 : 0;
+  return {alc:pa, az:pz, verd:pv, prot:pp, ctrl:pc, total:pa+pz+pv+pp+pc};
+}
+/* Nota de dieta del día (0–100). Cada respuesta suma puntos; la comida social ajusta al final. */
+const DIETA_W = {pico:15, verd:20, fruta:10, hc:15, cant:15, prot:5, proc:10, sal:5, integ:5};
+function notaDieta(a){
+  const pt={}, W={...DIETA_W};
+  if(a.pico) pt.pico = a.pico2==="no" ? 1 : 0;
+  if(a.verd) pt.verd = {"2":1, "1":0.5, "0":0}[a.verd];
+  if(a.fruta) pt.fruta = {"0":0, "1":0.6, "2":1, "3":1}[a.fruta];
+  if(a.hc) pt.hc = {ok:1, una:0.6, ninguna: FICHA.objetivo==="deficit" ? 0.4 : 0, mas:0.2}[a.hc];
+  if(a.cant) pt.cant = {si:1, poco:0.5, mal:0}[a.cant];
+  if(a.proteina) pt.prot = a.proteina==="si" ? 1 : 0;
+  if(a.proc) pt.proc = {"0":1, "1":0.4, "2":0}[a.proc];
+  if(a.sal) pt.sal = {no:1, poco:0.5, mucho:0}[a.sal];
+  if(a.integ) pt.integ = {si:1, medias:0.5, no:0}[a.integ];
+  let s=0, w=0; Object.keys(pt).forEach(k=>{ if(pt[k]!=null){ s+=pt[k]*W[k]; w+=W[k]; } });
+  if(!w) return null;
+  let d = s/w*100;
+  if(a.social==="si") d -= ({ctrl:0, algo:6, libre:12}[a.socialTipo]||0) + (a.socialHc==="mal"?3:0);
+  return Math.max(0, Math.min(100, Math.round(d)));
 }
 function puntosDia(a, f){
   const p={}, dk=["comidas","cantidades","verdura","proteina"];
-  if(dk.some(k=>a[k]) || a.social){
+  if(a.v===2){ const d=notaDieta(a); if(d!=null) p.dieta=d; }
+  else if(dk.some(k=>a[k]) || a.social){
     const W={comidas:15, cantidades:25, verdura:30, proteina:15};   // la verdura es lo que más pesa
     let d=0; dk.forEach(k=>{ if(a[k]==="si") d+=W[k]; });
     d += a.social==="no" ? 15 : a.social==="si" ? Math.min(15, ({ctrl:11, algo:6, libre:0}[a.socialTipo]||0) + ({bien:4, no:1, mal:0}[a.socialHc]||0)) : 0;
@@ -3099,6 +3120,9 @@ function vsCalcular(dias, nDias, fumador, extra={}){
   const sumPen=dias.reduce((a,d)=>a+(d.pen||0),0), nQ=dias.filter(d=>d.q).length;
   const pen=Math.round(sumPen/Math.max(7,nQ||nDias));
   Object.entries(extra).forEach(([k,v])=>{ if(v!=null) pil[k]=v; });
+  /* omega-3: se valora por semanas (objetivo: al menos 2 días a la semana) */
+  const conO=dias.filter(d=>d.o3!=null);
+  if(pil.dieta!=null && conO.length>=5){ const sem=conO.filter(d=>d.o3).length/conO.length*7; const r = sem>=2 ? 0 : sem>=1 ? 3 : 6; pil.dieta=Math.max(0,pil.dieta-r); pil.o3Sem=Math.round(sem*10)/10; }
   const base=notaDe(pil, true);
   return {score: base==null?null:Math.max(0,base-pen), base, pen, pil, alcSem, n:dias.length};
 }
@@ -3108,7 +3132,7 @@ function vsInicio(){
 }
 function vsDiasLocal(desde, hasta){
   const V=vsDatos(), fs=new Set([...Object.keys(V), ...Object.keys(bebDatos()), ...Object.keys(pasDatos().d)].filter(f=>f>=desde && f<=hasta));
-  return [...fs].sort().map(f=>{ const n=alcDia(f); return {f, p:puntosDia(V[f]||{}, f), alc:n, conf:!!(V[f]&&V[f].alcOk), q:!!V[f], pen:penDe(V[f]||{}, n).total}; });
+  return [...fs].sort().map(f=>{ const n=alcDia(f), r=V[f]||{}; return {f, p:puntosDia(r, f), alc:n, conf:!!r.alcOk, q:!!V[f], pen:penDe(r, n).total, o3: r.o3 ? r.o3==="si" : null}; });
 }
 const diasEntre = (a,b) => Math.round((deISO(b)-deISO(a))/864e5)+1;
 /* día del Vital Score diario: hoy si ya ha contestado el cuestionario; si no, ayer */
@@ -3275,13 +3299,25 @@ function vsQPintar(arriba){
   const ft=document.querySelector(".app footer"); if(ft) ft.hidden=true;
   const ob=(k,v,t)=>`<button type="button" class="qo${a[k]===v?" on":""}" data-k="${k}" data-v="${v}">${t}</button>`;
   const yn=(k,t)=>`<div class="qc qrow"><span>${t}</span><div class="qyn">${ob(k,"si","Sí")}${ob(k,"no","No")}</div></div>`;
-  const META={dieta:["Dieta","Toca Sí o No. Son 10 segundos."], azucar:["Azúcar","Sé sincero: nadie te juzga."],
-    alctab:[FICHA.fumador?"Alcohol y tabaco":"Alcohol","Lo que más pesa en tu Vital Score."], entreno:["Entreno","¿Te has movido hoy?"],
+  const META={dieta:["Dieta","Contesta con sinceridad: así tu nota será real."], azucar:["Azúcar","Sé sincero: nadie te juzga."],
+    alctab:[FICHA.fumador?"Alcohol y tabaco":"Alcohol","Lo que más pesa en tu Vital Score."], entreno:["Entreno","Fuerza o cardio: cuenta todo. Se valora por semanas."],
     pasos:["Pasos y sueño","Último paso."], fin:["¡Listo!","Así ha ido tu día."]};
   let body="";
   if(paso==="dieta"){
-    body = yn("comidas","¿Has hecho todas las comidas que te tocaban?") + yn("cantidades","¿Has respetado las cantidades de hidratos, proteína y verdura?")
-      + yn("verdura","¿Has comido la verdura y la fibra que tocaban?") + yn("proteina","¿La proteína ha sido sin rebozar ni freír?")
+    a.v=2;
+    const qg=(k,t,ops,cls,nota)=>`<div class="qc"><span class="qt">${t}</span><div class="qg ${cls}">${ops.map(([v,x])=>ob(k,v,x)).join("")}</div>${nota?`<small class="qnote">${nota}</small>`:""}</div>`;
+    const vegO=(FICHA.restricciones||[]).includes("vegano") && !(FICHA.vegCome||{}).pescado;
+    const o3txt = vegO ? "Nueces, semillas de chía, lino o cáñamo, edamame o tofu, aceite de lino." : "Salmón, sardinas, caballa o boquerones, atún o bonito, nueces, semillas de chía o lino.";
+    body = qg("pico2","¿Has respetado tus comidas sin picar entre horas?",[["no","Sí, sin picar"],["si","He picado algo"]],"g2")
+      + qg("verd","¿Has puesto verdura en la comida y en la cena?",[["2","En las dos"],["1","Solo en una"],["0","En ninguna"]],"g3")
+      + qg("fruta","¿Cuántas piezas de fruta has comido?",[["0","Ninguna"],["1","1"],["2","2"],["3","3 o más"]],"g4")
+      + qg("hc",FICHA.cenaSinHC?"¿Has comido la ración de hidratos de la comida?":"¿Has comido la ración de hidratos en comida y cena?",FICHA.cenaSinHC?[["ok","Sí, con su cantidad"],["ninguna","No"],["mas","Me he pasado de cantidad"]]:[["ok","En las dos, con su cantidad"],["una","Solo en una"],["ninguna","En ninguna"],["mas","Me he pasado de cantidad"]],"g2")
+      + qg("cant","¿Has controlado las cantidades y las grasas?",[["si","Sí, todo pesado"],["poco","Me he pasado un poco"],["mal","He perdido el control"]],"g1","Aceite pesado, frutos secos, aguacate, quesos… es donde más se escapan las calorías.")
+      + qg("proteina","¿La proteína ha sido sin rebozar ni freír?",[["si","Sí"],["no","No"]],"g2")
+      + (integrales()?qg("integ","¿El pan, la pasta, el arroz y los cereales han sido integrales?",[["si","Sí"],["medias","A medias"],["no","No"]],"g3"):"")
+      + qg("proc","¿Has comido ultraprocesados?",[["0","Nada"],["1","1"],["2","2 o más"]],"g3","Productos con una etiqueta larga de ingredientes: bollería, precocinados, embutidos, salsas, snacks…")
+      + qg("sal","¿Te has pasado con la sal?",[["no","No"],["poco","Un poco"],["mucho","Mucho"]],"g3","Sal añadida, embutidos, salsas, aperitivos salados, precocinados…")
+      + qg("o3","¿Has comido hoy algún alimento rico en omega-3?",[["si","Sí"],["no","No"]],"g2",o3txt+" Lo ideal: al menos 2 días a la semana.")
       + `<div class="qc"><span class="qt">¿Has tenido alguna comida social fuera?</span><div class="qg g2">${ob("social","si","Sí")}${ob("social","no","No")}</div>
         ${a.social==="si"?`<span class="qs">¿Cómo has salido parado?</span><div class="qg g1">${ob("socialTipo","ctrl","Bien: verdura y proteína sin rebozar ni fritos")}${ob("socialTipo","algo","A medias: algo me he pasado")}${ob("socialTipo","libre","Mal: no he podido o no he sabido elegir")}</div>
         <span class="qs">¿Y los hidratos?</span><div class="qg g1">${ob("socialHc","bien","Hidrato de calidad en su cantidad (arroz, patata, pasta, legumbre…)")}${ob("socialHc","mal","Hidrato refinado o demasiada cantidad")}${ob("socialHc","no","No he comido hidratos")}</div>`:""}</div>`;
@@ -3324,6 +3360,8 @@ function vsQPintar(arriba){
     if(pn.az) msgs.push(`<div class="qpen"><b>−${pn.az}</b> <span>puntos por exceso de azúcar</span></div>`);
     if(pn.verd) msgs.push(`<div class="qpen"><b>−${pn.verd}</b> <span>puntos por no comer la verdura</span></div>`);
     if(pn.prot) msgs.push(`<div class="qpen"><b>−${pn.prot}</b> <span>puntos por proteína rebozada o frita</span></div>`);
+    if(pn.ctrl) msgs.push(`<div class="qpen"><b>−${pn.ctrl}</b> <span>puntos por perder el control con las cantidades</span></div>`);
+    if(Q.a.o3==="si") msgs.push(`<div class="qok">Omega-3 de hoy: ✔</div>`);
     if(testAlc(Q.f)===true) msgs.push(`<div class="qok">${c.ca===1?"¡1 día sin alcohol!":`¡Ya llevas ${c.ca} días sin alcohol!`}</div>`);
     else if(testAlc(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin alcohol vuelve a empezar mañana</div>`);
     if(FICHA.fumador && testFumo(Q.f)===true) msgs.push(`<div class="qok">${c.cf===1?"¡1 día sin fumar!":`¡Ya llevas ${c.cf} días sin fumar!`}</div>`);
@@ -3437,7 +3475,7 @@ async function panelVS(el){
     const [cl, ds]=await Promise.all([nube("/rest/v1/clientes?select=codigo,nombre,fumador",{token:t}), nube(`/rest/v1/dias?select=codigo,fecha,datos,puntos&fecha=gte.${desde}&order=fecha`,{token:t})]);
     const filas=(cl||[]).map(c=>{
       const mios=(ds||[]).filter(d=>d.codigo===c.codigo), ini=mios.length?mios[0].fecha:hoy;
-      const dias=mios.map(d=>{ const p={...(d.puntos||{})}; delete p.alcohol; if(!c.fumador) delete p.tabaco; const al=(d.datos&&d.datos.alc)||0; return {f:d.fecha, p, alc:al, conf:!!(d.datos&&d.datos.alcOk), q:true, pen:penDe(d.datos||{}, al).total}; });
+      const dias=mios.map(d=>{ const p={...(d.puntos||{})}; delete p.alcohol; if(!c.fumador) delete p.tabaco; const al=(d.datos&&d.datos.alc)||0; return {f:d.fecha, p, alc:al, conf:!!(d.datos&&d.datos.alcOk), q:true, pen:penDe(d.datos||{}, al).total, o3:d.datos&&d.datos.o3?d.datos.o3==="si":null}; });
       const porF=Object.fromEntries(mios.map(d=>[d.fecha,d.datos||{}])), pau=Math.max(1,+(mios.length&&mios[mios.length-1].datos&&mios[mios.length-1].datos.pauta)||3);
       const getE=f=>{ const x=porF[f]; if(!x) return []; if(x.ent) return x.ent; return x.entreno==="si"?[{t:x.tipo||"fuerza"}]:[]; };
       dias.forEach(d=>delete d.p.fuerza);
@@ -3473,7 +3511,7 @@ function entDia(f, V){
 }
 /* valor de cada sesión frente a la pauta (no se enseña al cliente) */
 function valorSesion(s){
-  if(s.t==="cardio") return (s.min||45)>=45 ? 0.65 : 0.45;
+  if(s.t==="cardio") return FICHA.perfil==="resist" ? ((s.min||45)>=30 ? 1 : 0.7) : ((s.min||45)>=45 ? 0.85 : 0.6);   // el cardio también cuenta como entreno
   return ({fuerza:1, crossfit:1, hyrox:1, dirigida:0.75, pilates:0.75, yoga:0.55})[s.t] ?? 0.6;
 }
 const pautaEnt = () => Math.max(1, +FICHA.entrenosSemana || 3);
