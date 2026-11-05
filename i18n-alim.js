@@ -250,3 +250,8 @@ A("Dieta vegetal: proteínas de soja, tofu, tempeh, seitán, Heura y legumbres. 
 ["Esta semana: Fuerza: # de # · Cardio: # de #","Aquesta setmana: Força: # de # · Cardio: # de #","This week: Strength: # of # · Cardio: # of #"],
 ["El cardio que el móvil no cuenta como pasos (bici, elíptica, natación, remo…) suma pasos equivalentes según las kcal gastadas y tu peso: con # kg, unas # kcal ≈ #.# pasos. Correr y caminar ya los cuenta el móvil.","El cardio que el mòbil no compta com a passos (bici, el·líptica, natació, rem…) suma passos equivalents segons les kcal gastades i el teu pes: amb # kg, unes # kcal ≈ #.# passos. Córrer i caminar ja els compta el mòbil.","Cardio your phone doesn't count as steps (bike, elliptical, swimming, rowing…) adds equivalent steps based on the kcal burned and your weight: at # kg, about # kcal ≈ #,# steps. Running and walking are already counted by your phone."]
 ].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [
+["¿Cuántas kcal has gastado, más o menos?","Quantes kcal has gastat, més o menys?","Roughly how many kcal did you burn?"],["Menos de #","Menys de #","Under #"],["Más de #","Més de #","Over #"],["Menos de # kcal","Menys de # kcal","Under # kcal"],["Más de # kcal","Més de # kcal","Over # kcal"],
+["No lo sé","No ho sé","I don't know"],["Si sabes la cifra exacta (reloj o máquina)","Si saps la xifra exacta (rellotge o màquina)","If you know the exact figure (watch or machine)"],
+["Marca cuántas kcal has gastado (o «No lo sé»).","Marca quantes kcal has gastat (o «No ho sé»).","Tap how many kcal you burned (or «I don't know»)."]
+].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();

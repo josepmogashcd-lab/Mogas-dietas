@@ -365,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.39.0"></script>
-<script src="i18n-vs.js?v=2.39.0"></script>
-<script src="i18n-alim.js?v=2.39.0"></script>
-<script src="recetas-esp.js?v=2.39.0"></script>
+<script src="i18n.js?v=2.40.0"></script>
+<script src="i18n-vs.js?v=2.40.0"></script>
+<script src="i18n-alim.js?v=2.40.0"></script>
+<script src="recetas-esp.js?v=2.40.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -905,7 +905,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.39.0";
+const APP_VERSION = "2.40.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3453,7 +3453,7 @@ function vsQPintar(arriba){
   } else if(paso==="entreno"){
     const L=entDia(Q.f), S=semTxt(Q.f), eqP=pasosEqDia(Q.f);
     body = `<div class="qc"><span class="qlab">${esHoy?"ENTRENOS QUE HAS APUNTADO HOY":"ENTRENOS QUE APUNTASTE AYER"}</span>
-      ${L.length?`<ul class="qlist">${L.map(x=>`<li><span>${esc(sesionTxt(x))}</span>${x.min?` · <span>${x.min} min</span>`:""}${x.t==="cardio"?` · <span>≈${kcalCardio(x)} kcal</span>`:""}</li>`).join("")}</ul>`:`<b class="qbig">Ninguno</b>`}
+      ${L.length?`<ul class="qlist">${L.map(x=>`<li><span>${esc(sesionTxt(x))}</span>${x.min?` · <span>${x.min} min</span>`:""}${x.t==="cardio"?` · <span>${kcalTxt(x)}</span>`:""}</li>`).join("")}</ul>`:`<b class="qbig">Ninguno</b>`}
       <div class="qg g2">${L.length?ob("entOk","ok","Correcto")+ob("entOk","add","Me falta alguno"):ob("entOk","ok","Correcto, no he entrenado")+ob("entOk","add","Se me olvidó apuntarlo")}</div>
       ${a.entOk==="add"?`<span class="qs">Toca lo que te faltó apuntar</span><div class="qg g2">${[["fuerza","Fuerza en sala"],["crossfit","CrossFit o Hyrox"],["dirigida","Clase dirigida o pilates"],["cardio","Cardio"],["yoga","Yoga o estiramientos"]].map(([v,t])=>`<button type="button" class="qo" data-addent="${v}">+ ${t}</button>`).join("")}</div>
         ${Q.addEnt&&Q.addEnt.length?`<button type="button" class="qlink" data-act="undoent">Quitar el último</button>`:""}<span class="qs">Para poner la duración o las calorías, usa la pestaña Apuntar.</span>`:""}
@@ -3613,6 +3613,9 @@ const CARDIO = [["correr","Correr"],["bici","Bici o spinning"],["eliptica","Elí
 /* kcal activas aproximadas si no las pone: (MET − 1) × kg × horas */
 const MET_CARDIO = {correr:9.8, bici:7, eliptica:6, natacion:7, remo:7, caminar:4.3, otro:6};
 const pesoRef = () => FICHA.peso>0 ? FICHA.peso : (FICHA.sexo==="Hombre" ? 78 : 65);
+/* tramos de kcal para no tener que escribir: se guarda el punto medio */
+const KCAL_TRAMOS = [[150,"Menos de 200"],[250,"200–300"],[350,"300–400"],[500,"400–600"],[700,"600–800"],[900,"Más de 800"]];
+const kcalTxt = x => { const t=x.kr && KCAL_TRAMOS.find(([v])=>v===x.kcal); return t ? `${t[1]} kcal` : `${x.kcal?"":"≈"}${kcalCardio(x)} kcal`; };
 const kcalCardio = s => s.kcal>0 ? s.kcal : Math.round(((MET_CARDIO[s.sub]||6)-1) * pesoRef() * (s.min||45)/60);
 /* pasos equivalentes: caminar gasta ≈ 0,00057 kcal por paso y kg (70 kg → 10.000 pasos ≈ 400 kcal).
    Correr y caminar ya suman pasos en el móvil: no se cuentan dos veces. */
@@ -3668,31 +3671,35 @@ function entrenoApuntar(diaSel){
 <div class="entf"><span class="entl">¿Qué has hecho?</span><div class="entg ent-t">${ENT_TIPOS.map(([v,t])=>`<button type="button" data-t="${v}">${t}</button>`).join("")}</div>
 <div class="ent-cardio" hidden><span class="entl">¿Qué cardio?</span><div class="entg ent-s">${CARDIO.map(([v,t])=>`<button type="button" data-s="${v}">${t}</button>`).join("")}</div></div>
 <span class="entl">¿Cuánto rato?</span><div class="entg ent-m">${ENT_DUR.map(m=>`<button type="button" data-m="${m}">${m<60?`${m} min`:m===60?"1 h":m===90?"1 h 30 min":"2 h"}</button>`).join("")}</div>
-<div class="entin"><label><span>Otro (min)</span><input type="number" inputmode="numeric" min="5" max="600" class="ent-mi" placeholder="min"></label><label><span>Kcal gastadas (las del reloj o la máquina)</span><input type="number" inputmode="numeric" min="0" max="5000" class="ent-k" placeholder="kcal"></label></div>
+<div class="entin"><label><span>Otro (min)</span><input type="number" inputmode="numeric" min="5" max="600" class="ent-mi" placeholder="min"></label></div>
+<div class="ent-kc" hidden><span class="entl">¿Cuántas kcal has gastado, más o menos?</span><div class="entg ent-kr">${KCAL_TRAMOS.map(([v,t])=>`<button type="button" data-k="${v}">${t}</button>`).join("")}<button type="button" data-k="0">No lo sé</button></div>
+<div class="entin"><label><span>Si sabes la cifra exacta (reloj o máquina)</span><input type="number" inputmode="numeric" min="0" max="5000" class="ent-k" placeholder="kcal"></label></div></div>
 <p class="enterr warn"></p>
 <button type="button" class="bebok entok">✅ Guardar entreno</button></div>`);
   const box=chat.lastElementChild;
   const pintarLista=()=>{ const l=entDatos()[diaSel]||[], S=semTxt(diaSel);
-    box.querySelector(".entlista").innerHTML = (l.length ? l.map((x,i)=>`<div class="enti"><span><b>${esc(sesionTxt(x))}</b>${x.min?` · <span>${x.min} min</span>`:""}${x.t==="cardio"?` · <span>${x.kcal?"":"≈"}${kcalCardio(x)} kcal</span>`:x.kcal?` · <span>${x.kcal} kcal</span>`:""}</span><button type="button" class="entx" data-i="${i}" aria-label="Borrar">✕</button></div>`).join("")
+    box.querySelector(".entlista").innerHTML = (l.length ? l.map((x,i)=>`<div class="enti"><span><b>${esc(sesionTxt(x))}</b>${x.min?` · <span>${x.min} min</span>`:""}${x.t==="cardio"?` · <span>${kcalTxt(x)}</span>`:x.kcal?` · <span>${x.kcal} kcal</span>`:""}</span><button type="button" class="entx" data-i="${i}" aria-label="Borrar">✕</button></div>`).join("")
       : `<p class="note">${diaSel===hoy?"Hoy aún no has apuntado ningún entreno.":"Ayer no apuntaste ningún entreno."}</p>`)
       + `<div class="entsem"><span>Esta semana:</span> <span>${S.txt}</span></div>`;
     box.querySelectorAll(".entx").forEach(b=>b.onclick=()=>{ if(!confirm(trT("¿Borrar este entreno?"))) return; const D=entDatos(), L=D[diaSel]||[]; L.splice(+b.dataset.i,1); if(L.length) D[diaSel]=L; else delete D[diaSel]; entGuardar(D); vsSyncEnt(diaSel); pintarLista(); }); };
   const marcar=(sel,attr,val)=>box.querySelectorAll(sel+" button").forEach(b=>b.classList.toggle("on",b.dataset[attr]===String(val)));
-  box.querySelectorAll(".ent-t button").forEach(b=>b.onclick=()=>{ nuevo.t=b.dataset.t; marcar(".ent-t","t",nuevo.t); box.querySelector(".ent-cardio").hidden = nuevo.t!=="cardio"; if(nuevo.t!=="cardio") nuevo.sub=null; });
+  box.querySelectorAll(".ent-t button").forEach(b=>b.onclick=()=>{ nuevo.t=b.dataset.t; marcar(".ent-t","t",nuevo.t); box.querySelector(".ent-cardio").hidden = box.querySelector(".ent-kc").hidden = nuevo.t!=="cardio"; if(nuevo.t!=="cardio"){ nuevo.sub=null; nuevo.kcal=null; nuevo.kr=false; } });
+  box.querySelectorAll(".ent-kr button").forEach(b=>b.onclick=()=>{ const v=+b.dataset.k; nuevo.kcal=v||null; nuevo.kr=v>0; marcar(".ent-kr","k",v); box.querySelector(".ent-k").value=""; });
   box.querySelectorAll(".ent-s button").forEach(b=>b.onclick=()=>{ nuevo.sub=b.dataset.s; marcar(".ent-s","s",nuevo.sub); });
   box.querySelectorAll(".ent-m button").forEach(b=>b.onclick=()=>{ nuevo.min=+b.dataset.m; marcar(".ent-m","m",nuevo.min); box.querySelector(".ent-mi").value=""; });
   box.querySelector(".ent-mi").oninput=e=>{ const v=Math.round(+e.target.value); nuevo.min = v>0 ? v : null; marcar(".ent-m","m",-1); };
-  box.querySelector(".ent-k").oninput=e=>{ const v=Math.round(+e.target.value); nuevo.kcal = v>0 ? v : null; };
+  box.querySelector(".ent-k").oninput=e=>{ const v=Math.round(+e.target.value); nuevo.kcal = v>0 ? v : null; nuevo.kr=false; marcar(".ent-kr","k",-1); };
   box.querySelector(".entok").onclick=()=>{
     const er=box.querySelector(".enterr");
     if(!nuevo.t){ er.textContent=trT("Elige qué entreno has hecho."); return; }
     if(nuevo.t==="cardio" && !nuevo.sub){ er.textContent=trT("Elige qué tipo de cardio."); return; }
     if(!nuevo.min){ er.textContent=trT("Elige cuánto rato ha durado."); return; }
+    if(nuevo.t==="cardio" && !nuevo.kcal && !box.querySelector(".ent-kr button.on")){ er.textContent=trT("Marca cuántas kcal has gastado (o «No lo sé»)."); return; }
     er.textContent="";
-    const D=entDatos(), L=D[diaSel]||[]; L.push({t:nuevo.t, ...(nuevo.sub?{sub:nuevo.sub}:{}), min:nuevo.min, ...(nuevo.kcal?{kcal:nuevo.kcal}:{})}); D[diaSel]=L; entGuardar(D); vsSyncEnt(diaSel);
+    const D=entDatos(), L=D[diaSel]||[]; L.push({t:nuevo.t, ...(nuevo.sub?{sub:nuevo.sub}:{}), min:nuevo.min, ...(nuevo.kcal?{kcal:nuevo.kcal}:{}), ...(nuevo.kr?{kr:1}:{})}); D[diaSel]=L; entGuardar(D); vsSyncEnt(diaSel);
     const S=semTxt(diaSel), eqP=pasosEqDia(diaSel);
-    box.querySelectorAll(".entf button.on").forEach(b=>b.classList.remove("on")); box.querySelector(".ent-mi").value=""; box.querySelector(".ent-k").value=""; box.querySelector(".ent-cardio").hidden=true;
-    Object.assign(nuevo,{t:null,sub:null,min:null,kcal:null}); pintarLista();
+    box.querySelectorAll(".entf button.on").forEach(b=>b.classList.remove("on")); box.querySelector(".ent-mi").value=""; box.querySelector(".ent-k").value=""; box.querySelector(".ent-cardio").hidden=box.querySelector(".ent-kc").hidden=true;
+    Object.assign(nuevo,{t:null,sub:null,min:null,kcal:null,kr:false}); pintarLista();
     const op=box.nextElementSibling; if(op && op.classList.contains("opts")) op.remove();
     bot(`<b>✅ Entreno guardado</b>\n<span>Esta semana:</span> <span>${S.txt}</span>${eqP>0?`\n<span>Tu cardio de hoy cuenta como</span> <b>≈${fmtN(eqP)}</b> <span>pasos más en tu nota de pasos.</span>`:""}`);
     opts([{t:"🏋️ Apuntar otro entreno", f:()=>entrenoApuntar(diaSel)}]);
