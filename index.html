@@ -223,6 +223,10 @@
   .vsrec{font:inherit;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1.5px dashed var(--brand);color:var(--brand-dark);border-radius:12px;padding:11px;margin:10px 0 2px;cursor:pointer;font-weight:600}
   .qg.g5{grid-template-columns:repeat(5,1fr)}.qg.g5 .qo{min-height:40px;padding:0}
   .qesc{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:4px}
+  .vsnav{display:flex;align-items:center;justify-content:space-between;width:100%;margin:8px 0 2px}
+  .vsnav span{font-size:13.5px;font-weight:600;color:var(--brand-dark);text-align:center;flex:1}
+  .vsnb{font:inherit;font-size:22px;line-height:1;width:38px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--brand-dark);cursor:pointer}
+  .vsnb:disabled{opacity:.3;cursor:default}
   .hbtn{position:relative;z-index:1;margin-left:auto;font:inherit;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
   .panel button.big{width:100%;font:inherit;font-weight:650;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;cursor:pointer}
   .panel .cli{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #eef0ea}
@@ -361,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.35.2"></script>
-<script src="i18n-vs.js?v=2.35.2"></script>
-<script src="i18n-alim.js?v=2.35.2"></script>
-<script src="recetas-esp.js?v=2.35.2"></script>
+<script src="i18n.js?v=2.36.0"></script>
+<script src="i18n-vs.js?v=2.36.0"></script>
+<script src="i18n-alim.js?v=2.36.0"></script>
+<script src="recetas-esp.js?v=2.36.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -900,7 +904,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.35.2";
+const APP_VERSION = "2.36.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3248,7 +3252,7 @@ const ICO = {
 };
 
 /* --- pestañas --- */
-let TAB="vs", VS_PER="mes", Q=null;
+let TAB="vs", VS_PER="mes", VS_OFF=0, Q=null;   // VS_OFF: cuántos periodos hacia atrás (deslizar)
 function marcarTab(t){ TAB=t; document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t)); }
 function irTab(t){
   marcarTab(t); Q=null;
@@ -3274,10 +3278,16 @@ function vsHome(){
   Q=null;
   const ft=document.querySelector(".app footer"); if(ft) ft.hidden=false;
   const box=document.getElementById("vs"); if(!box) return;
-  const r=vsPeriodo(VS_PER), c=contadores(), V=vsDatos(), hoy=fechaISO(), ayer=fechaISO(sumarDias(new Date(),-1));
+  const NP={dia:1, semana:7, mes:30}[VS_PER]||0; if(!NP) VS_OFF=0;
+  const atras=VS_OFF*NP, r=vsPeriodo(VS_PER, atras), c=contadores(), V=vsDatos(), hoy=fechaISO(), ayer=fechaISO(sumarDias(new Date(),-1));
+  const finP=sumarDias(new Date(),-(atras+(VS_PER==="dia"?vsDiaRef():0))), iniP=sumarDias(finP,-(NP-1));
+  const hayAntes = NP && fechaISO(sumarDias(iniP,-1))>=vsInicio();
+  const fmtD=(d,o)=>d.toLocaleDateString(locale(),o);
+  const may = t => t ? t.charAt(0).toUpperCase()+t.slice(1) : t;
+  const etiqueta = !NP ? "" : may( VS_PER==="dia" ? (VS_OFF===0 ? "" : fmtD(finP,{weekday:"long",day:"numeric",month:"long"})) : `${fmtD(iniP,{day:"numeric",month:"short"})} – ${fmtD(finP,{day:"numeric",month:"short"})}`);
   let trend="";
   const TR={dia:[1,"el día anterior"], semana:[7,"los 7 días anteriores"], mes:[30,"los 30 días anteriores"]}[VS_PER];
-  if(r.score!=null && TR){ const p=vsPeriodo(VS_PER,TR[0]); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. ${TR[1]}` : d<0?`▼ ${-d} puntos vs. ${TR[1]}` : `Igual que ${TR[1]}`; } }
+  if(r.score!=null && TR){ const p=vsPeriodo(VS_PER,atras+TR[0]); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. ${TR[1]}` : d<0?`▼ ${-d} puntos vs. ${TR[1]}` : `Igual que ${TR[1]}`; } }
   const cnt=(ico,tit,n,rec)=>`<div class="vsc"><div class="vsct">${ico}<span>${tit}</span></div><div class="vscn"><b>${n}</b> <span>${n===1?"día":"días"}</span></div><small>Récord: ${rec} días</small></div>`;
   const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","pasos","estres","fuerza","pantallas","sueno"];
   const SA=serieAdic(), ult=SA.length?SA[SA.length-1]:null, ia=ult?ult.idx:null, ib=ia!=null?adicBanda(ia):null;
@@ -3297,6 +3307,7 @@ function vsHome(){
     <div class="vscnt${FICHA.fumador?" dos":""}">${FICHA.fumador?cnt(ICO.fumar,"SIN FUMAR",c.cf,c.rf):""}${cnt(ICO.alcohol,"SIN ALCOHOL",c.ca,c.ra)}</div>
     <div class="vscard">
       <div class="vstog cuatro" role="group"><button type="button" data-p="dia" class="${VS_PER==="dia"?"on":""}">${vsDiaRef()?"Ayer":"Hoy"}</button><button type="button" data-p="semana" class="${VS_PER==="semana"?"on":""}">7 días</button><button type="button" data-p="mes" class="${VS_PER==="mes"?"on":""}">30 días</button><button type="button" data-p="total" class="${VS_PER==="total"?"on":""}">Desde el inicio</button></div>
+      ${NP?`<div class="vsnav"><button type="button" class="vsnb" data-nav="1" ${hayAntes?"":"disabled"} aria-label="Anterior">‹</button><span class="notr">${esc(etiqueta||(VS_PER==="dia"?(vsDiaRef()?trT("Ayer"):trT("Hoy")):""))}</span><button type="button" class="vsnb" data-nav="-1" ${VS_OFF>0?"":"disabled"} aria-label="Siguiente">›</button></div>`:""}
       <div class="vslab">VITAL SCORE</div>
       <p class="vsque">No mide tu salud ni tu peso de hoy: mide tus hábitos. Es la nota de lo que está en tus manos (comer bien, moverte, dormir y evitar el alcohol y el tabaco) para llegar a tener un cuerpo sano.</p>
       ${anillo(r.score,210,22,r.score==null?`<b>—</b>`:`<b>${r.score}</b><small>de 100</small>`)}
@@ -3352,7 +3363,14 @@ function vsHome(){
       <ul>${VS_BANDAS.map((x,i)=>`<li><span><i style="background:${x.ring}"></i> ${x.n}</span> <span>${i?VS_BANDAS[i-1].max+1:0} – ${x.max}</span></li>`).join("")}</ul>
     </div>
     <div class="vspil">${orden.map(k=>{ const v=r.pil[k]; return `<div class="vsp">${anillo(v,44,6,v==null?"—":v)}<span class="t"><b>${VS_NOM[k]}</b><small>${det(k)}</small></span></div>`; }).join("")}</div>`;
-  box.querySelectorAll(".vstog button").forEach(x=>x.onclick=()=>{ VS_PER=x.dataset.p; vsHome(); });
+  box.querySelectorAll(".vstog button").forEach(x=>x.onclick=()=>{ VS_PER=x.dataset.p; VS_OFF=0; vsHome(); });
+  const mover=d=>{ if(d>0 && !hayAntes) return; if(d<0 && VS_OFF===0) return; VS_OFF=Math.max(0,VS_OFF+d); const st=box.scrollTop; vsHome(); box.scrollTop=st; };
+  box.querySelectorAll(".vsnb").forEach(x=>x.onclick=()=>mover(+x.dataset.nav));
+  /* deslizar el dedo hacia la izquierda = periodo anterior; hacia la derecha = siguiente */
+  const card=box.querySelector(".vscard"); if(card && NP){ let x0=null,y0=null;
+    card.addEventListener("touchstart",e=>{ x0=e.touches[0].clientX; y0=e.touches[0].clientY; },{passive:true});
+    card.addEventListener("touchend",e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
+      if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)*1.5) mover(dx<0?1:-1); },{passive:true}); }
   const rb=box.querySelector("#vsrec"); if(rb) rb.onclick=()=>{ irTab("ayuda"); chat.innerHTML=""; recordatorio(); };
   box.querySelectorAll("[data-q]").forEach(x=>x.onclick=()=>vsCuestionario(x.dataset.q));
   box.querySelector("#vscomo").onclick=()=>{ const e=box.querySelector("#vscomobox"); e.hidden=!e.hidden; };
