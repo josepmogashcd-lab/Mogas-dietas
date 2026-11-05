@@ -204,3 +204,4 @@ A("Dieta vegetal: proteínas de soja, tofu, tempeh, seitán, Heura y legumbres. 
 (function(){ if(!window.I18N) return; [["No mide tu salud ni tu peso de hoy: mide tus hábitos. Es la nota de lo que está en tus manos (comer bien, moverte, dormir y evitar el alcohol y el tabaco) para llegar a tener un cuerpo sano.",
 "No mesura la teva salut ni el teu pes d'avui: mesura els teus hàbits. És la nota del que està a les teves mans (menjar bé, moure't, dormir i evitar l'alcohol i el tabac) per arribar a tenir un cos sa.",
 "It doesn't measure your health or your weight today: it measures your habits. It's the score for what's in your hands (eating well, moving, sleeping, avoiding alcohol and tobacco) to reach a healthy body."]].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [["(≈# kcal de azúcar)","(≈# kcal de sucre)","(≈# kcal of sugar)"]].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();

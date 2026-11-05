@@ -358,10 +358,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.32.0"></script>
-<script src="i18n-vs.js?v=2.32.0"></script>
-<script src="i18n-alim.js?v=2.32.0"></script>
-<script src="recetas-esp.js?v=2.32.0"></script>
+<script src="i18n.js?v=2.32.1"></script>
+<script src="i18n-vs.js?v=2.32.1"></script>
+<script src="i18n-alim.js?v=2.32.1"></script>
+<script src="recetas-esp.js?v=2.32.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -897,7 +897,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.32.0";
+const APP_VERSION = "2.32.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3054,9 +3054,18 @@ function excesoAzucar(a){
   const pu=picoUnidades(a); u += pu.dulce>8 ? 4 : pu.dulce>=5 ? 2 : 0;
   return u;
 }
+/* kcal aproximadas de azúcar del día (dulces, bebidas azucaradas y azúcar del café) */
+const KCAL_PICO = {galletas:45, bolleria:250, chocolate:110, chuches:100, gominolas:100, postre:200};
+function kcalAzucar(a){
+  if(!a) return 0; let k=({"1":20,"2":40})[a.cafe]||0;
+  k += ({"1":140,"2":280,"3":450})[a.bebAz]||0;
+  if(a.pico==="si"){ if(a.picoN) Object.entries(a.picoN).forEach(([id,n])=>{ k += (KCAL_PICO[id]||0)*n; }); else k += picoUnidades(a).dulce*90; }
+  return k;
+}
+const PEN_AZ_KCAL = [[1200,40],[800,25],[500,15]];   // más de 500 kcal de azúcar al día resta directo de la nota total
 function penDe(a, alc){
   const tramo=(v,T)=>{ for(const [m,p] of T) if(v>=m) return p; return 0; };
-  const pa=tramo(alc||0,PEN_ALC), pz=tramo(excesoAzucar(a||{}),PEN_AZ);
+  const pa=tramo(alc||0,PEN_ALC), pz=Math.max(tramo(excesoAzucar(a||{}),PEN_AZ), tramo(kcalAzucar(a),PEN_AZ_KCAL));
   // fallos graves de dieta (restan además de bajar la nota de dieta)
   const pv = a && (a.verdura==="no" || a.verd==="0") ? 10 : 0, pp = a && a.proteina==="no" ? 5 : 0, pc = a && a.cant==="mal" ? 10 : 0;
   return {alc:pa, az:pz, verd:pv, prot:pp, ctrl:pc, total:pa+pz+pv+pp+pc};
@@ -3359,7 +3368,7 @@ function vsQPintar(arriba){
   } else {
     const p=puntosDia(Q.a, Q.f), pn=penDe(Q.a, alcDia(Q.f)), base=notaDe(p, FICHA.fumador), nota=base==null?null:Math.max(0,base-pn.total), bd=nota!=null?vsBanda(nota):null, c=contadores(), msgs=[];
     if(pn.alc) msgs.push(`<div class="qpen"><b>−${pn.alc}</b> <span>puntos por exceso de alcohol</span></div>`);
-    if(pn.az) msgs.push(`<div class="qpen"><b>−${pn.az}</b> <span>puntos por exceso de azúcar</span></div>`);
+    if(pn.az){ const kz=kcalAzucar(Q.a); msgs.push(kz>=500 ? `<div class="qpen"><b>−${pn.az}</b> <span>puntos por exceso de azúcar</span> <span>(≈${kz} kcal de azúcar)</span></div>` : `<div class="qpen"><b>−${pn.az}</b> <span>puntos por exceso de azúcar</span></div>`); }
     if(pn.verd) msgs.push(`<div class="qpen"><b>−${pn.verd}</b> <span>puntos por no comer la verdura</span></div>`);
     if(pn.prot) msgs.push(`<div class="qpen"><b>−${pn.prot}</b> <span>puntos por proteína rebozada o frita</span></div>`);
     if(pn.ctrl) msgs.push(`<div class="qpen"><b>−${pn.ctrl}</b> <span>puntos por perder el control con las cantidades</span></div>`);
