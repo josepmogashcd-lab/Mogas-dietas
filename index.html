@@ -365,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.40.0"></script>
-<script src="i18n-vs.js?v=2.40.0"></script>
-<script src="i18n-alim.js?v=2.40.0"></script>
-<script src="recetas-esp.js?v=2.40.0"></script>
+<script src="i18n.js?v=2.40.1"></script>
+<script src="i18n-vs.js?v=2.40.1"></script>
+<script src="i18n-alim.js?v=2.40.1"></script>
+<script src="recetas-esp.js?v=2.40.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -905,7 +905,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.40.0";
+const APP_VERSION = "2.40.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3074,7 +3074,7 @@ const alcPts = n => n===0?100 : n===1?75 : n===2?45 : n<=4?15 : 0;
 /* Castigos por exceso: restan directamente de la nota total del día */
 const PEN_ALC = [[12,50],[8,40],[5,25],[3,10]];          // consumiciones del día → puntos que resta
 const PEN_AZ  = [[6,40],[4,30],[3,20],[2,10]];           // unidades de exceso de azúcar → puntos que resta
-const PICO = [["galletas","Galletas","1 = 1 galleta"],["bolleria","Bollería","1 = 1 croissant, magdalena o donut"],["chocolate","Chocolate","1 = 2 onzas"],["chuches","Chucherías y caramelos","1 = un puñado"],["postre","Helado o postre","1 = 1 ración"]];
+const PICO = [["galletas","Galletas","1 = 1 galleta"],["bolleria","Bollería","1 = 1 croissant, magdalena o donut"],["chocolate","Chocolate (menos del 85 %)","1 = 2 onzas"],["chuches","Chucherías y caramelos","1 = un puñado"],["postre","Helado, pastel o postre dulce","1 = 1 ración"]];
 function picoUnidades(a){
   if(a.pico!=="si") return {dulce:0, salado:0};
   if(a.picoN){ let d=0,s=0; Object.entries(a.picoN).forEach(([k,n])=>{ if(k==="salado") s+=n; else d+=n; }); return {dulce:d, salado:s}; }
@@ -3425,7 +3425,7 @@ function vsQPintar(arriba){
     body = `<div class="qc"><span class="qt">¿Azúcar en el café o infusiones?</span><div class="qg g3">${ob("cafe","0","No")}${ob("cafe","1","1 sobre")}${ob("cafe","2","2 o más")}</div></div>
       <div class="qc"><span class="qt">¿Bebidas azucaradas? (refrescos, zumos, batidos)</span><div class="qg g4">${ob("bebAz","0","Ninguna")}${ob("bebAz","1","1")}${ob("bebAz","2","2")}${ob("bebAz","3","3 o más")}</div></div>
       <div class="qc"><span class="qt">¿Refrescos zero o light?</span><div class="qg g3">${ob("bebZero","0","Ninguno")}${ob("bebZero","1","1")}${ob("bebZero","2","2 o más")}</div><small class="qnote">No llevan azúcar, pero mantienen el gusto por el dulce: restan muy poco.</small></div>
-      <div class="qc"><span class="qt">¿Has picoteado algo dulce o con azúcar entre horas?</span><div class="qg g2">${ob("pico","no","No")}${ob("pico","si","Sí")}</div>
+      <div class="qc"><span class="qt">¿Has comido hoy algo dulce con azúcar? (también de postre)</span><div class="qg g2">${ob("pico","no","No")}${ob("pico","si","Sí")}</div><small class="qnote">Cuenta a cualquier hora: un donut de postre también. No cuentan la fruta ni el chocolate negro de 85 % o más.</small>
         ${a.pico==="si"?`<span class="qs">¿Qué dulces? Pon cuántos de cada uno</span><div class="qpico">${PICO.map(([k,n,u])=>{ const v=(a.picoN||{})[k]||0; return `<div class="qpi${v?" tiene":""}"><span class="qpn"><b>${n}</b><small>${u}</small></span><span class="qpc"><button type="button" class="qo" data-pn="${k}" data-d="-1" aria-label="Quitar">−</button><b>${v}</b><button type="button" class="qo mas" data-pn="${k}" data-d="1" aria-label="Añadir">+</button></span></div>`; }).join("")}</div>
         <span class="qs qtot">${(()=>{ const pu=picoUnidades(a); return pu.dulce+pu.salado ? `Total: ${pu.dulce} dulces${pu.salado?` · ${pu.salado} salados`:""}` : "Toca + en lo que hayas comido"; })()}</span></div>`:""}</div>`;
   } else if(paso==="pantallas"){

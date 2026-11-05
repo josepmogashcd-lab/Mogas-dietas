@@ -255,3 +255,8 @@ A("Dieta vegetal: proteínas de soja, tofu, tempeh, seitán, Heura y legumbres. 
 ["No lo sé","No ho sé","I don't know"],["Si sabes la cifra exacta (reloj o máquina)","Si saps la xifra exacta (rellotge o màquina)","If you know the exact figure (watch or machine)"],
 ["Marca cuántas kcal has gastado (o «No lo sé»).","Marca quantes kcal has gastat (o «No ho sé»).","Tap how many kcal you burned (or «I don't know»)."]
 ].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [
+["¿Has comido hoy algo dulce con azúcar? (también de postre)","Has menjat avui alguna cosa dolça amb sucre? (també de postres)","Did you eat anything sweet with sugar today? (dessert included)"],
+["Cuenta a cualquier hora: un donut de postre también. No cuentan la fruta ni el chocolate negro de # % o más.","Compta a qualsevol hora: un dònut de postres també. No compten la fruita ni la xocolata negra del # % o més.","Any time of day counts: a doughnut for dessert too. Fruit and dark chocolate of # % or more don't count."],
+["Chocolate (menos del # %)","Xocolata (menys del # %)","Chocolate (under # %)"],["Helado, pastel o postre dulce","Gelat, pastís o postres dolces","Ice cream, cake or sweet dessert"]
+].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
