@@ -365,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.36.0"></script>
-<script src="i18n-vs.js?v=2.36.0"></script>
-<script src="i18n-alim.js?v=2.36.0"></script>
-<script src="recetas-esp.js?v=2.36.0"></script>
+<script src="i18n.js?v=2.36.1"></script>
+<script src="i18n-vs.js?v=2.36.1"></script>
+<script src="i18n-alim.js?v=2.36.1"></script>
+<script src="recetas-esp.js?v=2.36.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -904,7 +904,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.36.0";
+const APP_VERSION = "2.36.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1643,7 +1643,7 @@ function recordatorio(hora){
     {t:"📅 Añadir a Google Calendar", f:()=>{ const d=d0(), e=new Date(d.getTime()+5*60000);
       const url=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Vital Score")}&details=${encodeURIComponent(txt)}&dates=${f(d)}/${f(e)}&ctz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid")}&recur=${encodeURIComponent("RRULE:FREQ=DAILY")}`;
       window.open(url,"_blank","noopener");
-      bot(`<a class="doclink" href="${esc(url)}" target="_blank" rel="noopener">📅 Abrir Google Calendar</a><span class="note">Se ha abierto Google Calendar. Pulsa <b>Guardar</b>. Para que te avise justo a la hora, en el evento cambia la notificación a <b>«En el momento del evento»</b>.</span>`); opts([{t:"🔔 Volver al recordatorio", f:()=>recordatorio()}]); }},
+      bot(`<a class="doclink" href="${esc(url)}" target="_blank" rel="noopener">📅 Abrir Google Calendar</a><span class="note">Antes de pulsar <b>Guardar</b>, revisa dos cosas en el evento:</span><ul><li><span>Repetición:</span> <b>«Cada día»</b> <span>(desde el móvil, a veces Google lo deja en «No se repite»: cámbialo).</span></li><li><span>Notificación:</span> <b>«En el momento del evento»</b>.</li></ul><span class="note">En iPhone también puedes usar el otro botón (calendario del iPhone) y, al añadirlo, elegir tu calendario de Google: ya va con la repetición diaria y el aviso puestos.</span>`); opts([{t:"🔔 Volver al recordatorio", f:()=>recordatorio()}]); }},
     {t:"🍎 Añadir al calendario del iPhone u otro", f:()=>{ const d=d0(), e=new Date(d.getTime()+5*60000), now=new Date();
       const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//MOGAS//Vital Score//ES","CALSCALE:GREGORIAN","BEGIN:VEVENT",`UID:vitalscore-${FICHA.codigo||"x"}@mogas`,`DTSTAMP:${f(now)}`,`DTSTART:${f(d)}`,`DTEND:${f(e)}`,"RRULE:FREQ=DAILY","SUMMARY:Vital Score",`DESCRIPTION:${txt.replace(/,/g,"\\,")}`,`URL:${app}`,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Vital Score","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
       const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"})); a.download="vital-score.ics"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
