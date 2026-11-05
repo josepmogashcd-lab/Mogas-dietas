@@ -320,6 +320,25 @@
   .vsadhoy{font-size:14px}
   .vsadn{font-size:12px;color:var(--muted);line-height:1.35}
   .vspil{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  button.vsp{font:inherit;text-align:left;border:0;cursor:pointer;width:100%}
+  .pback{font:inherit;font-size:15px;font-weight:700;align-self:flex-start;border:0;background:none;color:var(--brand-dark);padding:4px 2px;cursor:pointer}
+  .pchart{width:100%;display:flex;align-items:flex-end;gap:3px;height:130px;padding-top:6px}
+  .pchart.fino{gap:1px}
+  .pbar{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;border-radius:4px}
+  .pbar i{width:100%;border-radius:4px 4px 0 0;min-height:3px;display:block}
+  .pbar.vacio i{min-height:3px}.pbar.on{outline:2px solid var(--brand-dark);outline-offset:1px}
+  .pbar small{font-size:10px;color:var(--muted);line-height:1}
+  .pdia{width:100%;background:var(--brand-2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  .pdl{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13.5px}
+  .pstat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .pstat li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;border-bottom:1px solid var(--line);padding-bottom:6px}.pstat li:last-child{border:0;padding:0}
+  .ptips{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.4}
+  .rtit{font-size:18px;color:var(--grey);text-align:center}.rtxt{margin:0;font-size:14px;line-height:1.45;text-align:center}
+  .vsres{position:relative;background:#2f3d27;color:#fff;border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+  .vsres b{font-size:18px}.vsrest{font-size:12.5px;font-weight:700;letter-spacing:.03em;opacity:.85}.vsresn{font-size:13.5px}
+  .vsresx{position:absolute;top:8px;right:8px;width:32px;height:32px;border:0;border-radius:50%;background:rgba(255,255,255,.15);cursor:pointer;display:grid;place-items:center}
+  .vsresx svg{width:16px;height:16px;stroke:#fff;stroke-width:2.4;fill:none}
+  .vsresb{font:inherit;font-weight:700;margin-top:6px;border:0;border-radius:12px;padding:10px;background:#fff;color:#2f3d27;cursor:pointer}
   .vsp{background:#fff;border-radius:16px;padding:10px;display:flex;align-items:center;gap:10px}
   .vsp .t{min-width:0}.vsp b{display:block;font-size:14px;color:var(--grey)}.vsp small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
   .qz{display:flex;flex-direction:column;gap:10px}
@@ -365,10 +384,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.41.0"></script>
-<script src="i18n-vs.js?v=2.41.0"></script>
-<script src="i18n-alim.js?v=2.41.0"></script>
-<script src="recetas-esp.js?v=2.41.0"></script>
+<script src="i18n.js?v=2.42.0"></script>
+<script src="i18n-vs.js?v=2.42.0"></script>
+<script src="i18n-alim.js?v=2.42.0"></script>
+<script src="recetas-esp.js?v=2.42.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -905,7 +924,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.41.0";
+const APP_VERSION = "2.42.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3194,10 +3213,13 @@ function vsPeriodo(tipo, atras=0){
   if(tipo==="dia") atras += vsDiaRef();
   const fin=fechaISO(sumarDias(new Date(),-atras)), ini=vsInicio();
   const nDias = {dia:1, semana:7, mes:30}[tipo];
-  let desde = nDias ? fechaISO(sumarDias(deISO(fin),-(nDias-1))) : ini;
-  if(desde<ini) desde=ini; if(fin<desde) return {score:null, pil:{}, n:0};
+  return vsRango(nDias ? fechaISO(sumarDias(deISO(fin),-(nDias-1))) : ini, fin);
+}
+function vsRango(desde, fin){
+  const ini=vsInicio(); if(desde<ini) desde=ini; if(fin<desde) return {score:null, pil:{}, n:0, dias:[]};
   const dias=vsDiasLocal(desde,fin), V=vsDatos(), hayDatos=dias.some(d=>d.q) || Object.keys(entDatos()).length;
-  return vsCalcular(dias, diasEntre(desde,fin), FICHA.fumador, {fuerza: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaEnt(), desde, fin) : null, cardio: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaCardio(), desde, fin, valorCardio) : null});
+  const R=vsCalcular(dias, diasEntre(desde,fin), FICHA.fumador, {fuerza: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaEnt(), desde, fin) : null, cardio: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaCardio(), desde, fin, valorCardio) : null});
+  R.dias=dias; return R;
 }
 function racha(test){
   let n=0, d=new Date(); const t0=test(fechaISO(d));
@@ -3312,7 +3334,11 @@ function vsHome(){
     if(k==="alcohol" && r.alcSem!=null){ const s=Math.round(r.alcSem*10)/10; return s===1?"1 consumición/semana":`${String(s).replace(".",",")} consumiciones/semana`; }
     return vsBanda(v).n; };
   const b=r.score!=null?vsBanda(r.score):null;
+  const RP=resPendientes();
   box.innerHTML=`
+    ${RP.map(P=>{ const sc=resDatos(P).r.score, bi=VS_BANDAS.indexOf(vsBanda(sc)); return `<div class="vsres" data-res="${P.tipo}"><button type="button" class="vsresx" data-x="${P.tipo}" aria-label="Cerrar">${ICO.x}</button>
+      <span class="vsrest">${P.tipo==="mes"?"📅 Tu resumen del mes":"📋 Tu resumen de la semana"}</span><b>${VEREDICTO[P.tipo][bi][0]}</b><span class="vsresn"><span>Vital Score:</span> <b>${sc}</b></span>
+      <button type="button" class="vsresb" data-rv="${P.tipo}">Ver el resumen y los consejos</button></div>`; }).join("")}
     <div class="vscnt${FICHA.fumador?" dos":""}">${FICHA.fumador?cnt(ICO.fumar,"SIN FUMAR",c.cf,c.rf):""}${cnt(ICO.alcohol,"SIN ALCOHOL",c.ca,c.ra)}</div>
     <div class="vscard">
       <div class="vstog cuatro" role="group"><button type="button" data-p="dia" class="${VS_PER==="dia"?"on":""}">${vsDiaRef()?"Ayer":"Hoy"}</button><button type="button" data-p="semana" class="${VS_PER==="semana"?"on":""}">7 días</button><button type="button" data-p="mes" class="${VS_PER==="mes"?"on":""}">30 días</button><button type="button" data-p="total" class="${VS_PER==="total"?"on":""}">Desde el inicio</button></div>
@@ -3334,6 +3360,7 @@ function vsHome(){
       ${hoyAz!=null?`<div class="vsadhoy"><span>Azúcar de hoy:</span> <b style="color:${adicBanda(100-hoyAz).text}">${azDiaTxt(100-hoyAz)}</b></div>`:""}
       <small class="vsadn">Cuanto más bajo, mejor. Cada día sin azúcar lo baja un poco: los buenos hábitos se notan en 1–2 semanas.</small>
       <small class="vsadn">Es un indicador de hábitos, no un diagnóstico médico.</small>
+      <button type="button" class="vslink" data-pil="azucar">Ver día a día ›</button>
     </div>
     ${(()=>{ const SP=seriePant(); if(!SP.length) return `<div class="vsadic"><div class="vsadt"><span>ÍNDICE DE DEPENDENCIA DE PANTALLAS</span></div><small class="vsadn">Contesta el cuestionario para ver cuánto tiempo pasas en redes y ocio en el móvil.</small></div>`;
       const u=SP[SP.length-1], ip=u.idx, bp=adicBanda(ip), lun=fechaISO(lunesDe(new Date())), lunA=fechaISO(sumarDias(lunesDe(new Date()),-7));
@@ -3348,11 +3375,11 @@ function vsHome(){
       ${mE!=null?`<div class="vsadhoy"><span>Esta semana, de media:</span> <b>${hm(mE)}</b> <span>al día</span></div>`:""}
       ${d!=null?`<div class="vsadev ${d<0?"bien":d>0?"mal":""}">${d<0?`▼ ${-d} min menos al día que la semana pasada`:d>0?`▲ ${d} min más al día que la semana pasada`:"Igual que la semana pasada"}</div>`:""}
       ${u30.length>1?`<div class="vsspark" aria-hidden="true">${u30.map(x=>`<i style="height:${Math.max(4,x.idx)}%;background:${adicBanda(x.idx).ring}"></i>`).join("")}</div><div class="vsgl"><span>Hace 30 días</span><span>Hoy</span></div>`:""}
-      <small class="vsadn">Solo cuenta el ocio (redes, vídeos, juegos), no el trabajo. Cuanto más bajo, mejor.</small></div>`; })()}
+      <small class="vsadn">Solo cuenta el ocio (redes, vídeos, juegos), no el trabajo. Cuanto más bajo, mejor.</small><button type="button" class="vslink" data-pil="pantallas">Ver día a día ›</button></div>`; })()}
     <button type="button" class="vscta" data-q="${hoy}"><span class="qi">${ICO.test}</span><span class="t"><b>Cuestionario de hoy</b><small>${V[hoy]?"Hecho ✓ · Toca para revisarlo":"Pendiente · 1 minuto"}</small></span>${ICO.flecha}</button>
     ${!V[ayer] && vsInicio()<=ayer && ayer>=fechaISO(sumarDias(new Date(),-1))?`<button type="button" class="vsayer" data-q="${ayer}">¿Se te olvidó ayer? Contestar el de ayer</button>`:""}
     <button type="button" class="vsrec" id="vsrec">🔔 <span>Recordatorio diario en tu calendario</span></button>
-    <div class="vshead"><b>Tus pilares</b><button type="button" class="vslink" id="vscomo">Cómo se calcula</button></div>
+    <div class="vshead"><b>Tus pilares</b><span><button type="button" class="vslink" id="vsresl">Resúmenes</button> · <button type="button" class="vslink" id="vscomo">Cómo se calcula</button></span></div>
     <div class="vscomo" id="vscomobox" hidden>
       <b>Cuánto pesa cada pilar</b>
       <ul>${Object.entries(VS_PESOS).map(([k,p])=>`<li><span>${VS_NOM[k]}</span> <span>${p} %</span></li>`).join("")}</ul>
@@ -3375,7 +3402,8 @@ function vsHome(){
       <b>Colores</b>
       <ul>${VS_BANDAS.map((x,i)=>`<li><span><i style="background:${x.ring}"></i> ${x.n}</span> <span>${i?VS_BANDAS[i-1].max+1:0} – ${x.max}</span></li>`).join("")}</ul>
     </div>
-    <div class="vspil">${orden.map(k=>{ const v=r.pil[k]; return `<div class="vsp">${anillo(v,44,6,v==null?"—":v)}<span class="t"><b>${VS_NOM[k]}</b><small>${det(k)}</small></span></div>`; }).join("")}</div>`;
+    <div class="vspil">${orden.map(k=>{ const v=r.pil[k]; return `<button type="button" class="vsp" data-pil="${k}">${anillo(v,44,6,v==null?"—":v)}<span class="t"><b>${VS_NOM[k]}</b><small>${det(k)}</small></span></button>`; }).join("")}</div>
+    <small class="vsadn" style="text-align:center">Toca un pilar para ver sus días, semanas y meses.</small>`;
   box.querySelectorAll(".vstog button").forEach(x=>x.onclick=()=>{ VS_PER=x.dataset.p; VS_OFF=0; vsHome(); });
   const mover=d=>{ if(d>0 && !hayAntes) return; if(d<0 && VS_OFF===0) return; VS_OFF=Math.max(0,VS_OFF+d); const st=box.scrollTop; vsHome(); box.scrollTop=st; };
   box.querySelectorAll(".vsnb").forEach(x=>x.onclick=()=>mover(+x.dataset.nav));
@@ -3386,8 +3414,239 @@ function vsHome(){
       if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)*1.5) mover(dx<0?1:-1); },{passive:true}); }
   const rb=box.querySelector("#vsrec"); if(rb) rb.onclick=()=>{ irTab("ayuda"); chat.innerHTML=""; recordatorio(); };
   box.querySelectorAll("[data-q]").forEach(x=>x.onclick=()=>vsCuestionario(x.dataset.q));
+  box.querySelectorAll("[data-pil]").forEach(x=>x.onclick=()=>vsPilar(x.dataset.pil, 30));
+  box.querySelectorAll("[data-rv]").forEach(x=>x.onclick=()=>vsResumen(resPeriodos()[x.dataset.rv], true));
+  box.querySelectorAll("[data-x]").forEach(x=>x.onclick=()=>{ resCerrar(resPeriodos()[x.dataset.x]); vsHome(); });
+  box.querySelector("#vsresl").onclick=()=>vsResumenes();
   box.querySelector("#vscomo").onclick=()=>{ const e=box.querySelector("#vscomobox"); e.hidden=!e.hidden; };
   box.scrollTop=0;
+}
+
+/* ===== Detalle de cada pilar (tocar un pilar) y resúmenes semanal y mensual ===== */
+const nomPil = k => k==="azucar" ? "Azúcar" : VS_NOM[k];
+const PIL_ORDEN = () => ["dieta","pasos","fuerza","cardio","alcohol", ...(FICHA.fumador?["tabaco"]:[]),"estres","pantallas","sueno","azucar"];
+const SUENO_H = {menos4:3.5, menos6:5, h7:7, h8:8, mas8:9, entre:7};
+const hmTxt = v => { const m=Math.round(v*60/15)*15; return m>=60?`${Math.floor(m/60)} h${m%60?` ${m%60} min`:""}`:`${m} min`; };
+const sesPil = (k,f) => entDia(f).filter(s=>(k==="fuerza"?valorSesion:valorCardio)(s)>0);
+/* valor del pilar en un día: puntos 0–100 (alcohol: consumiciones; fuerza y cardio: sesiones) */
+function pilDia(k, f){
+  const a=vsDatos()[f];
+  if(k==="fuerza"||k==="cardio"){ const L=sesPil(k,f); return L.length ? L.reduce((s,x)=>s+(k==="fuerza"?valorSesion:valorCardio)(x),0) : (a?0:null); }
+  if(k==="alcohol"){ const n=alcDia(f); return (a&&a.alcOk)||n>0 ? n : null; }
+  if(k==="tabaco" && !FICHA.fumador) return null;
+  const p=puntosDia(a||{}, f); return p[k] ?? null;
+}
+const pilPts = (k,v) => v==null ? null : k==="alcohol" ? alcPts(v) : (k==="fuerza"||k==="cardio") ? Math.min(100, Math.round(v*100)) : v;
+function pilDiaTxt(k, f){
+  const a=vsDatos()[f]||{}, v=pilDia(k,f); if(v==null) return `<p class="note">Sin datos este día.</p>`;
+  const L=[];
+  if(k==="sueno"){ const o=SUENO_OPC.find(([x])=>x===a.sueno); L.push(o?o[1]:"6 – 8 h"); if(a.camaMovil==="si") L.push("Móvil en la cama o antes de dormir"); }
+  else if(k==="pasos"){ const ps=pasDatos().d[f], eq=pasosEqDia(f); if(ps!=null) L.push(`${fmtN(ps)} pasos`); if(eq>0) L.push(`+ ≈${fmtN(eq)} pasos por el cardio`); }
+  else if(k==="estres"){ L.push(`Estrés: ${a.es1}/10`, `Control: ${a.es2}/10`); }
+  else if(k==="pantallas"){ if(a.pant!=null) L.push(PANT_H[+a.pant]); if(a.camaMovil==="si") L.push("Móvil en la cama o antes de dormir"); }
+  else if(k==="alcohol"){ L.push(v===0?"Sin alcohol":v===1?"1 consumición":`${v} consumiciones`); }
+  else if(k==="tabaco"){ L.push(a.fumo==="no"?"Sin fumar":"Ha fumado"); }
+  else if(k==="azucar"){ L.push(azDiaTxt(100-v)); const kc=kcalAzucar(a); if(kc) L.push(`≈${fmtN(kc)} kcal de azúcar`); }
+  else if(k==="dieta"){ L.push(vsBanda(v).n); if(a.verd==="0"||a.verdura==="no") L.push("Sin verdura"); if(a.pico2==="si") L.push("Ha picado entre horas"); if(a.cant==="mal") L.push("Sin control de cantidades"); if(a.social==="si") L.push("Comida social"); }
+  else if(k==="fuerza"||k==="cardio"){ const S=sesPil(k,f); return `<div class="pdl">${S.length?S.map(s=>`<span><b>${esc(sesionTxt(s))}</b>${s.min?` · <span>${s.min} min</span>`:""}${s.t==="cardio"?` · <span>${kcalTxt(s)}</span>`:""}</span>`).join(""):`<span>Ningún entreno</span>`}</div>`; }
+  const pp=pilPts(k,v);
+  return `<div class="pdl">${k!=="alcohol"&&pp!=null?`<span><b>${pp} pts</b></span>`:""}${L.map(t=>`<span>${t}</span>`).join("")}</div>`;
+}
+/* estadísticas de un pilar en un periodo */
+function pilStats(k, desde, fin){
+  const fs=[]; for(let d=deISO(desde); fechaISO(d)<=fin; d=sumarDias(d,1)) fs.push(fechaISO(d));
+  const V=vsDatos(), D=fs.map(f=>({f, v:pilDia(k,f), a:V[f]||{}})).filter(x=>x.v!=null);
+  const s={n:D.length, dias:fs.length, D}; const med=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+  if(k==="sueno"){ const h=D.map(x=>SUENO_H[x.a.sueno]).filter(x=>x!=null); s.horas=med(h); s.cama=D.filter(x=>x.a.camaMovil==="si").length; s.dist=SUENO_OPC.map(([o,t])=>[t, D.filter(x=>x.a.sueno===o).length]); s.cortas=D.filter(x=>["menos4","menos6"].includes(x.a.sueno)).length; }
+  if(k==="pasos"){ const P=fs.map(f=>(pasDatos().d[f]??null)).filter(x=>x!=null); s.media=med(P); s.max=P.length?Math.max(...P):null; s.d10=P.filter(x=>x>=10000).length; s.nP=P.length; }
+  if(k==="estres"){ s.e=med(D.map(x=>+x.a.es1)); s.c=med(D.map(x=>+x.a.es2)); s.altos=D.filter(x=>estresIdx(x.a)>=8).length; }
+  if(k==="pantallas"){ s.h=med(D.filter(x=>x.a.pant!=null).map(x=>PANT_MED[+x.a.pant])); s.mas4=D.filter(x=>x.a.pant==="4").length; s.cama=D.filter(x=>x.a.camaMovil==="si").length; }
+  if(k==="alcohol"){ s.total=D.reduce((a,x)=>a+x.v,0); s.con=D.filter(x=>x.v>0).length; s.sin=D.filter(x=>x.v===0).length; s.sem=s.total/Math.max(7,fs.length)*7; }
+  if(k==="tabaco"){ s.sin=D.filter(x=>x.a.fumo==="no").length; }
+  if(k==="azucar"){ s.sin=D.filter(x=>x.v>=100).length; s.k500=D.filter(x=>kcalAzucar(x.a)>500).length; s.beb=D.filter(x=>+x.a.bebAz>0).length; }
+  if(k==="dieta"){ s.buenos=D.filter(x=>x.v>=80).length; s.sinVerd=D.filter(x=>x.a.verd==="0"||x.a.verdura==="no").length; s.pico=D.filter(x=>x.a.pico2==="si").length; s.cant=D.filter(x=>x.a.cant==="mal").length; }
+  if(k==="fuerza"||k==="cardio"){ s.ses=fs.reduce((a,f)=>a+sesPil(k,f).length,0); s.pauta=k==="fuerza"?pautaEnt():pautaCardio(); s.porSem=s.ses/fs.length*7; }
+  return s;
+}
+function pilStatsHTML(k, s){
+  const L=[], fila=(t,v)=>L.push(`<li><span>${t}</span> <b>${v}</b></li>`);
+  if(k==="sueno"){ if(s.horas!=null) fila("Media por noche", `≈${hmTxt(s.horas)}`); s.dist.forEach(([t,n])=>{ if(n) fila(t, n===1?"1 noche":`${n} noches`); }); fila("Móvil en la cama", s.cama===1?"1 noche":`${s.cama} noches`); }
+  if(k==="pasos"){ if(s.media!=null){ fila("Media al día", `${fmtN(s.media)} pasos`); fila("Mejor día", `${fmtN(s.max)} pasos`); fila("Días de 10.000 o más", `${s.d10} de ${s.nP}`); } }
+  if(k==="estres"){ if(s.e!=null){ fila("Estrés medio", `${String(Math.round(s.e*10)/10).replace(".",",")}/10`); fila("Control medio", `${String(Math.round(s.c*10)/10).replace(".",",")}/10`); fila("Días con mucho estrés", String(s.altos)); } }
+  if(k==="pantallas"){ if(s.h!=null) fila("Media al día", hmTxt(s.h)); fila("Días de más de 4 h", String(s.mas4)); fila("Móvil en la cama", s.cama===1?"1 noche":`${s.cama} noches`); }
+  if(k==="alcohol"){ fila("Consumiciones en total", String(s.total)); fila("Media por semana", String(Math.round(s.sem*10)/10).replace(".",",")); fila("Días sin alcohol", `${s.sin} de ${s.n}`); }
+  if(k==="tabaco"){ fila("Días sin fumar", `${s.sin} de ${s.n}`); }
+  if(k==="azucar"){ fila("Días sin azúcar", `${s.sin} de ${s.n}`); fila("Días de más de 500 kcal de azúcar", String(s.k500)); fila("Días con bebidas azucaradas", String(s.beb)); }
+  if(k==="dieta"){ fila("Días contestados", `${s.n} de ${s.dias}`); fila("Días muy buenos (80 o más)", String(s.buenos)); fila("Días sin verdura", String(s.sinVerd)); fila("Días que has picado", String(s.pico)); }
+  if(k==="fuerza"||k==="cardio"){ fila("Sesiones", String(s.ses)); fila("Media por semana", `${String(Math.round(s.porSem*10)/10).replace(".",",")} de ${s.pauta}`); }
+  return L.length ? `<ul class="pstat">${L.join("")}</ul>` : "";
+}
+/* consejos y felicitaciones de cada pilar, según la nota (v) y los datos del periodo (s) */
+const PIL_BIEN = {
+  dieta:"Estás siguiendo muy bien tu dieta: es la base de todo lo demás.",
+  pasos:"Te mueves mucho en el día a día. Es de lo que más cuenta para tu salud.",
+  fuerza:"Cumples tus entrenos de fuerza: protegen tu músculo, tus huesos y tu metabolismo.",
+  cardio:"Buen trabajo de cardio: tu corazón te lo agradece.",
+  alcohol:"Muy poco alcohol o nada: tu hígado, tu sueño y tu peso lo notan.",
+  tabaco:"Sin tabaco: es lo mejor que puedes hacer por tu salud.",
+  estres:"Estás gestionando bien el estrés.",
+  pantallas:"Usas poco el móvil para ocio: más tiempo para ti y mejor descanso.",
+  sueno:"Duermes bien: recuperas mejor y tienes menos hambre al día siguiente.",
+  azucar:"Muy poco azúcar: tu gusto por el dulce se está reeducando."};
+function pilConsejos(k, v, s){
+  const T=[];
+  if(k==="sueno"){ if(s.horas!=null && s.horas<6) T.push("Duermes poco. Intenta acostarte 30 minutos antes y mantener la misma hora cada día, también el fin de semana.");
+    else if(s.horas!=null && s.horas<7.5) T.push("Estás cerca: con 30–45 minutos más de sueño notarás más energía y menos hambre.");
+    if(s.cama>=2) T.push("Deja el móvil fuera de la habitación o en modo avión 1 hora antes de dormir: te dormirás antes y mejor.");
+    if(!T.length) T.push("Cena al menos 2 horas antes de acostarte y deja la habitación oscura y fresca."); }
+  if(k==="pasos"){ const m=s.media;
+    if(m==null || m<5000) T.push("Empieza por un paseo de 20–30 minutos al día: después de comer o de cenar es el mejor momento.");
+    else if(m<10000) T.push(`Te faltan unos ${fmtN(Math.round((10000-m)/100)*100)} pasos al día para llegar a 10.000. Baja una parada antes, usa las escaleras o haz las llamadas caminando.`);
+    else T.push("Mantén el nivel: si un día no llegas, compensa con un paseo largo el fin de semana.");
+    T.push("Si haces bici, elíptica o natación, apúntalo: también suma a tus pasos."); }
+  if(k==="fuerza"||k==="cardio"){ const p=k==="fuerza"?pautaEnt():pautaCardio();
+    T.push(k==="fuerza" ? `Tu objetivo son ${p} entrenos de fuerza a la semana. Pon los días y la hora en el calendario como si fueran citas.` : `Tu objetivo son ${p} sesiones de cardio a la semana. Si vas justo de tiempo, 30 minutos ya cuentan.`);
+    T.push("Apunta todos tus entrenos en la app: si no lo apuntas, no cuenta."); }
+  if(k==="dieta"){ if(s.sinVerd) T.push(s.sinVerd===1?"Ha habido 1 día sin verdura. Ten verdura lavada y cortada en la nevera o tira de verdura congelada.":`Ha habido ${s.sinVerd} días sin verdura. Ten verdura lavada y cortada en la nevera o tira de verdura congelada.`);
+    if(s.pico>=2) T.push("Has picado entre horas varios días. Bebe 1,5 vasos de agua antes de cada comida y no tengas a la vista lo que te tienta.");
+    if(s.cant>=2) T.push("Algunos días se te han ido las cantidades: sírvete en el plato y guarda el resto antes de empezar a comer.");
+    if(!T.length) T.push("Prioriza lo básico: verdura en comida y cena, la proteína de tu dieta y las cantidades que te tocan."); }
+  if(k==="azucar"){ T.push("No tengas dulces en casa a mano. Cuando te apetezca algo dulce: fruta, yogur natural o chocolate negro del 85 % o más.");
+    if(s.beb) T.push("Cambia los refrescos y zumos por agua con gas, infusiones o refrescos zero (mejor si es de vez en cuando)."); }
+  if(k==="alcohol"){ T.push(`Has tomado unas ${String(Math.round(s.sem*10)/10).replace(".",",")} consumiciones por semana. Decide de antemano los días sin alcohol y alterna con bebidas sin alcohol o agua con gas.`); }
+  if(k==="tabaco"){ T.push("Cada día sin fumar cuenta. Si te cuesta, pide ayuda a tu médico: hay tratamientos que funcionan."); }
+  if(k==="pantallas"){ T.push("Pon un límite diario a las apps de redes en el propio móvil y deja el móvil fuera del dormitorio."); }
+  if(k==="estres"){ T.push("Busca 10 minutos al día para ti: caminar, respirar despacio o desconectar el móvil.");
+    if(s.altos>=3) T.push("Has tenido varios días de mucho estrés. Coméntaselo a tu nutricionista o a un profesional: no tienes que llevarlo solo."); }
+  return T;
+}
+
+/* --- vista de un pilar --- */
+let PIL=null;   // {k, n:7|30|90, fin:"aaaa-mm-dd", sel:"aaaa-mm-dd"}
+function vsPilar(k, n, fin, sel){
+  const box=document.getElementById("vs"); if(!box) return;
+  const hoy=fechaISO(); PIL={k, n:n||(PIL&&PIL.k===k?PIL.n:30), fin:fin||hoy, sel:sel||null}; if(PIL.fin>hoy) PIL.fin=hoy;
+  const N=PIL.n, desde=fechaISO(sumarDias(deISO(PIL.fin),-(N-1))), ini=vsInicio();
+  const fmtD=(f,o)=>deISO(f).toLocaleDateString(locale(),o);
+  const r=vsRango(desde, PIL.fin), v=r.pil[k] ?? null, rp=vsRango(fechaISO(sumarDias(deISO(desde),-N)), fechaISO(sumarDias(deISO(desde),-1))), vp=rp.pil[k] ?? null;
+  const s=pilStats(k, desde, PIL.fin), sem=(k==="fuerza"||k==="cardio") ? N>7 : N>30;
+  /* barras: por día, o por semana (3 meses, y fuerza o cardio en 30 días) */
+  let barras=[];
+  if(!sem){ for(let d=deISO(desde); fechaISO(d)<=PIL.fin; d=sumarDias(d,1)){ const f=fechaISO(d), x=pilDia(k,f);
+      barras.push({f, h: x==null?0 : k==="alcohol" ? Math.min(100, 8+x*18) : Math.max(4, pilPts(k,x)), c: x==null?"#e6ebe5" : vsBanda(pilPts(k,x)).ring, vacio:x==null, lab:fmtD(f,{weekday:"narrow"})}); } }
+  else { for(let l=lunesDe(deISO(desde)); fechaISO(l)<=PIL.fin; l=sumarDias(l,7)){ const a0=fechaISO(l)<desde?desde:fechaISO(l), f7=fechaISO(sumarDias(l,6)), a1=f7>PIL.fin?PIL.fin:f7;
+      let x; if(k==="fuerza"||k==="cardio"){ x=fuerzaPeriodo(f=>entDia(f), k==="fuerza"?pautaEnt():pautaCardio(), a0, a1, k==="fuerza"?valorSesion:valorCardio); }
+      else { const Lv=[]; for(let d=deISO(a0); fechaISO(d)<=a1; d=sumarDias(d,1)){ const y=pilDia(k,fechaISO(d)); if(y!=null) Lv.push(pilPts(k,y)); } x=Lv.length?Math.round(Lv.reduce((a,b)=>a+b,0)/Lv.length):null; }
+      barras.push({f:a1, sem:true, h:x==null?0:Math.max(4,x), c:x==null?"#e6ebe5":vsBanda(x).ring, vacio:x==null, lab:fmtD(fechaISO(l),{day:"numeric"})}); } }
+  const d=v!=null&&vp!=null ? v-vp : null;
+  const etiq = `${fmtD(desde,{day:"numeric",month:"short"})} – ${fmtD(PIL.fin,{day:"numeric",month:"short"})}`;
+  const selF = PIL.sel && PIL.sel>=desde && PIL.sel<=PIL.fin ? PIL.sel : null;
+  const cons = v!=null && v<80 ? pilConsejos(k, v, s) : [];
+  box.innerHTML=`
+    <button type="button" class="pback">‹ <span>Vital Score</span></button>
+    <div class="vscard">
+      <div class="vslab">${nomPil(k)}</div>
+      <div class="vstog" style="grid-template-columns:repeat(3,1fr)">${[7,30,90].map(x=>`<button type="button" data-n="${x}" class="${N===x?"on":""}">${x===7?"7 días":x===30?"30 días":"3 meses"}</button>`).join("")}</div>
+      <div class="vsnav"><button type="button" class="vsnb" data-nav="1" ${desde>ini?"":"disabled"} aria-label="Anterior">‹</button><span class="notr">${esc(etiq)}</span><button type="button" class="vsnb" data-nav="-1" ${PIL.fin<hoy?"":"disabled"} aria-label="Siguiente">›</button></div>
+      ${anillo(v,130,14,v==null?`<b>—</b>`:`<b>${v}</b><small>de 100</small>`)}
+      ${v!=null?`<span class="vsband" style="background:${vsBanda(v).track};color:${vsBanda(v).text}">${vsBanda(v).n}</span>`:`<p class="vsvacio">Sin datos en estas fechas.</p>`}
+      ${d!=null?`<div class="vstrend">${d>0?`▲ ${d} puntos vs. el periodo anterior`:d<0?`▼ ${-d} puntos vs. el periodo anterior`:"Igual que el periodo anterior"}</div>`:""}
+      <div class="pchart${N>30&&!sem?" fino":""}">${barras.map(b=>`<button type="button" class="pbar${b.vacio?" vacio":""}${(selF&&!b.sem&&b.f===selF)?" on":""}" data-f="${b.f}" data-sem="${b.sem?1:""}"><i style="height:${b.h}%;background:${b.c}"></i>${N<=7||sem?`<small class="notr">${esc(b.lab)}</small>`:""}</button>`).join("")}</div>
+      ${N>7&&!sem?`<div class="vsgl"><span class="notr">${esc(fmtD(desde,{day:"numeric",month:"short"}))}</span><span class="notr">${esc(fmtD(PIL.fin,{day:"numeric",month:"short"}))}</span></div>`:""}
+      <small class="vsadn">${sem?"Cada barra es una semana. Tócala para ver sus días.":"Toca un día para ver el detalle."}</small>
+      ${selF?`<div class="pdia"><b class="notr">${esc((t=>t.charAt(0).toUpperCase()+t.slice(1))(fmtD(selF,{weekday:"long",day:"numeric",month:"long"})))}</b>${pilDiaTxt(k, selF)}<button type="button" class="vslink" data-q="${selF}">Revisar el cuestionario de ese día</button></div>`:""}
+    </div>
+    ${s.n?`<div class="vsadic"><div class="vsadt"><span>RESUMEN DEL PERIODO</span></div>${pilStatsHTML(k,s)}</div>`:""}
+    ${v!=null && v>=80?`<div class="vsadic"><div class="vsadev bien">👏 <span>${PIL_BIEN[k]}</span></div></div>`:""}
+    ${cons.length?`<div class="vsadic"><div class="vsadt"><span>CONSEJOS PARA MEJORAR</span></div><ul class="ptips">${cons.map(t=>`<li>${t}</li>`).join("")}</ul></div>`:""}`;
+  box.querySelector(".pback").onclick=()=>{ PIL=null; vsHome(); };
+  box.querySelectorAll(".vstog button").forEach(x=>x.onclick=()=>vsPilar(k, +x.dataset.n, PIL.fin));
+  const mover=dd=>{ const nf=fechaISO(sumarDias(deISO(PIL.fin), -dd*N)); if(dd>0 && desde<=ini) return; vsPilar(k, N, nf>hoy?hoy:nf); };
+  box.querySelectorAll(".vsnb").forEach(x=>x.onclick=()=>{ if(!x.disabled) mover(+x.dataset.nav); });
+  box.querySelectorAll(".pbar").forEach(x=>x.onclick=()=>{ if(x.dataset.sem){ if(k==="fuerza"||k==="cardio"){ vsPilar(k, 7, x.dataset.f); } else vsPilar(k, 7, x.dataset.f); } else { const st=box.scrollTop; vsPilar(k, N, PIL.fin, x.dataset.f); box.scrollTop=st; } });
+  box.querySelectorAll("[data-q]").forEach(x=>x.onclick=()=>vsCuestionario(x.dataset.q));
+  const card=box.querySelector(".vscard"); let x0=null,y0=null;
+  card.addEventListener("touchstart",e=>{ x0=e.touches[0].clientX; y0=e.touches[0].clientY; },{passive:true});
+  card.addEventListener("touchend",e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
+    if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)*1.5){ if(dx<0 && desde>ini) mover(1); else if(dx>0 && PIL.fin<hoy) mover(-1); } },{passive:true});
+  if(!sel) box.scrollTop=0;
+}
+
+/* --- resúmenes: semana (lunes a domingo) y mes natural --- */
+const resKey = () => "mogas-resumen-" + (FICHA.codigo||"DEMO");
+function resPeriodos(){
+  const ahora=new Date(), tarde=ahora.getHours()>=18;
+  const lun = ahora.getDay()===0 && tarde ? lunesDe(ahora) : sumarDias(lunesDe(ahora),-7);
+  const finMes = new Date(ahora.getFullYear(), ahora.getMonth()+1, 0).getDate()===ahora.getDate() && tarde;
+  const m0 = finMes ? new Date(ahora.getFullYear(), ahora.getMonth(), 1) : new Date(ahora.getFullYear(), ahora.getMonth()-1, 1);
+  return {semana:{tipo:"semana", id:fechaISO(lun), desde:fechaISO(lun), fin:fechaISO(sumarDias(lun,6))},
+          mes:{tipo:"mes", id:fechaISO(m0).slice(0,7), desde:fechaISO(m0), fin:fechaISO(new Date(m0.getFullYear(), m0.getMonth()+1, 0))}};
+}
+function resDatos(P){
+  const r=vsRango(P.desde, P.fin), nQ=(r.dias||[]).filter(x=>x.q).length, nD=diasEntre(P.desde,P.fin);
+  const len=nD, pD=fechaISO(sumarDias(deISO(P.desde),-(P.tipo==="mes"?new Date(deISO(P.desde).getFullYear(),deISO(P.desde).getMonth(),0).getDate():7))), pF=fechaISO(sumarDias(deISO(P.desde),-1));
+  const rp=vsRango(pD, pF);
+  return {r, rp, nQ, nD:len};
+}
+const resMinimo = (P,R) => R.r.score!=null && R.nQ >= (P.tipo==="mes" ? 7 : 3);
+function resPendientes(){
+  const P=resPeriodos(), vistos=store.get(resKey())||{};
+  return ["mes","semana"].filter(t=>vistos[t]!==P[t].id).map(t=>P[t]).filter(p=>resMinimo(p, resDatos(p)));
+}
+const resCerrar = P => { const v=store.get(resKey())||{}; v[P.tipo]=P.id; store.set(resKey(), v); };
+const VEREDICTO = {
+  semana:[["Semana difícil","Ha sido una semana complicada. No pasa nada: lo importante es volver a empezar el lunes con 1 o 2 objetivos claros."],
+          ["Semana floja","Hay cosas que se han quedado por el camino. Elige los 2 consejos de abajo y céntrate solo en eso esta semana."],
+          ["Semana a medias","Ni bien ni mal: tienes una buena base, pero hay margen para subir. Con pequeños cambios lo notarás."],
+          ["Buena semana","¡Buena semana! Vas por el buen camino. Pule los detalles de abajo y estarás en excelente."],
+          ["Semana excelente","¡Semana excelente! Enhorabuena: así es como se consiguen los resultados. Sigue igual."]],
+  mes:[["Mes difícil","Este mes ha costado. Empieza el nuevo mes con un solo objetivo: el primer consejo de abajo."],
+       ["Mes flojo","Ha sido un mes irregular. Elige 2 hábitos de abajo y conviértelos en rutina este mes."],
+       ["Mes a medias","Tienes una base, pero falta constancia. Este mes, apunta y contesta todos los días."],
+       ["Buen mes","¡Buen mes! Los hábitos se están asentando. Pule los detalles de abajo."],
+       ["Mes excelente","¡Mes excelente! Enhorabuena, de verdad: esto ya son hábitos. Sigue así."]]};
+function resumenHTML(P){
+  const R=resDatos(P), r=R.r, sc=r.score, bi=VS_BANDAS.indexOf(vsBanda(sc)), [tit,txt]=VEREDICTO[P.tipo][bi], b=vsBanda(sc);
+  const fmtD=(f,o)=>deISO(f).toLocaleDateString(locale(),o);
+  const dif = R.rp.score!=null ? sc-R.rp.score : null;
+  const pil=PIL_ORDEN().filter(k=>r.pil[k]!=null);
+  const bien=pil.filter(k=>r.pil[k]>=80).sort((a,c)=>VS_PESOS[c]-VS_PESOS[a]).slice(0,4);
+  const mej=pil.filter(k=>R.rp.pil[k]!=null && r.pil[k]-R.rp.pil[k]>=10 && !bien.includes(k)).slice(0,3);
+  const mal=pil.filter(k=>r.pil[k]<70).sort((a,c)=>(100-r.pil[c])*VS_PESOS[c]-(100-r.pil[a])*VS_PESOS[a]).slice(0,3);
+  let semanas="";
+  if(P.tipo==="mes"){ const W=[]; for(let l=lunesDe(deISO(P.desde)); fechaISO(l)<=P.fin; l=sumarDias(l,7)){ const a0=fechaISO(l)<P.desde?P.desde:fechaISO(l), f7=fechaISO(sumarDias(l,6)), a1=f7>P.fin?P.fin:f7; if(diasEntre(a0,a1)<3) continue; const x=vsRango(a0,a1).score; W.push({a0,a1,x}); }
+    if(W.length) semanas=`<div class="vsadt"><span>TUS SEMANAS</span></div><ul class="pstat">${W.map(w=>`<li><span class="notr">${esc(`${fmtD(w.a0,{day:"numeric",month:"short"})} – ${fmtD(w.a1,{day:"numeric",month:"short"})}`)}</span> <b style="color:${w.x==null?"inherit":vsBanda(w.x).text}">${w.x==null?"—":w.x}</b></li>`).join("")}</ul>`; }
+  const etq = P.tipo==="mes" ? (t=>t.charAt(0).toUpperCase()+t.slice(1))(deISO(P.desde).toLocaleDateString(locale(),{month:"long",year:"numeric"})) : `${fmtD(P.desde,{day:"numeric",month:"short"})} – ${fmtD(P.fin,{day:"numeric",month:"short"})}`;
+  return `<div class="vscard">
+      <div class="vslab">${P.tipo==="mes"?"RESUMEN DEL MES":"RESUMEN DE LA SEMANA"}</div><span class="notr" style="font-weight:600;color:var(--brand-dark)">${esc(etq)}</span>
+      ${anillo(sc,130,14,`<b>${sc}</b><small>de 100</small>`)}
+      <span class="vsband" style="background:${b.track};color:${b.text}">${b.n}</span>
+      ${dif!=null?`<div class="vstrend">${dif>0?`▲ ${dif} puntos vs. ${P.tipo==="mes"?"el mes anterior":"la semana anterior"}`:dif<0?`▼ ${-dif} puntos vs. ${P.tipo==="mes"?"el mes anterior":"la semana anterior"}`:`Igual que ${P.tipo==="mes"?"el mes anterior":"la semana anterior"}`}</div>`:""}
+      <b class="rtit">${tit}</b><p class="rtxt">${txt}</p>
+    </div>
+    ${bien.length||mej.length?`<div class="vsadic"><div class="vsadt"><span>👏 LO QUE HAS HECHO BIEN</span></div><ul class="ptips bien">${bien.map(k=>`<li><b>${nomPil(k)}</b> <span>(${r.pil[k]})</span>: <span>${PIL_BIEN[k]}</span></li>`).join("")}${mej.map(k=>`<li><b>${nomPil(k)}</b>: <span>Has mejorado ${r.pil[k]-R.rp.pil[k]} puntos. ¡Así se hace!</span></li>`).join("")}</ul></div>`:""}
+    ${mal.length?`<div class="vsadic"><div class="vsadt"><span>💡 LO QUE PUEDES MEJORAR</span></div><ul class="ptips">${mal.map(k=>{ const t=pilConsejos(k, r.pil[k], pilStats(k,P.desde,P.fin)); return `<li><b>${nomPil(k)}</b> <span>(${r.pil[k]})</span>: <span>${t[0]}</span>${t[1]?` <span>${t[1]}</span>`:""}</li>`; }).join("")}</ul></div>`
+      :`<div class="vsadic"><div class="vsadev bien">🎉 <span>No hay ningún pilar por debajo de 70. ¡Enhorabuena!</span></div></div>`}
+    ${r.pen?`<div class="vsadic"><div class="vsadev mal"><span>Los excesos (alcohol, azúcar, días sin verdura…) te han restado</span> <b>${r.pen}</b> <span>puntos.</span></div></div>`:""}
+    ${semanas?`<div class="vsadic">${semanas}</div>`:""}
+    ${R.nQ<R.nD?`<div class="vsadic"><small class="vsadn">Has contestado el cuestionario ${R.nQ} de ${R.nD} días. Cuantos más días contestes, más fiel será tu nota.</small></div>`:""}`;
+}
+function vsResumen(P, pend){
+  const box=document.getElementById("vs"); if(!box) return; PIL=null;
+  box.innerHTML=`<button type="button" class="pback">‹ <span>Vital Score</span></button>${resumenHTML(P)}
+    ${pend?`<button type="button" class="vscta rcerrar"><span class="t"><b>Entendido, cerrar</b><small>Puedes volver a verlo desde «Resúmenes»</small></span></button>`:""}`;
+  box.querySelector(".pback").onclick=()=>vsHome();
+  const c=box.querySelector(".rcerrar"); if(c) c.onclick=()=>{ resCerrar(P); vsHome(); };
+  box.scrollTop=0;
+}
+function vsResumenes(){
+  const box=document.getElementById("vs"); if(!box) return; const P=resPeriodos();
+  const L=[["semana",P.semana],["mes",P.mes]].filter(([,p])=>resMinimo(p,resDatos(p)));
+  box.innerHTML=`<button type="button" class="pback">‹ <span>Vital Score</span></button>
+    <div class="vsadic"><div class="vsadt"><span>RESÚMENES</span></div>
+    ${L.length?L.map(([t])=>`<button type="button" class="vscta" data-r="${t}"><span class="t"><b>${t==="mes"?"Resumen del mes":"Resumen de la semana"}</b></span>${ICO.flecha}</button>`).join(""):`<small class="vsadn">Aún no hay suficientes días contestados. El resumen semanal aparece con 3 días contestados en la semana y el mensual, con 7 en el mes.</small>`}</div>`;
+  box.querySelector(".pback").onclick=()=>vsHome();
+  box.querySelectorAll("[data-r]").forEach(x=>x.onclick=()=>vsResumen(P[x.dataset.r], false));
 }
 
 /* --- cuestionario diario --- */
