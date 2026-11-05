@@ -358,10 +358,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.32.1"></script>
-<script src="i18n-vs.js?v=2.32.1"></script>
-<script src="i18n-alim.js?v=2.32.1"></script>
-<script src="recetas-esp.js?v=2.32.1"></script>
+<script src="i18n.js?v=2.33.0"></script>
+<script src="i18n-vs.js?v=2.33.0"></script>
+<script src="i18n-alim.js?v=2.33.0"></script>
+<script src="recetas-esp.js?v=2.33.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -897,7 +897,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.32.1";
+const APP_VERSION = "2.33.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3015,8 +3015,8 @@ async function nube(path, {method="GET", body, token, prefer}={}){
   return j;
 }
 
-const VS_PESOS = {dieta:35, alcohol:25, fuerza:10, tabaco:10, azucar:8, pasos:6, sueno:6};
-const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Entreno", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
+const VS_PESOS = {dieta:32, alcohol:22, pantallas:10, fuerza:10, tabaco:9, azucar:7, pasos:5, sueno:5};
+const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Entreno", pantallas:"Pantallas", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
 const VS_BANDAS = [
   {max:20,  n:"Crítico",   ring:"#D93B30", text:"#B42318", track:"#FBE3E1"},
   {max:40,  n:"Bajo",      ring:"#EE8A1F", text:"#B54708", track:"#FDEBD6"},
@@ -3068,7 +3068,8 @@ function penDe(a, alc){
   const pa=tramo(alc||0,PEN_ALC), pz=Math.max(tramo(excesoAzucar(a||{}),PEN_AZ), tramo(kcalAzucar(a),PEN_AZ_KCAL));
   // fallos graves de dieta (restan además de bajar la nota de dieta)
   const pv = a && (a.verdura==="no" || a.verd==="0") ? 10 : 0, pp = a && a.proteina==="no" ? 5 : 0, pc = a && a.cant==="mal" ? 10 : 0;
-  return {alc:pa, az:pz, verd:pv, prot:pp, ctrl:pc, total:pa+pz+pv+pp+pc};
+  const pt = a && a.pant==="4" ? 10 : 0;   // más de 4 h de pantallas de ocio
+  return {alc:pa, az:pz, verd:pv, prot:pp, ctrl:pc, pant:pt, total:pa+pz+pv+pp+pc+pt};
 }
 /* Nota de dieta del día (0–100). Cada respuesta suma puntos; la comida social ajusta al final. */
 const DIETA_W = {pico:15, verd:20, fruta:10, hc:15, cant:15, prot:5, proc:10, sal:5, integ:5};
@@ -3103,7 +3104,8 @@ function puntosDia(a, f){
     if(a.pico==="si"){ const pu=picoUnidades(a), u=pu.dulce+pu.salado/2; z -= u<=0?0 : u<=1?15 : u<=4?35 : u<=8?60 : 80; }
     p.azucar=Math.max(0,z);
   }
-  if(a.sueno) p.sueno = ({menos6:20, entre:70, mas8:100})[a.sueno];
+  if(a.sueno) p.sueno = Math.max(0, ({menos6:20, entre:70, mas8:100})[a.sueno] - (a.camaMovil==="si"?10:0));
+  if(a.pant!=null) p.pantallas = Math.max(0, ({"0":100,"1":75,"2":45,"3":20,"4":0})[a.pant] - (a.camaMovil==="si"?10:0));
   if(FICHA.fumador && a.fumo) p.tabaco = a.fumo==="no" ? 100 : (({a:40, b:15, c:0})[a.cigs] ?? 20);
   const ps=pasDatos().d[f], obj=FICHA.pasosObjetivo||10000;
   if(ps!=null) p.pasos=Math.min(100, Math.round(ps/obj*100));
@@ -3188,6 +3190,14 @@ function serieAdic(){
     idx = idx==null ? c : idx*(1-ADIC_ALFA) + c*ADIC_ALFA; out.push({f, idx:Math.round(idx), dia:c}); });
   return out;
 }
+/* Índice de dependencia de pantallas: igual que el del azúcar, con memoria */
+function seriePant(){
+  const V=vsDatos(), fs=Object.keys(V).sort(), out=[]; let idx=null;
+  fs.forEach(f=>{ const pp=puntosDia(V[f],f).pantallas; if(pp==null) return; const c=100-pp;
+    idx = idx==null ? c : idx*(1-ADIC_ALFA) + c*ADIC_ALFA; out.push({f, idx:Math.round(idx), dia:c, h:+V[f].pant}); });
+  return out;
+}
+const PANT_H = ["Menos de 1 h","1 – 2 h","2 – 3 h","3 – 4 h","Más de 4 h"], PANT_MED = [0.5,1.5,2.5,3.5,4.5];
 const AZ_DIA = [[0,"Sin azúcar"],[30,"Bajo"],[60,"Moderado"],[85,"Alto"],[100,"Muy alto"]];
 const azDiaTxt = c => (AZ_DIA.find(([m])=>c<=m)||AZ_DIA[4])[1];
 function anillo(v, size, stroke, txt, banda=vsBanda){
@@ -3238,7 +3248,7 @@ function vsHome(){
   const TR={dia:[1,"el día anterior"], semana:[7,"los 7 días anteriores"], mes:[30,"los 30 días anteriores"]}[VS_PER];
   if(r.score!=null && TR){ const p=vsPeriodo(VS_PER,TR[0]); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. ${TR[1]}` : d<0?`▼ ${-d} puntos vs. ${TR[1]}` : `Igual que ${TR[1]}`; } }
   const cnt=(ico,tit,n,rec)=>`<div class="vsc"><div class="vsct">${ico}<span>${tit}</span></div><div class="vscn"><b>${n}</b> <span>${n===1?"día":"días"}</span></div><small>Récord: ${rec} días</small></div>`;
-  const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno"];
+  const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pantallas","pasos","sueno"];
   const SA=serieAdic(), ult=SA.length?SA[SA.length-1]:null, ia=ult?ult.idx:null, ib=ia!=null?adicBanda(ia):null;
   const hace=SA.filter(x=>x.f<=fechaISO(sumarDias(new Date(),-14))).pop() || (SA.length>1?SA[0]:null);
   const dif = ult && hace && hace!==ult ? ult.idx-hace.idx : null;
@@ -3247,6 +3257,7 @@ function vsHome(){
     : dif>0 ? `<div class="vsadev mal">▲ ${dif} puntos desde hace 2 semanas. Vigila el azúcar.</div>` : `<div class="vsadev">Igual que hace 2 semanas.</div>`;
   const hoyAz = V[hoy] ? puntosDia(V[hoy],hoy).azucar : null;
   const det=k=>{ const v=r.pil[k]; if(v==null) return "Sin datos";
+    if(k==="pantallas") return vsBanda(v).n;
     if(k==="fuerza"){ const s=semanaEnt(fechaISO(), f=>entDia(f), pautaEnt()); return s.n===1?`1 de ${s.pauta} esta semana`:`${s.n} de ${s.pauta} esta semana`; }
     if(k==="alcohol" && r.alcSem!=null){ const s=Math.round(r.alcSem*10)/10; return s===1?"1 consumición/semana":`${String(s).replace(".",",")} consumiciones/semana`; }
     return vsBanda(v).n; };
@@ -3273,6 +3284,20 @@ function vsHome(){
       <small class="vsadn">Cuanto más bajo, mejor. Cada día sin azúcar lo baja un poco: los buenos hábitos se notan en 1–2 semanas.</small>
       <small class="vsadn">Es un indicador de hábitos, no un diagnóstico médico.</small>
     </div>
+    ${(()=>{ const SP=seriePant(); if(!SP.length) return `<div class="vsadic"><div class="vsadt"><span>ÍNDICE DE DEPENDENCIA DE PANTALLAS</span></div><small class="vsadn">Contesta el cuestionario para ver cuánto tiempo pasas en redes y ocio en el móvil.</small></div>`;
+      const u=SP[SP.length-1], ip=u.idx, bp=adicBanda(ip), lun=fechaISO(lunesDe(new Date())), lunA=fechaISO(sumarDias(lunesDe(new Date()),-7));
+      const media=(a,b)=>{ const L=SP.filter(x=>x.f>=a&&x.f<b&&!isNaN(x.h)); return L.length?L.reduce((s,x)=>s+PANT_MED[x.h],0)/L.length:null; };
+      const mE=media(lun,"9999"), mA=media(lunA,lun), hm=v=>{ const m=Math.round(v*60/15)*15; return m>=60?`${Math.floor(m/60)} h${m%60?` ${m%60} min`:""}`:`${m} min`; };
+      const d = mE!=null&&mA!=null ? Math.round((mE-mA)*60/5)*5 : null;
+      const u30=SP.filter(x=>x.f>=fechaISO(sumarDias(new Date(),-29)));
+      return `<div class="vsadic"><div class="vsadt"><span>ÍNDICE DE DEPENDENCIA DE PANTALLAS</span></div>
+      <div class="vsadr">${anillo(ip,86,11,`<b>${ip}</b><small>%</small>`,adicBanda)}
+        <div class="vsadi"><span class="vsband" style="background:${bp.track};color:${bp.text}">${bp.n}</span>
+          <div class="vsgauge"><i style="left:${ip}%"></i></div><div class="vsgl"><span>0 %</span><span>100 %</span></div></div></div>
+      ${mE!=null?`<div class="vsadhoy"><span>Esta semana, de media:</span> <b>${hm(mE)}</b> <span>al día</span></div>`:""}
+      ${d!=null?`<div class="vsadev ${d<0?"bien":d>0?"mal":""}">${d<0?`▼ ${-d} min menos al día que la semana pasada`:d>0?`▲ ${d} min más al día que la semana pasada`:"Igual que la semana pasada"}</div>`:""}
+      ${u30.length>1?`<div class="vsspark" aria-hidden="true">${u30.map(x=>`<i style="height:${Math.max(4,x.idx)}%;background:${adicBanda(x.idx).ring}"></i>`).join("")}</div><div class="vsgl"><span>Hace 30 días</span><span>Hoy</span></div>`:""}
+      <small class="vsadn">Solo cuenta el ocio (redes, vídeos, juegos), no el trabajo. Cuanto más bajo, mejor.</small></div>`; })()}
     <button type="button" class="vscta" data-q="${hoy}"><span class="qi">${ICO.test}</span><span class="t"><b>Cuestionario de hoy</b><small>${V[hoy]?"Hecho ✓ · Toca para revisarlo":"Pendiente · 1 minuto"}</small></span>${ICO.flecha}</button>
     ${!V[ayer] && vsInicio()<=ayer && ayer>=fechaISO(sumarDias(new Date(),-1))?`<button type="button" class="vsayer" data-q="${ayer}">¿Se te olvidó ayer? Contestar el de ayer</button>`:""}
     <div class="vshead"><b>Tus pilares</b><button type="button" class="vslink" id="vscomo">Cómo se calcula</button></div>
@@ -3285,7 +3310,9 @@ function vsHome(){
       <small>Una caña, una copa de vino o un chupito cuentan como 1 consumición. Un cubata o un gin tonic, como 2.</small>
       <b>Excesos y fallos graves: restan de la nota total del día</b>
       <ul><li><span>3 – 4 consumiciones en un día</span> <span>−10</span></li><li><span>5 – 7 consumiciones</span> <span>−25</span></li><li><span>8 – 11 consumiciones</span> <span>−40</span></li><li><span>12 o más consumiciones</span> <span>−50</span></li>
-      <li><span>Exceso de azúcar moderado</span> <span>−10 / −20</span></li><li><span>Exceso de azúcar alto</span> <span>−30</span></li><li><span>No comer la verdura</span> <span>−15</span></li><li><span>Proteína rebozada o frita</span> <span>−8</span></li><li><span>Exceso de azúcar muy alto</span> <span>−40</span></li></ul>
+      <li><span>Exceso de azúcar moderado</span> <span>−10 / −20</span></li><li><span>Más de 500 kcal de azúcar</span> <span>−15</span></li><li><span>Más de 800 kcal de azúcar</span> <span>−25</span></li><li><span>Más de 1.200 kcal de azúcar</span> <span>−40</span></li><li><span>No comer verdura</span> <span>−10</span></li><li><span>Perder el control con las cantidades</span> <span>−10</span></li><li><span>Más de 4 h de pantallas de ocio</span> <span>−10</span></li><li><span>Proteína rebozada o frita</span> <span>−5</span></li></ul>
+      <b>Pantallas de ocio al día</b>
+      <ul><li><span>Menos de 1 h</span> <span>100 pts</span></li><li><span>1 – 2 h</span> <span>75 pts</span></li><li><span>2 – 3 h</span> <span>45 pts</span></li><li><span>3 – 4 h</span> <span>20 pts</span></li><li><span>Más de 4 h</span> <span>0 pts</span></li></ul><small>Usar el móvil en la cama resta 10 puntos en pantallas y en sueño.</small>
       <small>En la nota de 30 días, los excesos se reparten entre los días contestados.</small>
       <b>Colores</b>
       <ul>${VS_BANDAS.map((x,i)=>`<li><span><i style="background:${x.ring}"></i> ${x.n}</span> <span>${i?VS_BANDAS[i-1].max+1:0} – ${x.max}</span></li>`).join("")}</ul>
@@ -3304,7 +3331,7 @@ function vsCuestionario(f){
   const ps=pasDatos().d[f]; if(ps!=null) a.pasos=ps;
   Q={f, paso:0, a, add:[]}; vsQPintar(true);
 }
-const Q_PASOS = ["dieta","azucar","alctab","entreno","pasos","fin"];
+const Q_PASOS = ["dieta","azucar","pantallas","alctab","entreno","pasos","fin"];
 function vsQPintar(arriba){
   const box=document.getElementById("vs"), a=Q.a, paso=Q_PASOS[Q.paso], st=box.scrollTop, esHoy=Q.f===fechaISO();
   const ft=document.querySelector(".app footer"); if(ft) ft.hidden=true;
@@ -3312,7 +3339,7 @@ function vsQPintar(arriba){
   const yn=(k,t)=>`<div class="qc qrow"><span>${t}</span><div class="qyn">${ob(k,"si","Sí")}${ob(k,"no","No")}</div></div>`;
   const META={dieta:["Dieta","Contesta con sinceridad: así tu nota será real."], azucar:["Azúcar","Sé sincero: nadie te juzga."],
     alctab:[FICHA.fumador?"Alcohol y tabaco":"Alcohol","Lo que más pesa en tu Vital Score."], entreno:["Entreno","Fuerza o cardio: cuenta todo. Se valora por semanas."],
-    pasos:["Pasos y sueño","Último paso."], fin:["¡Listo!","Así ha ido tu día."]};
+    pasos:["Pasos y sueño","Último paso."], fin:["¡Listo!","Así ha ido tu día."], pantallas:["Pantallas","Solo el ocio: el trabajo no cuenta."]};
   let body="";
   if(paso==="dieta"){
     a.v=2;
@@ -3340,6 +3367,11 @@ function vsQPintar(arriba){
       <div class="qc"><span class="qt">¿Has picoteado algo dulce o con azúcar entre horas?</span><div class="qg g2">${ob("pico","no","No")}${ob("pico","si","Sí")}</div>
         ${a.pico==="si"?`<span class="qs">¿Qué dulces? Pon cuántos de cada uno</span><div class="qpico">${PICO.map(([k,n,u])=>{ const v=(a.picoN||{})[k]||0; return `<div class="qpi${v?" tiene":""}"><span class="qpn"><b>${n}</b><small>${u}</small></span><span class="qpc"><button type="button" class="qo" data-pn="${k}" data-d="-1" aria-label="Quitar">−</button><b>${v}</b><button type="button" class="qo mas" data-pn="${k}" data-d="1" aria-label="Añadir">+</button></span></div>`; }).join("")}</div>
         <span class="qs qtot">${(()=>{ const pu=picoUnidades(a); return pu.dulce+pu.salado ? `Total: ${pu.dulce} dulces${pu.salado?` · ${pu.salado} salados`:""}` : "Toca + en lo que hayas comido"; })()}</span></div>`:""}</div>`;
+  } else if(paso==="pantallas"){
+    body = `<div class="qc"><span class="qt">¿Cuánto tiempo has pasado hoy en redes sociales y ocio en el móvil?</span><div class="qg g1">${PANT_H.map((t,i)=>ob("pant",String(i),t)).join("")}</div>
+      <small class="qnote">Instagram, TikTok, YouTube, juegos… Míralo en el móvil: iPhone → Ajustes → Tiempo de uso · Android → Ajustes → Bienestar digital. El tiempo de trabajo no cuenta.</small></div>
+      <div class="qc"><span class="qt">¿Has usado el móvil en la cama o en la última hora antes de dormir?</span><div class="qg g2">${ob("camaMovil","no","No")}${ob("camaMovil","si","Sí")}</div>
+      <small class="qnote">La luz y los estímulos de la pantalla empeoran el sueño.</small></div>`;
   } else if(paso==="alctab"){
     const n=alcDia(Q.f), D=(bebDatos()[Q.f])||{};
     const lista=Object.entries(D).filter(([id,c])=>UNID_ALC[id]&&c>0).map(([id,c])=>`<li>${c} × <span>${esc(BEB[id].t)}</span></li>`).join("");
@@ -3372,12 +3404,13 @@ function vsQPintar(arriba){
     if(pn.verd) msgs.push(`<div class="qpen"><b>−${pn.verd}</b> <span>puntos por no comer la verdura</span></div>`);
     if(pn.prot) msgs.push(`<div class="qpen"><b>−${pn.prot}</b> <span>puntos por proteína rebozada o frita</span></div>`);
     if(pn.ctrl) msgs.push(`<div class="qpen"><b>−${pn.ctrl}</b> <span>puntos por perder el control con las cantidades</span></div>`);
+    if(pn.pant) msgs.push(`<div class="qpen"><b>−${pn.pant}</b> <span>puntos por más de 4 h de pantallas</span></div>`);
     if(Q.a.o3==="si") msgs.push(`<div class="qok">Omega-3 de hoy: ✔</div>`);
     if(testAlc(Q.f)===true) msgs.push(`<div class="qok">${c.ca===1?"¡1 día sin alcohol!":`¡Ya llevas ${c.ca} días sin alcohol!`}</div>`);
     else if(testAlc(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin alcohol vuelve a empezar mañana</div>`);
     if(FICHA.fumador && testFumo(Q.f)===true) msgs.push(`<div class="qok">${c.cf===1?"¡1 día sin fumar!":`¡Ya llevas ${c.cf} días sin fumar!`}</div>`);
     else if(FICHA.fumador && testFumo(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin fumar vuelve a empezar mañana</div>`);
-    const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pasos","sueno","azucar"];
+    const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","fuerza","pantallas","pasos","sueno","azucar"];
     body = `<div class="qc qday">${anillo(nota,112,14,nota==null?"—":`<b>${nota}</b>`)}<span class="t"><span class="qlab">${esHoy?"TU DÍA DE HOY":"TU DÍA DE AYER"}</span>${bd?`<span class="vsband" style="background:${bd.track};color:${bd.text}">${bd.n}</span>`:""}<small>Suma a tu Vital Score de los últimos 30 días.</small></span></div>
       ${msgs.join("")}
       ${orden.map(k=>{ if(k==="fuerza"){ const s=semanaEnt(Q.f, f=>entDia(f), pautaEnt()); const ok=s.n>=s.pauta; return `<div class="qc qsum"><i style="background:${ok?"#2E7D4F":"#E9C21B"}"></i><b>${VS_NOM[k]}</b><span style="color:${ok?"#1F6B3F":"#7A5E00"}">${s.n} de ${s.pauta} esta semana</span></div>`; }
