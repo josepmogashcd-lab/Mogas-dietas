@@ -361,10 +361,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.35.1"></script>
-<script src="i18n-vs.js?v=2.35.1"></script>
-<script src="i18n-alim.js?v=2.35.1"></script>
-<script src="recetas-esp.js?v=2.35.1"></script>
+<script src="i18n.js?v=2.35.2"></script>
+<script src="i18n-vs.js?v=2.35.2"></script>
+<script src="i18n-alim.js?v=2.35.2"></script>
+<script src="recetas-esp.js?v=2.35.2"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -900,7 +900,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.35.1";
+const APP_VERSION = "2.35.2";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3096,7 +3096,8 @@ function penDe(a, alc){
   const pa=tramo(alc||0,PEN_ALC), pz=Math.max(tramo(excesoAzucar(a||{}),PEN_AZ), tramo(kcalAzucar(a),PEN_AZ_KCAL));
   // fallos graves de dieta (restan además de bajar la nota de dieta)
   const pv = a && (a.verdura==="no" || a.verd==="0") ? 10 : 0, pp = a && a.proteina==="no" ? 5 : 0, pc = a && a.cant==="mal" ? 10 : 0;
-  return {alc:pa, az:pz, verd:pv, prot:pp, ctrl:pc, total:pa+pz+pv+pp+pc};   // las pantallas no restan directo: ya cuentan en su pilar y en el sueño
+  const pt = a && a.pant==="4" ? 10 : 0;   // más de 4 h de pantallas de ocio (el móvil en la cama no resta directo)
+  return {alc:pa, az:pz, verd:pv, prot:pp, ctrl:pc, pant:pt, total:pa+pz+pv+pp+pc+pt};
 }
 /* Nota de dieta del día (0–100). Cada respuesta suma puntos; la comida social ajusta al final. */
 const DIETA_W = {pico:15, verd:20, fruta:10, hc:15, cant:15, prot:5, proc:10, sal:5, integ:5};
@@ -3341,7 +3342,7 @@ function vsHome(){
       <small>Una caña, una copa de vino o un chupito cuentan como 1 consumición. Un cubata o un gin tonic, como 2.</small>
       <b>Excesos y fallos graves: restan de la nota total del día</b>
       <ul><li><span>3 – 4 consumiciones en un día</span> <span>−10</span></li><li><span>5 – 7 consumiciones</span> <span>−25</span></li><li><span>8 – 11 consumiciones</span> <span>−40</span></li><li><span>12 o más consumiciones</span> <span>−50</span></li>
-      <li><span>Exceso de azúcar moderado</span> <span>−10 / −20</span></li><li><span>Más de 500 kcal de azúcar</span> <span>−15</span></li><li><span>Más de 800 kcal de azúcar</span> <span>−25</span></li><li><span>Más de 1.200 kcal de azúcar</span> <span>−40</span></li><li><span>No comer verdura</span> <span>−10</span></li><li><span>Perder el control con las cantidades</span> <span>−10</span></li><li><span>Proteína rebozada o frita</span> <span>−5</span></li></ul>
+      <li><span>Exceso de azúcar moderado</span> <span>−10 / −20</span></li><li><span>Más de 500 kcal de azúcar</span> <span>−15</span></li><li><span>Más de 800 kcal de azúcar</span> <span>−25</span></li><li><span>Más de 1.200 kcal de azúcar</span> <span>−40</span></li><li><span>No comer verdura</span> <span>−10</span></li><li><span>Perder el control con las cantidades</span> <span>−10</span></li><li><span>Más de 4 h de pantallas de ocio</span> <span>−10</span></li><li><span>Proteína rebozada o frita</span> <span>−5</span></li></ul>
       <b>Estrés</b>
       <ul><li><span>3 preguntas del 1 al 10: estrés, control y cómo lo nota el cuerpo</span> <span></span></li><li><span>Estrés bajo y bien gestionado</span> <span>100 pts</span></li><li><span>Estrés máximo</span> <span>0 pts</span></li></ul>
       <b>Pantallas de ocio al día</b>
@@ -3443,6 +3444,7 @@ function vsQPintar(arriba){
     if(pn.verd) msgs.push(`<div class="qpen"><b>−${pn.verd}</b> <span>puntos por no comer la verdura</span></div>`);
     if(pn.prot) msgs.push(`<div class="qpen"><b>−${pn.prot}</b> <span>puntos por proteína rebozada o frita</span></div>`);
     if(pn.ctrl) msgs.push(`<div class="qpen"><b>−${pn.ctrl}</b> <span>puntos por perder el control con las cantidades</span></div>`);
+    if(pn.pant) msgs.push(`<div class="qpen"><b>−${pn.pant}</b> <span>puntos por más de 4 h de pantallas</span></div>`);
     if(Q.a.es1!=null && Q.a.es2!=null && Q.a.es3!=null && estresIdx(Q.a)>=8) msgs.push(`<div class="vsadev">Hoy has tenido mucho estrés. Si se repite varios días, coméntaselo a tu nutricionista o a un profesional: no tienes que llevarlo solo.</div>`);
     if(Q.a.o3==="si") msgs.push(`<div class="qok">Omega-3 de hoy: ✔</div>`);
     if(testAlc(Q.f)===true) msgs.push(`<div class="qok">${c.ca===1?"¡1 día sin alcohol!":`¡Ya llevas ${c.ca} días sin alcohol!`}</div>`);
