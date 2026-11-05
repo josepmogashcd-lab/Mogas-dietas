@@ -219,3 +219,12 @@ A("Dieta vegetal: proteínas de soja, tofu, tempeh, seitán, Heura y legumbres. 
 ["¿Has usado el móvil en la cama o en la última hora antes de dormir?","Has fet servir el mòbil al llit o l'última hora abans de dormir?","Did you use your phone in bed or in the last hour before sleep?"],
 ["La luz y los estímulos de la pantalla empeoran el sueño.","La llum i els estímuls de la pantalla empitjoren la son.","Screen light and stimulation worsen sleep."],["puntos por más de # h de pantallas","punts per més de # h de pantalles","points for more than # h of screens"]
 ].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [
+["Recordatorio diario en tu calendario","Recordatori diari al teu calendari","Daily reminder in your calendar"],["Recordatorio diario del Vital Score","Recordatori diari del Vital Score","Daily Vital Score reminder"],
+["Te pondremos un aviso cada día en tu calendario para que no se te olvide contestar el cuestionario. Elige la hora:","Et posarem un avís cada dia al teu calendari perquè no t'oblidis de contestar el qüestionari. Tria l'hora:","We'll add a daily alert to your calendar so you don't forget the questionnaire. Choose the time:"],
+["📅 Añadir a Google Calendar","📅 Afegir a Google Calendar","📅 Add to Google Calendar"],["🍎 Añadir al calendario del iPhone u otro","🍎 Afegir al calendari de l'iPhone o un altre","🍎 Add to iPhone or other calendar"],
+["Se ha abierto Google Calendar. Pulsa","S'ha obert Google Calendar. Prem","Google Calendar has opened. Tap"],["Guardar","Desar","Save"],[". Para que te avise justo a la hora, en el evento cambia la notificación a",". Perquè t'avisi just a l'hora, a l'esdeveniment canvia la notificació a",". To be alerted right on time, change the event notification to"],
+["«En el momento del evento»","«En el moment de l'esdeveniment»","«At time of event»"],["🔔 Volver al recordatorio","🔔 Tornar al recordatori","🔔 Back to the reminder"],
+["Abre el archivo","Obre l'arxiu","Open the file"],["y pulsa","i prem","and tap"],["Añadir",'Afegir',"Add"],[": el aviso ya va a la hora exacta, cada día.",": l'avís ja va a l'hora exacta, cada dia.",": the alert is set for the exact time, every day."]
+].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [["📅 Abrir Google Calendar","📅 Obrir Google Calendar","📅 Open Google Calendar"]].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
