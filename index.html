@@ -365,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.37.0"></script>
-<script src="i18n-vs.js?v=2.37.0"></script>
-<script src="i18n-alim.js?v=2.37.0"></script>
-<script src="recetas-esp.js?v=2.37.0"></script>
+<script src="i18n.js?v=2.38.0"></script>
+<script src="i18n-vs.js?v=2.38.0"></script>
+<script src="i18n-alim.js?v=2.38.0"></script>
+<script src="recetas-esp.js?v=2.38.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -904,7 +904,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.37.0";
+const APP_VERSION = "2.38.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3122,6 +3122,9 @@ function notaDieta(a){
   if(a.social==="si") d -= ({ctrl:0, algo:6, libre:12}[a.socialTipo]||0) + (a.socialHc==="mal"?3:0);
   return Math.max(0, Math.min(100, Math.round(d)));
 }
+/* Pasos: curva con más premio donde más cuesta y aporta (de 5.000 a 10.000) y menos a partir de 12.000 */
+const PASOS_CURVA = [[0,0],[3000,15],[5000,35],[8000,65],[10000,82],[12000,90],[15000,96],[20000,100]];
+function ptsPasos(n){ if(!(n>0)) return 0; for(let i=1;i<PASOS_CURVA.length;i++){ const [x1,y1]=PASOS_CURVA[i-1], [x2,y2]=PASOS_CURVA[i]; if(n<=x2) return Math.round(y1+(n-x1)/(x2-x1)*(y2-y1)); } return 100; }
 function puntosDia(a, f){
   const p={}, dk=["comidas","cantidades","verdura","proteina"];
   if(a.v===2){ const d=notaDieta(a); if(d!=null) p.dieta=d; }
@@ -3141,7 +3144,7 @@ function puntosDia(a, f){
   if(a.pant!=null) p.pantallas = Math.max(0, ({"0":100,"1":75,"2":45,"3":20,"4":0})[a.pant] - (a.camaMovil==="si"?10:0));
   if(FICHA.fumador && a.fumo) p.tabaco = a.fumo==="no" ? 100 : (({a:40, b:15, c:0})[a.cigs] ?? 20);
   const ps=pasDatos().d[f], obj=FICHA.pasosObjetivo||10000;
-  if(ps!=null) p.pasos=Math.min(100, Math.round(ps/obj*100));
+  if(ps!=null) p.pasos=ptsPasos(ps);
   if(a.alcOk) p.alcohol=alcPts(alcDia(f));
   return p;
 }
@@ -3356,6 +3359,8 @@ function vsHome(){
       <li><span>Exceso de azúcar moderado</span> <span>−10 / −20</span></li><li><span>Más de 500 kcal de azúcar</span> <span>−15</span></li><li><span>Más de 800 kcal de azúcar</span> <span>−25</span></li><li><span>Más de 1.200 kcal de azúcar</span> <span>−40</span></li><li><span>No comer verdura</span> <span>−10</span></li><li><span>Perder el control con las cantidades</span> <span>−10</span></li><li><span>Más de 4 h de pantallas de ocio</span> <span>−10</span></li><li><span>Proteína rebozada o frita</span> <span>−5</span></li></ul>
       <b>Estrés</b>
       <ul><li><span>3 preguntas del 1 al 10: estrés, control y cómo lo nota el cuerpo</span> <span></span></li><li><span>Estrés bajo y bien gestionado</span> <span>100 pts</span></li><li><span>Estrés máximo</span> <span>0 pts</span></li></ul>
+      <b>Pasos al día</b>
+      <ul>${PASOS_CURVA.slice(1).map(([x,y])=>`<li><span>${fmtN(x)}</span> <span>${y} pts</span></li>`).join("")}</ul><small>Entre medias, la nota sube poco a poco. Lo que más suma es pasar de 5.000 a 10.000.</small>
       <b>Pantallas de ocio al día</b>
       <ul><li><span>Menos de 1 h</span> <span>100 pts</span></li><li><span>1 – 2 h</span> <span>75 pts</span></li><li><span>2 – 3 h</span> <span>45 pts</span></li><li><span>3 – 4 h</span> <span>20 pts</span></li><li><span>Más de 4 h</span> <span>0 pts</span></li></ul><small>Usar el móvil en la cama resta 10 puntos en pantallas y en sueño.</small>
       <small>En la nota de 30 días, los excesos se reparten entre los días contestados.</small>
