@@ -260,3 +260,4 @@ A("Dieta vegetal: proteínas de soja, tofu, tempeh, seitán, Heura y legumbres. 
 ["Cuenta a cualquier hora: un donut de postre también. No cuentan la fruta ni el chocolate negro de # % o más.","Compta a qualsevol hora: un dònut de postres també. No compten la fruita ni la xocolata negra del # % o més.","Any time of day counts: a doughnut for dessert too. Fruit and dark chocolate of # % or more don't count."],
 ["Chocolate (menos del # %)","Xocolata (menys del # %)","Chocolate (under # %)"],["Helado, pastel o postre dulce","Gelat, pastís o postres dolces","Ice cream, cake or sweet dessert"]
 ].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
+(function(){ if(!window.I18N) return; [["# preguntas del # al #: estrés y control","# preguntes de l'# al #: estrès i control","# questions from # to #: stress and control"]].forEach(([es,ca,en])=>{ I18N.ca[es]=ca; I18N.en[es]=en; }); })();
