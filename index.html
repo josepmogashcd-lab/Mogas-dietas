@@ -365,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.38.0"></script>
-<script src="i18n-vs.js?v=2.38.0"></script>
-<script src="i18n-alim.js?v=2.38.0"></script>
-<script src="recetas-esp.js?v=2.38.0"></script>
+<script src="i18n.js?v=2.39.0"></script>
+<script src="i18n-vs.js?v=2.39.0"></script>
+<script src="i18n-alim.js?v=2.39.0"></script>
+<script src="recetas-esp.js?v=2.39.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -550,7 +550,8 @@ const FICHA = {
   postrePrincipal: true, // postre en comida y cena
   platoAuto: true,    // comida y cena calculadas solas (si hay peso)
   vegCome: {},        // dieta vegetal: {huevo, lacteos, pescado} lo que sí come
-  integrales: ""      // "" según perfil · "si" · "no"
+  integrales: "",     // "" según perfil · "si" · "no"
+  cardioSemana: 0     // sesiones de cardio pautadas (0 = 2, o 4 en resistencia)
 };
 const SUPERS = ["","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo"];
 
@@ -904,7 +905,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.38.0";
+const APP_VERSION = "2.39.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1791,7 +1792,8 @@ function panel(){
         <label>Sexo${sel("p_sexo",["Mujer","Hombre"],FICHA.sexo)}</label>
         <div class="pgrid"><label>Objetivo de pasos diarios<input id="p_pasos" type="number" inputmode="numeric" value="${FICHA.pasosObjetivo}"></label>
           <label>Media de pasos al día ahora (app Salud o reloj)<input id="p_pmedia" type="number" inputmode="numeric" value="${FICHA.pasosMedia||""}"></label></div>
-        <label>Entrenos pautados por semana<input id="p_entsem" type="number" inputmode="numeric" min="1" max="14" value="${FICHA.entrenosSemana||3}"></label>
+        <div class="pgrid"><label>Entrenos de fuerza por semana<input id="p_entsem" type="number" inputmode="numeric" min="1" max="14" value="${FICHA.entrenosSemana||3}"></label>
+          <label>Sesiones de cardio por semana<input id="p_cardsem" type="number" inputmode="numeric" min="1" max="14" value="${FICHA.cardioSemana||""}" placeholder="${FICHA.perfil==="resist"?4:2}"></label></div>
         <label class="check"><input type="checkbox" id="p_fumador" ${FICHA.fumador?"checked":""}> Fuma (verá su contador de días sin fumar y el tabaco contará en su Vital Score)</label>
         <p class="note" style="margin-top:6px">Intolerancias, alergias y sensibilidades:</p>
         <div class="chips" id="p_restr">${Object.entries(RESTRICCIONES).map(([k,r])=>`<button type="button" class="chip${FICHA.restricciones.includes(k)?" on":""}" data-k="${k}">${esc(r.t)}</button>`).join("")}</div>
@@ -1887,7 +1889,7 @@ function panel(){
       reloj:$("p_reloj").checked, kcalDesc:+$("p_kdesc").value||0, kcalEnt:+$("p_kent").value||0, kcalLargo:+$("p_klargo").value||0, kcalMedia:+$("p_kmedia").value||0,
       atracon:$("p_atr").value, atrMomento:$("p_atrm").value, atrAlimentos:$("p_atra").value, integrales:$("p_integ").value};
     const ed=$("p_edad"); if(ed){ const n=ENTREVISTA.nac?new Date(ENTREVISTA.nac):null; ed.textContent = n&&!isNaN(n) ? Math.floor((Date.now()-n)/(365.25*864e5))+" años" : ""; } const n=ENTREVISTA.texto.trim()?ENTREVISTA.texto.trim().split(/\s+/).length:0; $("p_ecount").textContent=n?`${n} palabras`:""; };
-  const leer=()=>{leerE();FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.fumador=$("p_fumador").checked;FICHA.peso=+String($("p_peso").value).replace(",",".")||0;FICHA.pasosMedia=Math.round(+$("p_pmedia").value)||0;FICHA.entrenosSemana=Math.max(1,Math.round(+$("p_entsem").value)||3);FICHA.otrasRestricciones=$("p_otras").value.trim();
+  const leer=()=>{leerE();FICHA.nombre=$("p_nombre").value;FICHA.codigo=$("p_codigo").value.trim().toUpperCase();FICHA.sexo=$("p_sexo").value;FICHA.pasosObjetivo=+$("p_pasos").value||0;FICHA.fumador=$("p_fumador").checked;FICHA.peso=+String($("p_peso").value).replace(",",".")||0;FICHA.pasosMedia=Math.round(+$("p_pmedia").value)||0;FICHA.entrenosSemana=Math.max(1,Math.round(+$("p_entsem").value)||3);FICHA.cardioSemana=Math.max(0,Math.round(+($("p_cardsem")||{}).value)||0);FICHA.otrasRestricciones=$("p_otras").value.trim();
     FICHA.tmb=+$("p_tmb").value||0;FICHA.factor=+$("p_factor").value;FICHA.objetivo=$("p_obj").value;FICHA.ajuste=Math.max(0,+$("p_aj").value||0); if(FICHA.perfil==="salud" && FICHA.ajuste>DEFICIT_MAX_SALUD){ FICHA.ajuste=DEFICIT_MAX_SALUD; $("p_aj").value=DEFICIT_MAX_SALUD; }
     if(PERFILES[FICHA.perfil] && FICHA.perfil!=="resist"){ FICHA.objetivo=PERFILES[FICHA.perfil].obj; $("p_obj").value=FICHA.objetivo; }
     FICHA.prioridad=$("p_prio").value;FICHA.deficitMaxSesion=+$("p_defmax").value||0;FICHA.intestinoEntrenado=$("p_intest").checked;FICHA.entrenoIncluido=+$("p_incl").value||0;};
@@ -3047,8 +3049,8 @@ async function nube(path, {method="GET", body, token, prefer}={}){
   return j;
 }
 
-const VS_PESOS = {dieta:22, pasos:18, fuerza:13, azucar:11, alcohol:8, tabaco:8, pantallas:7, estres:7, sueno:6};
-const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Entreno", pantallas:"Pantallas", estres:"Estrés", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
+const VS_PESOS = {dieta:20, pasos:18, fuerza:15, azucar:10, alcohol:7, tabaco:7, cardio:6, pantallas:6, estres:6, sueno:5};
+const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Fuerza", cardio:"Cardio", pantallas:"Pantallas", estres:"Estrés", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
 const VS_BANDAS = [
   {max:20,  n:"Crítico",   ring:"#D93B30", text:"#B42318", track:"#FBE3E1"},
   {max:40,  n:"Bajo",      ring:"#EE8A1F", text:"#B54708", track:"#FDEBD6"},
@@ -3144,7 +3146,7 @@ function puntosDia(a, f){
   if(a.pant!=null) p.pantallas = Math.max(0, ({"0":100,"1":75,"2":45,"3":20,"4":0})[a.pant] - (a.camaMovil==="si"?10:0));
   if(FICHA.fumador && a.fumo) p.tabaco = a.fumo==="no" ? 100 : (({a:40, b:15, c:0})[a.cigs] ?? 20);
   const ps=pasDatos().d[f], obj=FICHA.pasosObjetivo||10000;
-  if(ps!=null) p.pasos=ptsPasos(ps);
+  const eq=pasosEqDia(f); if(ps!=null || eq>0) p.pasos=ptsPasos((ps||0)+eq);   // el cardio sin pasos (bici, elíptica…) compensa los pasos
   if(a.alcOk) p.alcohol=alcPts(alcDia(f));
   return p;
 }
@@ -3192,7 +3194,7 @@ function vsPeriodo(tipo, atras=0){
   let desde = nDias ? fechaISO(sumarDias(deISO(fin),-(nDias-1))) : ini;
   if(desde<ini) desde=ini; if(fin<desde) return {score:null, pil:{}, n:0};
   const dias=vsDiasLocal(desde,fin), V=vsDatos(), hayDatos=dias.some(d=>d.q) || Object.keys(entDatos()).length;
-  return vsCalcular(dias, diasEntre(desde,fin), FICHA.fumador, {fuerza: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaEnt(), desde, fin) : null});
+  return vsCalcular(dias, diasEntre(desde,fin), FICHA.fumador, {fuerza: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaEnt(), desde, fin) : null, cardio: hayDatos ? fuerzaPeriodo(f=>entDia(f,V), pautaCardio(), desde, fin, valorCardio) : null});
 }
 function racha(test){
   let n=0, d=new Date(); const t0=test(fechaISO(d));
@@ -3292,7 +3294,7 @@ function vsHome(){
   const TR={dia:[1,"el día anterior"], semana:[7,"los 7 días anteriores"], mes:[30,"los 30 días anteriores"]}[VS_PER];
   if(r.score!=null && TR){ const p=vsPeriodo(VS_PER,atras+TR[0]); if(p.score!=null){ const d=r.score-p.score; trend = d>0?`▲ ${d} puntos vs. ${TR[1]}` : d<0?`▼ ${-d} puntos vs. ${TR[1]}` : `Igual que ${TR[1]}`; } }
   const cnt=(ico,tit,n,rec)=>`<div class="vsc"><div class="vsct">${ico}<span>${tit}</span></div><div class="vscn"><b>${n}</b> <span>${n===1?"día":"días"}</span></div><small>Récord: ${rec} días</small></div>`;
-  const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","pasos","estres","fuerza","pantallas","sueno"];
+  const orden=["dieta","pasos","fuerza","cardio","alcohol", ...(FICHA.fumador?["tabaco"]:[]),"estres","pantallas","sueno"];
   const SA=serieAdic(), ult=SA.length?SA[SA.length-1]:null, ia=ult?ult.idx:null, ib=ia!=null?adicBanda(ia):null;
   const hace=SA.filter(x=>x.f<=fechaISO(sumarDias(new Date(),-14))).pop() || (SA.length>1?SA[0]:null);
   const dif = ult && hace && hace!==ult ? ult.idx-hace.idx : null;
@@ -3302,7 +3304,8 @@ function vsHome(){
   const hoyAz = V[hoy] ? puntosDia(V[hoy],hoy).azucar : null;
   const det=k=>{ const v=r.pil[k]; if(v==null) return "Sin datos";
     if(k==="pantallas"||k==="estres") return vsBanda(v).n;
-    if(k==="fuerza"){ const s=semanaEnt(fechaISO(), f=>entDia(f), pautaEnt()); return s.n===1?`1 de ${s.pauta} esta semana`:`${s.n} de ${s.pauta} esta semana`; }
+    if(k==="fuerza"){ const s=semanaEnt(fechaISO(), f=>entDia(f), pautaEnt()); return `${s.n} de ${s.pauta} esta semana`; }
+    if(k==="cardio"){ const s=semanaEnt(fechaISO(), f=>entDia(f), pautaCardio(), valorCardio); return `${s.n} de ${s.pauta} esta semana`; }
     if(k==="alcohol" && r.alcSem!=null){ const s=Math.round(r.alcSem*10)/10; return s===1?"1 consumición/semana":`${String(s).replace(".",",")} consumiciones/semana`; }
     return vsBanda(v).n; };
   const b=r.score!=null?vsBanda(r.score):null;
@@ -3360,7 +3363,7 @@ function vsHome(){
       <b>Estrés</b>
       <ul><li><span>3 preguntas del 1 al 10: estrés, control y cómo lo nota el cuerpo</span> <span></span></li><li><span>Estrés bajo y bien gestionado</span> <span>100 pts</span></li><li><span>Estrés máximo</span> <span>0 pts</span></li></ul>
       <b>Pasos al día</b>
-      <ul>${PASOS_CURVA.slice(1).map(([x,y])=>`<li><span>${fmtN(x)}</span> <span>${y} pts</span></li>`).join("")}</ul><small>Entre medias, la nota sube poco a poco. Lo que más suma es pasar de 5.000 a 10.000.</small>
+      <ul>${PASOS_CURVA.slice(1).map(([x,y])=>`<li><span>${fmtN(x)}</span> <span>${y} pts</span></li>`).join("")}</ul><small>Entre medias, la nota sube poco a poco. Lo que más suma es pasar de 5.000 a 10.000.</small><small>El cardio que el móvil no cuenta como pasos (bici, elíptica, natación, remo…) suma pasos equivalentes según las kcal gastadas y tu peso: con 70 kg, unas 400 kcal ≈ 10.000 pasos. Correr y caminar ya los cuenta el móvil.</small>
       <b>Pantallas de ocio al día</b>
       <ul><li><span>Menos de 1 h</span> <span>100 pts</span></li><li><span>1 – 2 h</span> <span>75 pts</span></li><li><span>2 – 3 h</span> <span>45 pts</span></li><li><span>3 – 4 h</span> <span>20 pts</span></li><li><span>Más de 4 h</span> <span>0 pts</span></li></ul><small>Usar el móvil en la cama resta 10 puntos en pantallas y en sueño.</small>
       <small>En la nota de 30 días, los excesos se reparten entre los días contestados.</small>
@@ -3448,13 +3451,14 @@ function vsQPintar(arriba){
       + (FICHA.fumador?`<div class="qc"><span class="qt">¿Has fumado hoy?</span><div class="qg g2">${ob("fumo","no","No")}${ob("fumo","si","Sí")}</div>
         ${a.fumo==="si"?`<span class="qs">¿Cuántos cigarrillos?</span><div class="qg g3">${ob("cigs","a","1 – 5")}${ob("cigs","b","6 – 10")}${ob("cigs","c","Más de 10")}</div>`:""}</div>`:"");
   } else if(paso==="entreno"){
-    const L=entDia(Q.f), sem=semanaEnt(Q.f, f=>entDia(f), pautaEnt());
+    const L=entDia(Q.f), S=semTxt(Q.f), eqP=pasosEqDia(Q.f);
     body = `<div class="qc"><span class="qlab">${esHoy?"ENTRENOS QUE HAS APUNTADO HOY":"ENTRENOS QUE APUNTASTE AYER"}</span>
-      ${L.length?`<ul class="qlist">${L.map(x=>`<li><span>${esc(sesionTxt(x))}</span>${x.min?` · <span>${x.min} min</span>`:""}</li>`).join("")}</ul>`:`<b class="qbig">Ninguno</b>`}
+      ${L.length?`<ul class="qlist">${L.map(x=>`<li><span>${esc(sesionTxt(x))}</span>${x.min?` · <span>${x.min} min</span>`:""}${x.t==="cardio"?` · <span>≈${kcalCardio(x)} kcal</span>`:""}</li>`).join("")}</ul>`:`<b class="qbig">Ninguno</b>`}
       <div class="qg g2">${L.length?ob("entOk","ok","Correcto")+ob("entOk","add","Me falta alguno"):ob("entOk","ok","Correcto, no he entrenado")+ob("entOk","add","Se me olvidó apuntarlo")}</div>
       ${a.entOk==="add"?`<span class="qs">Toca lo que te faltó apuntar</span><div class="qg g2">${[["fuerza","Fuerza en sala"],["crossfit","CrossFit o Hyrox"],["dirigida","Clase dirigida o pilates"],["cardio","Cardio"],["yoga","Yoga o estiramientos"]].map(([v,t])=>`<button type="button" class="qo" data-addent="${v}">+ ${t}</button>`).join("")}</div>
         ${Q.addEnt&&Q.addEnt.length?`<button type="button" class="qlink" data-act="undoent">Quitar el último</button>`:""}<span class="qs">Para poner la duración o las calorías, usa la pestaña Apuntar.</span>`:""}
-      <div class="${sem.n>=sem.pauta?"qok":"vsadev"}">${sem.n===1?`Esta semana: 1 entreno de ${sem.pauta}`:`Esta semana: ${sem.n} entrenos de ${sem.pauta}`}</div>
+      <div class="${S.a.n>=S.a.pauta&&S.c.n>=S.c.pauta?"qok":"vsadev"}"><span>Esta semana:</span> <span>${S.txt}</span></div>
+      ${eqP>0?`<div class="qok"><span>Tu cardio de hoy cuenta como</span> <b>≈${fmtN(eqP)}</b> <span>pasos más en tu nota de pasos.</span></div>`:""}
       <small class="qnote">Los entrenos se apuntan en la pestaña Apuntar. Aquí solo lo confirmas.</small></div>`;
   } else if(paso==="pasos"){
     body = `<div class="qc"><label class="qt" for="qpasos">Pasos de hoy</label><div class="qpas"><button type="button" class="qo" data-act="menos" aria-label="Restar 1.000 pasos">−</button><input id="qpasos" type="number" inputmode="numeric" min="0" max="100000" value="${a.pasos!=null?a.pasos:""}" placeholder="0"><button type="button" class="qo" data-act="mas" aria-label="Sumar 1.000 pasos">+</button></div>
@@ -3474,10 +3478,10 @@ function vsQPintar(arriba){
     else if(testAlc(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin alcohol vuelve a empezar mañana</div>`);
     if(FICHA.fumador && testFumo(Q.f)===true) msgs.push(`<div class="qok">${c.cf===1?"¡1 día sin fumar!":`¡Ya llevas ${c.cf} días sin fumar!`}</div>`);
     else if(FICHA.fumador && testFumo(Q.f)===false) msgs.push(`<div class="qreset">Tu racha sin fumar vuelve a empezar mañana</div>`);
-    const orden=["alcohol", ...(FICHA.fumador?["tabaco"]:[]), "dieta","pasos","estres","fuerza","pantallas","sueno","azucar"];
+    const orden=["dieta","pasos","fuerza","cardio","alcohol", ...(FICHA.fumador?["tabaco"]:[]),"estres","pantallas","sueno","azucar"];
     body = `<div class="qc qday">${anillo(nota,112,14,nota==null?"—":`<b>${nota}</b>`)}<span class="t"><span class="qlab">${esHoy?"TU DÍA DE HOY":"TU DÍA DE AYER"}</span>${bd?`<span class="vsband" style="background:${bd.track};color:${bd.text}">${bd.n}</span>`:""}<small>Suma a tu Vital Score de los últimos 30 días.</small></span></div>
       ${msgs.join("")}
-      ${orden.map(k=>{ if(k==="fuerza"){ const s=semanaEnt(Q.f, f=>entDia(f), pautaEnt()); const ok=s.n>=s.pauta; return `<div class="qc qsum"><i style="background:${ok?"#2E7D4F":"#E9C21B"}"></i><b>${VS_NOM[k]}</b><span style="color:${ok?"#1F6B3F":"#7A5E00"}">${s.n} de ${s.pauta} esta semana</span></div>`; }
+      ${orden.map(k=>{ if(k==="fuerza"||k==="cardio"){ const s=k==="fuerza"?semanaEnt(Q.f, f=>entDia(f), pautaEnt()):semanaEnt(Q.f, f=>entDia(f), pautaCardio(), valorCardio); const ok=s.n>=s.pauta; return `<div class="qc qsum"><i style="background:${ok?"#2E7D4F":"#E9C21B"}"></i><b>${VS_NOM[k]}</b><span style="color:${ok?"#1F6B3F":"#7A5E00"}">${s.n} de ${s.pauta} esta semana</span></div>`; }
         if(k==="azucar"){ const c=p.azucar==null?null:100-p.azucar, ib=c!=null?adicBanda(c):null; return `<div class="qc qsum"><i style="background:${ib?ib.ring:"#cfd8cf"}"></i><b>Azúcar</b><span style="color:${ib?ib.text:"#73766f"}">${c!=null?azDiaTxt(c):"—"}</span></div>`; }
         return `<div class="qc qsum"><i style="background:${p[k]!=null?vsBanda(p[k]).ring:"#cfd8cf"}"></i><b>${VS_NOM[k]}</b><span style="color:${p[k]!=null?vsBanda(p[k]).text:"#73766f"}">${p[k]!=null?p[k]:"—"}</span></div>`; }).join("")}`;
   }
@@ -3514,7 +3518,7 @@ function vsGuardarDia(){
   const a=JSON.parse(JSON.stringify(Q.a));
   if(a.pasos!=null && a.pasos!==""){ const P=pasDatos(); P.d[Q.f]=Math.round(+a.pasos); pasGuardar(P); }
   delete a.pasos; a.alcOk=!!a.alcOk; if(!a.alcOk) delete a.alcOk;
-  a.entOk=!!a.entOk; if(!a.entOk) delete a.entOk; a.ent=entDia(Q.f); delete a.entreno; delete a.tipo; a.pauta=pautaEnt();
+  a.entOk=!!a.entOk; if(!a.entOk) delete a.entOk; a.ent=entDia(Q.f); delete a.entreno; delete a.tipo; a.pauta=pautaEnt(); a.pautaC=pautaCardio();
   a.alc=alcDia(Q.f); a.t=Date.now();
   const V=vsDatos(); V[Q.f]=a; vsGuardar(V);
   vsSubir(Q.f);
@@ -3586,9 +3590,10 @@ async function panelVS(el){
       const dias=mios.map(d=>{ const p={...(d.puntos||{})}; delete p.alcohol; if(!c.fumador) delete p.tabaco; const al=(d.datos&&d.datos.alc)||0; return {f:d.fecha, p, alc:al, conf:!!(d.datos&&d.datos.alcOk), q:true, pen:penDe(d.datos||{}, al).total, o3:d.datos&&d.datos.o3?d.datos.o3==="si":null}; });
       const porF=Object.fromEntries(mios.map(d=>[d.fecha,d.datos||{}])), pau=Math.max(1,+(mios.length&&mios[mios.length-1].datos&&mios[mios.length-1].datos.pauta)||3);
       const getE=f=>{ const x=porF[f]; if(!x) return []; if(x.ent) return x.ent; return x.entreno==="si"?[{t:x.tipo||"fuerza"}]:[]; };
-      dias.forEach(d=>delete d.p.fuerza);
+      dias.forEach(d=>{ delete d.p.fuerza; delete d.p.cardio; });
       const d0=ini<desde?desde:ini;
-      const r=vsCalcular(dias, diasEntre(d0, hoy), c.fumador, {fuerza: mios.length ? fuerzaPeriodo(getE, pau, d0, hoy) : null});
+      const pauC=Math.max(1,+(mios.length&&mios[mios.length-1].datos&&mios[mios.length-1].datos.pautaC)||2);
+      const r=vsCalcular(dias, diasEntre(d0, hoy), c.fumador, {fuerza: mios.length ? fuerzaPeriodo(getE, pau, d0, hoy) : null, cardio: mios.length ? fuerzaPeriodo(getE, pauC, d0, hoy, valorCardio) : null});
       return {c, r, ult:mios.length?mios[mios.length-1].fecha:null, n:mios.length};
     }).sort((a,b)=>(a.r.score??999)-(b.r.score??999));
     el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="note">Últimos 30 días. Primero, quien más lo necesita.</p>
@@ -3604,7 +3609,15 @@ async function panelVS(el){
 /* =========== ENTRENOS: se apuntan como las bebidas y la fuerza se valora por semana =========== */
 const ENT_TIPOS = [["fuerza","Fuerza en sala"],["crossfit","CrossFit"],["hyrox","Hyrox"],["dirigida","Clase dirigida"],["pilates","Pilates"],["yoga","Yoga o estiramientos"],["cardio","Cardio"]];
 const ENT_NOM = Object.fromEntries(ENT_TIPOS);
-const CARDIO = [["correr","Correr"],["bici","Bici"],["natacion","Natación"],["caminar","Caminar rápido"],["otro","Otro"]];
+const CARDIO = [["correr","Correr"],["bici","Bici o spinning"],["eliptica","Elíptica"],["natacion","Natación"],["remo","Remo"],["caminar","Caminar rápido"],["otro","Otro"]];
+/* kcal activas aproximadas si no las pone: (MET − 1) × kg × horas */
+const MET_CARDIO = {correr:9.8, bici:7, eliptica:6, natacion:7, remo:7, caminar:4.3, otro:6};
+const pesoRef = () => FICHA.peso>0 ? FICHA.peso : (FICHA.sexo==="Hombre" ? 78 : 65);
+const kcalCardio = s => s.kcal>0 ? s.kcal : Math.round(((MET_CARDIO[s.sub]||6)-1) * pesoRef() * (s.min||45)/60);
+/* pasos equivalentes: caminar gasta ≈ 0,00057 kcal por paso y kg (70 kg → 10.000 pasos ≈ 400 kcal).
+   Correr y caminar ya suman pasos en el móvil: no se cuentan dos veces. */
+const KCAL_PASO = () => 0.00057 * pesoRef();
+function pasosEqDia(f){ return Math.round(entDia(f).filter(x=>x.t==="cardio" && !["correr","caminar"].includes(x.sub)).reduce((a,x)=>a+kcalCardio(x),0) / KCAL_PASO()); }
 const CARDIO_NOM = Object.fromEntries(CARDIO);
 const ENT_DUR = [30,45,60,90,120];
 const entKey = () => "mogas-ent-" + (FICHA.codigo||"DEMO");
@@ -3618,23 +3631,26 @@ function entDia(f, V){
   return [];
 }
 /* valor de cada sesión frente a la pauta (no se enseña al cliente) */
-function valorSesion(s){
-  if(s.t==="cardio") return FICHA.perfil==="resist" ? ((s.min||45)>=30 ? 1 : 0.7) : ((s.min||45)>=45 ? 0.85 : 0.6);   // el cardio también cuenta como entreno
+function valorSesion(s){   // fuerza (el cardio va aparte)
+  if(s.t==="cardio") return 0;
   return ({fuerza:1, crossfit:1, hyrox:1, dirigida:0.75, pilates:0.75, yoga:0.55})[s.t] ?? 0.6;
 }
+function valorCardio(s){ if(s.t!=="cardio") return 0; return (s.min||0)>=30 || kcalCardio(s)>=200 ? 1 : 0.6; }
 const pautaEnt = () => Math.max(1, +FICHA.entrenosSemana || 3);
-function semanaEnt(f, getEnt, pauta){
+const pautaCardio = () => Math.max(1, +FICHA.cardioSemana || (FICHA.perfil==="resist" ? 4 : 2));
+function semanaEnt(f, getEnt, pauta, val=valorSesion){
   const lun=lunesDe(deISO(f)); let n=0, v=0;
-  for(let i=0;i<7;i++){ const x=fechaISO(sumarDias(lun,i)); getEnt(x).forEach(s=>{ n++; v+=valorSesion(s); }); }
+  for(let i=0;i<7;i++){ const x=fechaISO(sumarDias(lun,i)); getEnt(x).forEach(s=>{ const w=val(s); if(w>0){ n++; v+=w; } }); }
   return {n, v, pauta};
 }
+const semTxt = f => { const a=semanaEnt(f, x=>entDia(x), pautaEnt()), c=semanaEnt(f, x=>entDia(x), pautaCardio(), valorCardio); return {a, c, txt:`Fuerza: ${a.n} de ${a.pauta} · Cardio: ${c.n} de ${c.pauta}`}; };
 /* nota de fuerza de un periodo: media de las semanas; las semanas incompletas se comparan con lo que tocaba hasta ese día */
-function fuerzaPeriodo(getEnt, pauta, desde, fin){
+function fuerzaPeriodo(getEnt, pauta, desde, fin, val=valorSesion){
   const notas=[]; let lun=lunesDe(deISO(desde));
   while(fechaISO(lun)<=fin){
     const ini = fechaISO(lun)<desde ? desde : fechaISO(lun), finS = fechaISO(sumarDias(lun,6))>fin ? fin : fechaISO(sumarDias(lun,6));
     const dias=diasEntre(ini, finS);
-    if(dias>=3){ let v=0; for(let d=deISO(ini); fechaISO(d)<=finS; d=sumarDias(d,1)) getEnt(fechaISO(d)).forEach(s=>v+=valorSesion(s));
+    if(dias>=3){ let v=0; for(let d=deISO(ini); fechaISO(d)<=finS; d=sumarDias(d,1)) getEnt(fechaISO(d)).forEach(s=>v+=val(s));
       notas.push(Math.min(100, Math.round(v/(pauta*dias/7)*100))); }
     lun=sumarDias(lun,7);
   }
@@ -3652,14 +3668,14 @@ function entrenoApuntar(diaSel){
 <div class="entf"><span class="entl">¿Qué has hecho?</span><div class="entg ent-t">${ENT_TIPOS.map(([v,t])=>`<button type="button" data-t="${v}">${t}</button>`).join("")}</div>
 <div class="ent-cardio" hidden><span class="entl">¿Qué cardio?</span><div class="entg ent-s">${CARDIO.map(([v,t])=>`<button type="button" data-s="${v}">${t}</button>`).join("")}</div></div>
 <span class="entl">¿Cuánto rato?</span><div class="entg ent-m">${ENT_DUR.map(m=>`<button type="button" data-m="${m}">${m<60?`${m} min`:m===60?"1 h":m===90?"1 h 30 min":"2 h"}</button>`).join("")}</div>
-<div class="entin"><label><span>Otro (min)</span><input type="number" inputmode="numeric" min="5" max="600" class="ent-mi" placeholder="min"></label><label><span>Kcal (opcional)</span><input type="number" inputmode="numeric" min="0" max="5000" class="ent-k" placeholder="kcal"></label></div>
+<div class="entin"><label><span>Otro (min)</span><input type="number" inputmode="numeric" min="5" max="600" class="ent-mi" placeholder="min"></label><label><span>Kcal gastadas (las del reloj o la máquina)</span><input type="number" inputmode="numeric" min="0" max="5000" class="ent-k" placeholder="kcal"></label></div>
 <p class="enterr warn"></p>
 <button type="button" class="bebok entok">✅ Guardar entreno</button></div>`);
   const box=chat.lastElementChild;
-  const pintarLista=()=>{ const l=entDatos()[diaSel]||[], s=semanaEnt(diaSel, f=>entDatos()[f]||entDia(f), pautaEnt());
-    box.querySelector(".entlista").innerHTML = (l.length ? l.map((x,i)=>`<div class="enti"><span><b>${esc(sesionTxt(x))}</b>${x.min?` · <span>${x.min} min</span>`:""}${x.kcal?` · <span>${x.kcal} kcal</span>`:""}</span><button type="button" class="entx" data-i="${i}" aria-label="Borrar">✕</button></div>`).join("")
+  const pintarLista=()=>{ const l=entDatos()[diaSel]||[], S=semTxt(diaSel);
+    box.querySelector(".entlista").innerHTML = (l.length ? l.map((x,i)=>`<div class="enti"><span><b>${esc(sesionTxt(x))}</b>${x.min?` · <span>${x.min} min</span>`:""}${x.t==="cardio"?` · <span>${x.kcal?"":"≈"}${kcalCardio(x)} kcal</span>`:x.kcal?` · <span>${x.kcal} kcal</span>`:""}</span><button type="button" class="entx" data-i="${i}" aria-label="Borrar">✕</button></div>`).join("")
       : `<p class="note">${diaSel===hoy?"Hoy aún no has apuntado ningún entreno.":"Ayer no apuntaste ningún entreno."}</p>`)
-      + `<div class="entsem"><span>${s.n===1?`Esta semana: 1 entreno de ${s.pauta}`:`Esta semana: ${s.n} entrenos de ${s.pauta}`}</span></div>`;
+      + `<div class="entsem"><span>Esta semana:</span> <span>${S.txt}</span></div>`;
     box.querySelectorAll(".entx").forEach(b=>b.onclick=()=>{ if(!confirm(trT("¿Borrar este entreno?"))) return; const D=entDatos(), L=D[diaSel]||[]; L.splice(+b.dataset.i,1); if(L.length) D[diaSel]=L; else delete D[diaSel]; entGuardar(D); vsSyncEnt(diaSel); pintarLista(); }); };
   const marcar=(sel,attr,val)=>box.querySelectorAll(sel+" button").forEach(b=>b.classList.toggle("on",b.dataset[attr]===String(val)));
   box.querySelectorAll(".ent-t button").forEach(b=>b.onclick=()=>{ nuevo.t=b.dataset.t; marcar(".ent-t","t",nuevo.t); box.querySelector(".ent-cardio").hidden = nuevo.t!=="cardio"; if(nuevo.t!=="cardio") nuevo.sub=null; });
@@ -3674,11 +3690,11 @@ function entrenoApuntar(diaSel){
     if(!nuevo.min){ er.textContent=trT("Elige cuánto rato ha durado."); return; }
     er.textContent="";
     const D=entDatos(), L=D[diaSel]||[]; L.push({t:nuevo.t, ...(nuevo.sub?{sub:nuevo.sub}:{}), min:nuevo.min, ...(nuevo.kcal?{kcal:nuevo.kcal}:{})}); D[diaSel]=L; entGuardar(D); vsSyncEnt(diaSel);
-    const s=semanaEnt(diaSel, f=>entDia(f), pautaEnt());
+    const S=semTxt(diaSel), eqP=pasosEqDia(diaSel);
     box.querySelectorAll(".entf button.on").forEach(b=>b.classList.remove("on")); box.querySelector(".ent-mi").value=""; box.querySelector(".ent-k").value=""; box.querySelector(".ent-cardio").hidden=true;
     Object.assign(nuevo,{t:null,sub:null,min:null,kcal:null}); pintarLista();
     const op=box.nextElementSibling; if(op && op.classList.contains("opts")) op.remove();
-    bot(`<b>✅ Entreno guardado</b>\n<span>${s.n===1?`Esta semana: 1 entreno de ${s.pauta}`:`Esta semana: ${s.n} entrenos de ${s.pauta}`}</span>${s.n>=s.pauta?`\n<span>¡Pauta de la semana cumplida!</span>`:""}`);
+    bot(`<b>✅ Entreno guardado</b>\n<span>Esta semana:</span> <span>${S.txt}</span>${eqP>0?`\n<span>Tu cardio de hoy cuenta como</span> <b>≈${fmtN(eqP)}</b> <span>pasos más en tu nota de pasos.</span>`:""}`);
     opts([{t:"🏋️ Apuntar otro entreno", f:()=>entrenoApuntar(diaSel)}]);
   };
   box.querySelectorAll(".bebdia button").forEach(b=>b.onclick=()=>{ if(b.dataset.d===diaSel) return; box.remove(); const o=chat.lastElementChild; if(o&&o.classList.contains("opts")) o.remove(); entrenoApuntar(b.dataset.d); });
@@ -3691,12 +3707,12 @@ function vsSyncEnt(f){ const V=vsDatos(); if(V[f]){ V[f].ent=entDatos()[f]||[]; 
 /* =========== PESTAÑA APUNTAR: pasos, entrenos y bebidas =========== */
 function apuntarMenu(){
   SECCION=null; if(TAB!=="apuntar") marcarTab("apuntar");
-  const hoy=fechaISO(), ps=pasDatos().d[hoy], B=bebDatos()[hoy], s=semanaEnt(hoy, f=>entDia(f), pautaEnt());
+  const hoy=fechaISO(), ps=pasDatos().d[hoy], B=bebDatos()[hoy], S=semTxt(hoy);
   const nAlc=B?Object.entries(B).reduce((a,[id,c])=>a+(UNID_ALC[id]?UNID_ALC[id]*c:0),0):0;
   const w=document.createElement("div"); w.className="apgrid";
   const tarjetas=[
     {ico:"🚶", t:"Pasos", sub: ps!=null?`Hoy: ${fmtN(ps)} pasos`:"Hoy aún no los has apuntado", f:pasosApuntar},
-    {ico:"🏋️", t:"Entrenos", sub: s.n===1?`Esta semana: 1 entreno de ${s.pauta}`:`Esta semana: ${s.n} entrenos de ${s.pauta}`, f:()=>entrenoApuntar()},
+    {ico:"🏋️", t:"Entrenos", sub: S.txt, f:()=>entrenoApuntar()},
     {ico:"🍹", t:"Bebidas", sub: B?(nAlc?`Hoy: ${kcalDia(B)} kcal · ${nAlc} de alcohol`:`Hoy: ${kcalDia(B)} kcal en bebidas`):"Hoy: ninguna apuntada", f:()=>bebidasApuntar()}];
   w.innerHTML=`<div class="aptit">¿Qué quieres apuntar?</div>`+tarjetas.map((x,i)=>`<button type="button" class="apcard" data-i="${i}"><span class="qi">${x.ico}</span><span><b>${x.t}</b><small>${x.sub}</small></span><span class="apmas" aria-hidden="true">+</span></button>`).join("")
     +`<div class="apsec"><button type="button" data-o="sem">📅 Poner la media de pasos de una semana</button><button type="button" data-o="ps">📊 Ver mis semanas de pasos</button><button type="button" data-o="bm">📊 Resumen de bebidas del mes</button></div>`;
