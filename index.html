@@ -365,10 +365,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.36.1"></script>
-<script src="i18n-vs.js?v=2.36.1"></script>
-<script src="i18n-alim.js?v=2.36.1"></script>
-<script src="recetas-esp.js?v=2.36.1"></script>
+<script src="i18n.js?v=2.37.0"></script>
+<script src="i18n-vs.js?v=2.37.0"></script>
+<script src="i18n-alim.js?v=2.37.0"></script>
+<script src="recetas-esp.js?v=2.37.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -904,7 +904,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.36.1";
+const APP_VERSION = "2.37.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -3047,7 +3047,7 @@ async function nube(path, {method="GET", body, token, prefer}={}){
   return j;
 }
 
-const VS_PESOS = {dieta:26, alcohol:17, pasos:14, estres:10, pantallas:9, fuerza:9, tabaco:7, azucar:4, sueno:4};
+const VS_PESOS = {dieta:22, pasos:18, fuerza:13, azucar:11, alcohol:8, tabaco:8, pantallas:7, estres:7, sueno:6};
 const VS_NOM = {alcohol:"Alcohol", tabaco:"Tabaco", dieta:"Dieta", fuerza:"Entreno", pantallas:"Pantallas", estres:"Estrés", pasos:"Pasos", sueno:"Sueño", azucar:"Adicción al azúcar"};
 const VS_BANDAS = [
   {max:20,  n:"Crítico",   ring:"#D93B30", text:"#B42318", track:"#FBE3E1"},
