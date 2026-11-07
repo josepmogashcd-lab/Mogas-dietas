@@ -403,10 +403,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.44.0"></script>
-<script src="i18n-vs.js?v=2.44.0"></script>
-<script src="i18n-alim.js?v=2.44.0"></script>
-<script src="recetas-esp.js?v=2.44.0"></script>
+<script src="i18n.js?v=2.45.0"></script>
+<script src="i18n-vs.js?v=2.45.0"></script>
+<script src="i18n-alim.js?v=2.45.0"></script>
+<script src="recetas-esp.js?v=2.45.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -591,7 +591,8 @@ const FICHA = {
   integrales: "",     // "" según perfil · "si" · "no"
   cardioSemana: 0,    // sesiones de cardio pautadas (0 = 2, o 4 en resistencia)
   edad: 0, altura: 0, // del alta de cliente nuevo (#nuevo)
-  supermercado: ""    // supermercado habitual (para la futura lista de la compra)
+  supermercado: "",   // supermercado habitual (para la futura lista de la compra)
+  cafe: null          // null = cafés como siempre (≈60 kcal) · {n, forma, leche, azucar, cuando:[]} (del alta)
 };
 const SUPERS = ["","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo"];
 
@@ -820,7 +821,7 @@ const conSuple = () => FICHA.suplementos ?? esFitness();
 const SUPLE = ["proteina","cremaArroz","cacPolvo"];   // ingredientes de suplementación
 const batidoOn = () => conSuple() && (FICHA.batidoPost ?? true);
 const batidoBase = () => (!esFitness() && batidoOn() && entrena()) ? kcalBatido() : 0;
-const kcalMenus = () => kcalObj() - batidoBase();
+const kcalMenus = () => kcalObj() - batidoBase() - kcalCafesDia();
 const extraDia = d => Math.round(Object.values(d.aj||{}).reduce((a,b)=>a+b,0)*RACION_HC) + (d.batido?kcalBatido():0);
 const franja = c => { const f=(FICHA.franjas||{})[c]; return f&&f[0]&&f[1] ? `${f[0]}–${f[1]}` : f&&f[0] ? f[0] : ""; };
 
@@ -915,8 +916,27 @@ const ALMIDON = `<b>💡 Truco: almidón resistente</b>
 Cuando cocinas arroz, pasta, patata, boniato, quinoa o legumbres y los <b>enfrías en la nevera al menos 12 horas</b>, parte de su almidón cambia de estructura y se vuelve "resistente": no se digiere como azúcar y llega al intestino grueso, donde funciona como fibra y alimenta a tu flora intestinal.
 <ul><li>✅ Subida de azúcar en sangre más suave y más saciedad.</li><li>✅ El efecto se mantiene aunque lo recalientes.</li><li>✅ Ideal para hacer táper: cocina para 2–3 días de golpe.</li></ul><b>Cómo hacerlo seguro</b><ul><li>Mételo en la nevera en menos de 1 hora tras cocinarlo, no lo dejes la tarde en la encimera.</li><li>Arroz: consúmelo en 24 h y recaliéntalo una sola vez, bien caliente.</li><li>Pasta, patata y legumbres: hasta 2–3 días en la nevera.</li></ul><span class="note">Las cantidades de tu dieta no cambian: pésalo igual.</span>`;
 
+/* ---- CAFÉS: cuántos, cómo, con qué leche y azúcar (kcal reales; con FICHA.cafe se descuentan del día) ---- */
+const CAFE_FORMA = {solo:{t:"solo", ml:0}, cortado:{t:"cortado", ml:30}, leche:{t:"con leche", ml:100}, latte:{t:"latte o capuchino grande", ml:200}};
+const CAFE_LECHE = {entera:{t:"leche entera", k:65}, semi:{t:"leche semidesnatada", k:47}, desnatada:{t:"leche desnatada", k:35}, sinlactosa:{t:"leche sin lactosa", k:45}, avena:{t:"bebida de avena", k:45}, soja:{t:"bebida de soja sin azúcar", k:35}, almendra:{t:"bebida de almendras sin azúcar", k:15}};
+const CAFE_AZ = {no:{t:"Sin azúcar", k:0}, edulc:{t:"Con edulcorante", k:0}, s1:{t:"1 sobre de azúcar", k:30}, s2:{t:"2 sobres de azúcar", k:60}};
+const CAFE_CUANDO = {levantar:"Al levantarte", desayuno:"Con el desayuno", manana:"A media mañana", comer:"Después de comer", tarde:"Por la tarde"};
+const cafeCfg = () => FICHA.cafe && typeof FICHA.cafe==="object" ? FICHA.cafe : null;
+function kcalCafes(){ const c=cafeCfg(); if(!c) return 60; if(!(c.n>0)) return 0;
+  const f=CAFE_FORMA[c.forma]||CAFE_FORMA.leche, l=CAFE_LECHE[c.leche]||CAFE_LECHE.semi, az=CAFE_AZ[c.azucar]||CAFE_AZ.no;
+  return Math.round(c.n*(2 + f.ml*l.k/100 + az.k)/5)*5; }
+const kcalCafesDia = () => cafeCfg() ? kcalCafes() : 0;   // lo que se descuenta del total (las fichas antiguas no lo descuentan)
+/* líneas del café (para el PDF y la app) */
+function cafeLineas(){ const c=cafeCfg(); if(!c) return ["Utilizar poca leche de avena para el café"];
+  if(!(c.n>0)) return [];
+  const f=CAFE_FORMA[c.forma]||CAFE_FORMA.leche, l=CAFE_LECHE[c.leche]||CAFE_LECHE.semi, az=CAFE_AZ[c.azucar]||CAFE_AZ.no;
+  const L=[`${c.n} ${c.n===1?"café":"cafés"} ${f.t}`];
+  if(f.ml) L.push(`${f.ml} ml de ${l.t}${c.n>1?" en cada uno":""}`);
+  L.push(az.t + (az.k && c.n>1 ? " en cada café" : "") + (az.k ? ". Si puedes, cámbialo por edulcorante: te ahorras " + az.k*c.n + " kcal al día" : ""));
+  if((c.cuando||[]).length) L.push("Cuándo: " + c.cuando.map(x=>(CAFE_CUANDO[x]||"").toLowerCase()).filter(Boolean).join(", "));
+  return L; }
 const COMIDAS = [
-  {id:"cafes", nombre:"☕ Cafés del día", kcal:60, texto:"Usa poca leche de avena para el café."},
+  {id:"cafes", nombre:"☕ Cafés del día", get kcal(){ return kcalCafes(); }, get texto(){ return cafeLineas().join(". "); }},
   {id:"desayuno", nombre:"🍞 Desayuno", kcal:300, grupos:["desayuno"]},
   {id:"segundo", nombre:"🥪 Segundo desayuno", kcal:0, grupos:["fruta"]},
   {id:"comida", nombre:"🥗 Comida", kcal:600, texto:"Ensalada completa o plato caliente: elige una opción de cada grupo. ¡Ve intercalando!"},
@@ -944,7 +964,7 @@ const INDICACIONES = [
 ];
 
 const FAQ = [
-  {p:"¿Puedo tomar más café?", r:"Sí, los cafés están contados en el día (≈60 kcal). Lo que cuenta es la leche: usa poca leche de avena."},
+  {p:"¿Puedo tomar más café?", get r(){ return cafeCfg() ? `Tus cafés ya están contados en el día (≈${kcalCafes()} kcal). Un café solo apenas tiene calorías: lo que cuenta es la leche y el azúcar. Si tomas uno más, mejor solo o con un chorrito de leche.` : "Sí, los cafés están contados en el día (≈60 kcal). Lo que cuenta es la leche: usa poca leche de avena."; }},
   {p:"¿Cuándo es la comida libre?", r:"Tienes 1 cheat meal a la semana. Elige tú el día, pero solo una comida, no un día entero."},
   {p:"Tengo hambre entre horas", r:"La pauta es no picar entre horas. Bebe 1,5 vasos de agua antes de cada comida y asegúrate de llegar a los 200–300 g de verdura en comida y cena. Si te pasa a menudo, coméntalo con tu nutricionista para ajustarlo."},
   {p:"¿Cómo uso el aceite?", r:"Siempre en spray y pesado. En comida y cena tienes 5 g de AOVE incluidos, y no hay más: vigila mucho el aceite, es donde más calorías se cuelan sin darte cuenta."},
@@ -956,7 +976,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.44.0";
+const APP_VERSION = "2.45.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1066,12 +1086,12 @@ function dietaParaDoc(){
   if(restr().length||FICHA.otrasRestricciones) datos.push(["Adaptada a:",[...restr().map(r=>r.t.toLowerCase()),FICHA.otrasRestricciones].filter(Boolean).join(", ")]);
   const cajas=[[{k:"h",t:"Equivalencia de fruta:",first:true},{k:"o",p:"1 pieza de fruta = ",t:GRUPOS.fruta.opciones.join(" / ")}]];
   // Cafés + desayuno / segundo desayuno
-  const c1=[{k:"h",t:"Cafés del día :",first:true},{k:"t",t:ad("Utilizar poca leche de avena para el café")},{k:"total",kcal:60}];
+  const cl=cafeLineas(), c1 = cl.length ? [{k:"h",t:"Cafés del día :",first:true},...cl.map(t=>({k:"t",t:ad(t)})),{k:"total",kcal:kcalCafes()}] : [];
   if(FICHA.comidas.includes("Desayuno")){
     const rd=recetasDoc("Desayuno");
-    c1.push({k:"h",t:`Desayuno${fj("Desayuno")}:`},{k:"esp"},...(rd||[...opciones(GRUPOS.desayuno.opciones),{k:"esp"},{k:"t",t:"1 pieza de fruta"}]),{k:"total",kcal:kcalDe("Desayuno")});
+    c1.push({k:"h",t:`Desayuno${fj("Desayuno")}:`,first:!c1.length},{k:"esp"},...(rd||[...opciones(GRUPOS.desayuno.opciones),{k:"esp"},{k:"t",t:"1 pieza de fruta"}]),{k:"total",kcal:kcalDe("Desayuno")});
   }
-  cajas.push(c1);
+  if(c1.length) cajas.push(c1);
   if(FICHA.comidas.includes("Segundo desayuno")) cajas.push([{k:"h",t:`Segundo desayuno${fj("Segundo desayuno")}:`,first:true},...(recetasDoc("Segundo desayuno")||[{k:"t",t:"1 pieza de fruta"}]),{k:"total",kcal:kcalDe("Segundo desayuno")}]);
   // Comida y cena
   const principales=["Comida","Cena"].filter(n=>FICHA.comidas.includes(n));
@@ -2615,7 +2635,7 @@ function verDieta(){
   const R=reparto(), kc=kcalObj(), {pre,post}=prePost();
   const cs=[...FICHA.comidas].sort((a,b)=>POS[a]-POS[b]);
   bot(`Tu objetivo es de <b>${kc} kcal</b> al día, repartidas así:<div class="plate">${cs.map(c=>`<div><span>${esc(c)}${c===pre?" · antes de entrenar":c===post?" · después de entrenar":""}${franja(c)?`<small class="frj">🕐 ${franja(c)}</small>`:""}</span><span><b>${Math.round(kcalMenus()*R[c]/1000)*10} kcal</b> (${R[c]}%)</span></div>`).join("")}${batidoBase()?`<div><span>🥤 Batido post-entreno<small class="frj">${esc(batidoTxt())}</small></span><span><b>${batidoBase()} kcal</b></span></div>`:""}</div>${FICHA.entreno==="ayunas"?`<span class="note">Entrenas en ayunas: si tienes mucha hambre, como máximo 1 pieza de fruta al levantarte.</span>\n`:pre?`<span class="note">Deja al menos 2 horas entre ${esc(pre.toLowerCase())} y el entreno.</span>\n`:""}¿Qué comida quieres ver?`);
-  opts([...(conTiposDia()?[{t:"📅 ¿Qué día es hoy? (ajusta tu dieta)", f:tipoDiaHoy}]:[]), ...COMIDAS.filter(c=>!COMIDA_DE[c.id] || FICHA.comidas.includes(COMIDA_DE[c.id]) || c.id==="precama").map(c=>({t:c.nombre+(franja(COMIDA_DE[c.id])?` · ${franja(COMIDA_DE[c.id])}`:""), f:()=>verComida(c)}))]);
+  opts([...(conTiposDia()?[{t:"📅 ¿Qué día es hoy? (ajusta tu dieta)", f:tipoDiaHoy}]:[]), ...COMIDAS.filter(c=>c.id!=="cafes" || cafeLineas().length).filter(c=>!COMIDA_DE[c.id] || FICHA.comidas.includes(COMIDA_DE[c.id]) || c.id==="precama").map(c=>({t:c.nombre+(franja(COMIDA_DE[c.id])?` · ${franja(COMIDA_DE[c.id])}`:""), f:()=>verComida(c)}))]);
 }
 const COMIDA_DE = {desayuno:"Desayuno", segundo:"Segundo desayuno", comida:"Comida", merienda:"Merienda", cena:"Cena", precama:"Pre-cama"};
 /* --- Tipo de día (fitness / resistencia): el cliente elige qué día es y ve su dieta ajustada --- */
@@ -2643,6 +2663,7 @@ function verComida(c){
   if((cm==="Comida"||cm==="Cena") && FICHA.platoAuto && FICHA.peso>0){ const P=platoPrincipal(cm); if(P){ bot(h+"\n"+platoHTML(P)); opts([{t:"🍽️ Montarla paso a paso", f:montarInicio},{t:"📋 Ver otra comida", f:verDieta}]); return; } }
   const rec = COMIDAS_RECETA.includes(cm) ? recetasComidaHTML(cm) : "";
   if(rec){ bot(h+"\n"+rec); opts([{t:"📋 Ver otra comida", f:verDieta}]); return; }
+  if(c.id==="cafes"){ bot(h+"\n"+cafeLineas().map(t=>t.startsWith("Cuándo: ") ? `<span>Cuándo:</span> `+t.slice(8).split(", ").map(x=>`<span>${esc(x.charAt(0).toUpperCase()+x.slice(1))}</span>`).join(" · ") : `<span>${esc(t)}</span>`).join("\n")); opts([{t:"📋 Ver otra comida", f:verDieta}]); return; }
   if(c.texto) h+=`\n${esc(c.texto)}`;
   (c.grupos||[]).forEach(g=>{const G=GRUPOS[g];h+=`\n<span class="note">${esc(G.nota)}</span><ul>${G.opciones.map(o=>`<li>${esc(o)}</li>`).join("")}</ul>`});
   bot(h);
@@ -4109,9 +4130,13 @@ const ALTA_Q = [
   {id:"horasRes", t:"¿Cuántas horas entrenas tu deporte a la semana?", tipo:"uno", si:a=>a.perfil==="resist", ops:[["3","Menos de 4 h"],["5","4 – 6 h"],["7.5","6 – 9 h"],["10.5","9 – 12 h"],["13","Más de 12 h"]]},
   {id:"entreno", t:"¿A qué hora sueles entrenar?", tipo:"uno", si:a=>a.fuerza!=="0" || (a.cardio && a.cardio!=="0") || a.perfil==="resist", ops:Object.entries(ENTRENOS).filter(([k])=>k!=="no").map(([k,v])=>[k,v.t]).concat([["no","Cada día a una hora diferente"]])},
   {id:"comidas", t:"¿Cuántas comidas quieres hacer al día?", tipo:"uno", ops:[["3","3: desayuno, comida y cena"],["4","4: + merienda"],["5","5: + media mañana y merienda"],["4c","4: + algo antes de dormir"]]},
-  {id:"manana", t:"Por la mañana, al levantarte…", tipo:"uno", ops:[["si","Tengo hambre y desayuno bien"],["poco","Tengo poco hambre: prefiero algo ligero"]]},
-  {id:"hambre", t:"¿Cuándo tienes más hambre?", tipo:"uno", ops:[["igual","Igual todo el día"],["manana","Por la mañana"],["noche","Por la tarde y la noche"]]},
+  {id:"hambre", t:"¿Cuándo tienes más hambre?", tipo:"uno", ops:[["igual","Igual todo el día"],["manana","Por la mañana"],["noche","Por la tarde y la noche"],["sinmanana","Al levantarme casi no tengo hambre"]]},
   {id:"horario", t:"¿A qué hora sueles comer y cenar?", tipo:"uno", ops:[["pronto","Como sobre las 13:00 y ceno sobre las 20:00"],["normal","Como sobre las 14:00 y ceno sobre las 21:00"],["tarde","Como sobre las 15:00 y ceno sobre las 22:00"]]},
+  {id:"cafeN", t:"¿Tomas café? ¿Cuántos al día?", tipo:"uno", sub:"Las infusiones y el té sin azúcar no cuentan.", ops:[["0","No tomo café"],["1","1"],["2","2"],["3","3"],["4","4 o más"]]},
+  {id:"cafeForma", t:"¿Cómo lo tomas?", tipo:"uno", si:a=>a.cafeN&&a.cafeN!=="0", ops:[["solo","Solo"],["cortado","Cortado (un chorrito de leche)"],["leche","Con leche"],["latte","Latte o capuchino grande"]]},
+  {id:"cafeLeche", t:"¿Con qué leche?", tipo:"uno", si:a=>a.cafeN&&a.cafeN!=="0"&&a.cafeForma!=="solo", ops:Object.entries(CAFE_LECHE).map(([k,v])=>[k,v.t.charAt(0).toUpperCase()+v.t.slice(1)])},
+  {id:"cafeAz", t:"¿Le pones azúcar?", tipo:"uno", si:a=>a.cafeN&&a.cafeN!=="0", ops:Object.entries(CAFE_AZ).map(([k,v])=>[k, k==="s1"?"1 sobre en cada café":k==="s2"?"2 sobres en cada café":v.t])},
+  {id:"cafeCuando", t:"¿Cuándo los tomas?", tipo:"varios", si:a=>a.cafeN&&a.cafeN!=="0", sub:"Marca todos los momentos.", ops:Object.entries(CAFE_CUANDO)},
   {id:"restr", t:"¿Tienes alguna alergia, intolerancia o forma de comer especial?", tipo:"varios", sub:"Marca todas las que tengas.", ninguna:"ninguna", ops:[["ninguna","Ninguna"],["vegano","🌱 Vegetariana o vegana"],["lactosa","Intolerancia a la lactosa"],["gluten","Celiaquía / sin gluten"],["digestiva","Digestiones delicadas (colon irritable…)"],["frutosSecos","Alergia a frutos secos"],["cacahuete","Alergia al cacahuete"],["huevo","Alergia al huevo"],["pescado","Alergia al pescado"],["marisco","Alergia al marisco"],["soja","Alergia a la soja"]]},
   {id:"veg", t:"De esto, ¿qué sí comes?", tipo:"varios", si:a=>(a.restr||[]).includes("vegano"), ninguna:"nada", ops:[["huevo","🥚 Huevo"],["lacteos","🥛 Lácteos"],["pescado","🐟 Pescado"],["nada","Nada de esto (vegana)"]]},
   {id:"integ", t:"Pan, pasta y arroz integrales…", tipo:"uno", ops:[["si","Me gustan"],["no","Prefiero los normales"],["","Me da igual"]]},
@@ -4152,7 +4177,8 @@ function altaFicha(a){
     codigo:"PRUEBA", nombre:(a.nombre||"").trim()||"Cliente nuevo", sexo:hombre?"Hombre":"Mujer", edad, altura:alt, peso,
     tmb, factor, perfil:a.perfil, objetivo, ajuste, comidas,
     entreno: (a.entreno && (nF||nC||hR)) ? a.entreno : "no",
-    hambre:a.hambre||"igual", sinHambreManana:a.manana==="poco",
+    hambre: a.hambre==="sinmanana" ? "noche" : (a.hambre||"igual"), sinHambreManana: a.hambre==="sinmanana",
+    cafe: {n:Math.min(4,+a.cafeN||0), forma:a.cafeForma||"leche", leche:a.cafeForma==="solo"?"":(a.cafeLeche||"semi"), azucar:a.cafeAz||"no", cuando:a.cafeCuando||[]},
     pasosObjetivo: pasos>=10000 ? 12000 : 10000, pasosMedia: a.pasos==="nose"?0:pasos,
     restricciones:restr, vegCome: restr.includes("vegano") ? {huevo:veg.includes("huevo"), lacteos:veg.includes("lacteos"), pescado:veg.includes("pescado")} : {},
     entrenosSemana: Math.max(1,nF), cardioSemana: a.perfil==="resist" ? Math.max(3, Math.round(hR/1.5)) : (nC ? (nC>=5?5:nC>=3?3:2) : 0),
@@ -4216,6 +4242,7 @@ function altaFin(){
         <li><span>· por trabajo</span> <b>+${nf(c.fTrab)}</b></li>
         <li><span>· por entrenos</span> <b>+${nf(c.fEnt)}</b> <small class="notr">(≈${fmtN(c.kSem)} kcal/sem)</small></li>
         <li><span>Mantenimiento</span> <b>${c.mant} kcal</b></li>
+        <li><span>Cafés (ya descontados de las comidas)</span> <b>${kcalCafes()} kcal</b></li>
         <li><span>Objetivo</span> <b>${obj}</b></li>
         <li><span>Proteína</span> <b>≈${c.protDia} g/día</b></li>
         <li><span>IMC</span> <b>${nf(c.imc)}</b></li>
