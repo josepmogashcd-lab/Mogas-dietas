@@ -403,10 +403,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.46.0"></script>
-<script src="i18n-vs.js?v=2.46.0"></script>
-<script src="i18n-alim.js?v=2.46.0"></script>
-<script src="recetas-esp.js?v=2.46.0"></script>
+<script src="i18n.js?v=2.47.0"></script>
+<script src="i18n-vs.js?v=2.47.0"></script>
+<script src="i18n-alim.js?v=2.47.0"></script>
+<script src="recetas-esp.js?v=2.47.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -978,7 +978,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.46.0";
+const APP_VERSION = "2.47.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1335,9 +1335,14 @@ const ING = {
   tofu:      {es:"tofu firme marinado", ca:"tofu ferm marinat", en:"firm marinated tofu", u:"g", k:130, p:13},
   hummus:    {es:"hummus ligero", ca:"hummus lleuger", en:"light hummus", u:"g", k:250, p:7},
   canela:    {es:"Canela al gusto", ca:"Canyella al gust", en:"Cinnamon to taste", u:"", k:0, fijo:true},
+  wasa:      {es:"pan crujiente tipo Wasa (1 tostada ≈ 10 g)", ca:"pa cruixent tipus Wasa (1 torrada ≈ 10 g)", en:"Wasa-style crispbread (1 slice ≈ 10 g)", u:"g", k:340, p:9},
+  feta:      {es:"queso feta", ca:"formatge feta", en:"feta cheese", u:"g", k:265, p:14},
   levadura:  {es:"½ cucharadita de levadura química", ca:"½ culleradeta de llevat químic", en:"½ tsp baking powder", u:"", k:0, fijo:true}
 };
 const RECETAS = [
+  {id:"huevosWasa", n:"Huevos revueltos con tostadas Wasa, aguacate y queso feta", m:["Desayuno"],
+   i:[["huevo",2],["wasa",20],["aguacate",30],["feta",20]],
+   p:["Bate los huevos con una pizca de sal y pimienta.","Cuájalos a fuego medio-bajo en una sartén antiadherente, sin aceite, removiendo hasta que queden cremosos.","Unta el aguacate en las tostadas, pon el revuelto encima y desmenuza el feta."]},
   {id:"porridge", n:"Porridge de avena con plátano, frutos rojos y crema de cacahuete", m:["Desayuno"],
    i:[["avena",70],["bebAvena",250],["platano",100],["frutosRoj",80],["cremaCac",15],["canela"]]},
   {id:"bananabread", n:"Banana bread al microondas", m:["Desayuno","Merienda"],
@@ -1474,19 +1479,35 @@ const llevaSuple = r => r.i.some(([id])=>SUPLE.includes(id));
 const recetaOk = r => !r.i.some(([id])=>prohibido(ING[id].es)) && !prohibido(r.n) && (conSuple() || !llevaSuple(r));
 /* recetas de una comida: las que ha elegido el nutricionista o, si no ha elegido, las que mejor encajan con sus kcal */
 /* tipo de cada receta, para las preferencias de desayuno y merienda */
-const RECETA_TIPO = {porridge:"yogur", bananabread:"dulce", batidoArroz:"batido", bocPavo:"salado", bocSerrano:"salado", bocTortilla:"salado", bocAguacate:"salado", bocAtun:"salado", bocSalmon:"salado",
-  platanoFS:"fruta", bolYogur:"yogur", tortitas:"fruta", cerealesBeb:"yogur", cremaArrozBeb:"yogur", pancake:"dulce", bocIntAtun:"salado", bocIntPavo:"salado", bocIntTortilla:"salado", bolGriego:"yogur",
+const RECETA_TIPO = {huevosWasa:"huevos", porridge:"cereal", bananabread:"dulce", batidoArroz:"batido", bocPavo:"salado", bocSerrano:"salado", bocTortilla:"salado", bocAguacate:"salado", bocAtun:"salado", bocSalmon:"salado",
+  platanoFS:"fruta", bolYogur:"yogur", tortitas:"fruta", cerealesBeb:"cereal", cremaArrozBeb:"cereal", pancake:"dulce", bocIntAtun:"salado", bocIntPavo:"salado", bocIntTortilla:"salado", bolGriego:"yogur",
   tostMolde:"salado", postWhey:"batido", yogFruta:"yogur", frutaTort:"fruta", castanas:"fruta", bolGrande:"yogur", bocPollo:"salado", bocTofu:"salado", tortPavo:"salado"};
 const prefsDe = comida => (comida==="Desayuno" ? FICHA.prefDes : FICHA.prefMer) || [];
 function recetasPara(comida, T){
   const sel=(FICHA.recetas||{})[comida];
   if(Array.isArray(sel)) return sel.map(id=>RECETA[id]).filter(Boolean).filter(recetaOk);
-  const C=RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.6&&x.f<=1.7).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).map(x=>x.r);
-  const P=prefsDe(comida); let top;
-  if(P.length){ const si=C.filter(r=>P.includes(RECETA_TIPO[r.id])), no=C.filter(r=>!P.includes(RECETA_TIPO[r.id])); top=[...si,...no].slice(0,3); }
-  else top=C.slice(0,3);
-  if(!P.length && conSuple() && top.length===3 && !top.some(llevaSuple)){ const s=C.find(llevaSuple); if(s) top[2]=s; }
-  return top;
+  const C=RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.5&&x.f<=1.8).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).map(x=>x.r);
+  const P=prefsDe(comida);
+  if(!P.length && comida!=="Desayuno"){ const top=C.slice(0,3);
+    if(conSuple() && top.length===3 && !top.some(llevaSuple)){ const s=C.find(llevaSuple); if(s) top[2]=s; }
+    return top; }
+  return recetasVariadas(C, P, comida);
+}
+/* Siempre 3 opciones de estilos distintos: primero lo que prefiere (los bocadillos van juntos como una sola opción,
+   con 2–3 rellenos) y el resto, estilos diferentes elegidos al azar (el azar es fijo para cada cliente). */
+function recetasVariadas(C, P, comida){
+  let sem=[...String(FICHA.codigo||"")+String(FICHA.nombre||"")].reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0, 7);
+  const azar=()=>{ sem=(sem*1664525+1013904223)>>>0; return sem/4294967296; };
+  const tipo=r=>esBocadillo(r)?"boc":(RECETA_TIPO[r.id]||"otro"), tiposPref=P.flatMap(t=>t==="salado"?["boc"]:t==="yogur"&&comida==="Desayuno"?["yogur","cereal"]:[t]);
+  const out=[], usados=new Set(); let n=0;
+  const poner=t=>{ if(usados.has(t)) return; const L=C.filter(r=>tipo(r)===t&&!out.includes(r)); if(!L.length) return; usados.add(t);
+    if(t==="boc"){ if(tiposPref.includes("boc")) out.unshift(...L.slice(0,3)); else out.push(...L.slice(0,3)); } else out.push(L[0]); n++; };
+  tiposPref.forEach(t=>{ if(n<3) poner(t); });
+  if(comida==="Desayuno") poner("yogur");   // en el desayuno, siempre una de yogur si no la ha elegido ya
+  const resto=[...new Set(C.map(tipo))].filter(t=>!usados.has(t) && !(t==="salado" && usados.has("boc")) && !(t==="boc" && usados.has("salado"))).map(t=>[t,azar()]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+  resto.forEach(t=>{ if(n<3) poner(t); });
+  C.forEach(r=>{ if(n<3 && !out.includes(r) && !(tipo(r)==="boc" && usados.has("boc"))){ out.push(r); n++; } });
+  return out;
 }
 const kcalComida = c => { const R=reparto(); return FICHA.comidas.includes(c) ? Math.round(kcalMenus()*R[c]/1000)*10 : 0; };
 function recetaHTML(r, T){ const e=escalar(r,T);
@@ -1494,6 +1515,13 @@ function recetaHTML(r, T){ const e=escalar(r,T);
 function recetasComidaHTML(comida){
   const T=kcalComida(comida); if(!T) return "";
   const L=recetasPara(comida,T); if(!L.length) return "";
+  const bocs=L.filter(esBocadillo);
+  if(bocs.length>=2){   // los bocadillos, juntos como una sola opción (igual que en el PDF)
+    const es=bocs.map(r=>escalar(r,T)), pg=panComun(T), tipos=new Set(bocs.map(r=>r.i.find(([id])=>PANES.includes(id))[0]));
+    const pan = tipos.size>1 ? `${pg} g de pan (mejor integral)` : lineaIng([...tipos][0], pg), media=Math.round(es.reduce((a,e)=>a+e.kcal,0)/es.length), comp=complemento(T-media);
+    const card=`<div class="rec"><b><span class="notr">1)</span> <span>Bocadillo o tostada</span></b> <small>≈${comp?T:media} kcal</small><span class="note" style="display:block"><span>Base para todas:</span> <b>${esc(adaptarTexto(pan))}</b></span><ul style="list-style:none;padding-left:4px">${bocs.map((r,j)=>`<li><span class="notr">${LETRAS[j]}-</span> ${es[j].items.filter(([id])=>!PANES.includes(id)).map(([id,q])=>`<span>${esc(adaptarTexto(id==="aove"?`${q} g de AOVE`:lineaIng(id,q)))}</span>`).join(" + ")}</li>`).join("")}</ul>${comp?`<span class="note">Para completar, añade una opción:</span><ul>${comp.op.map(x=>`<li>${esc(adaptarTexto(x))}</li>`).join("")}</ul>`:""}</div>`;
+    return `<span class="note">Elige una opción. Las cantidades ya están calculadas para tus ${T} kcal.</span>${card}${L.filter(r=>!esBocadillo(r)).map((r,i)=>recetaHTML(r,T).replace("<b>",`<b><span class="notr">${i+2})</span> `)).join("")}`;
+  }
   return `<span class="note">Elige una opción. Las cantidades ya están calculadas para tus ${T} kcal.</span>${L.map((r,i)=>recetaHTML(r,T).replace("<b>",`<b><span class="notr">${LETRAS[i]})</span> `)).join("")}`;
 }
 /* traducciones de recetas e ingredientes (se generan a partir de los datos) */
@@ -1501,6 +1529,10 @@ function recetasComidaHTML(comida){
   const RN = {
     "Porridge de avena con plátano, frutos rojos y crema de cacahuete":["Porridge de civada amb plàtan, fruits vermells i crema de cacauet","Oat porridge with banana, berries and peanut butter"],
     "Banana bread al microondas":["Banana bread al microones","Microwave banana bread"],
+    "Huevos revueltos con tostadas Wasa, aguacate y queso feta":["Ous remenats amb torrades Wasa, alvocat i formatge feta","Scrambled eggs on Wasa crispbread with avocado and feta"],
+    "Bate los huevos con una pizca de sal y pimienta.":["Bat els ous amb un pessic de sal i pebre.","Beat the eggs with a pinch of salt and pepper."],
+    "Cuájalos a fuego medio-bajo en una sartén antiadherente, sin aceite, removiendo hasta que queden cremosos.":["Qualla'ls a foc mitjà-baix en una paella antiadherent, sense oli, remenant fins que quedin cremosos.","Cook them over medium-low heat in a non-stick pan, without oil, stirring until creamy."],
+    "Unta el aguacate en las tostadas, pon el revuelto encima y desmenuza el feta.":["Unta l'alvocat a les torrades, posa-hi el remenat a sobre i esmicola el feta.","Spread the avocado on the crispbread, top with the eggs and crumble the feta."],
     "Batido de crema de arroz, proteína y plátano":["Batut de crema d'arròs, proteïna i plàtan","Cream of rice, protein and banana shake"],
     "Bocadillo de jamón cocido o pavo con queso light":["Entrepà de pernil dolç o gall dindi amb formatge light","Cooked ham or turkey sandwich with light cheese"],
     "Bocadillo de jamón serrano, ibérico o lomo":["Entrepà de pernil serrà, ibèric o llom","Serrano or Iberian ham or cured loin sandwich"],
@@ -4141,7 +4173,7 @@ const ALTA_Q = [
   {id:"comidas", t:"¿Cuántas comidas quieres hacer al día?", tipo:"uno", ops:[["3","3: desayuno, comida y cena"],["4","4: + merienda"],["5","5: + media mañana y merienda"],["4c","4: + algo antes de dormir"]]},
   {id:"hambre", t:"¿Cuándo tienes más hambre?", tipo:"uno", ops:[["igual","Igual todo el día"],["manana","Por la mañana"],["noche","Por la tarde y la noche"],["sinmanana","Al levantarme casi no tengo hambre"]]},
   {id:"horario", t:"¿A qué hora sueles comer y cenar?", tipo:"uno", ops:[["pronto","Como sobre las 13:00 y ceno sobre las 20:00"],["normal","Como sobre las 14:00 y ceno sobre las 21:00"],["tarde","Como sobre las 15:00 y ceno sobre las 22:00"]]},
-  {id:"prefDes", t:"¿Qué te apetece más para desayunar?", tipo:"varios", sub:"Marca todo lo que te guste: te pondremos opciones de eso.", ninguna:"igual", ops:[["salado","🥖 Bocadillo o tostadas"],["yogur","🥣 Yogur, porridge o cereales"],["batido","🥤 Batido o smoothie"],["dulce","🥞 Algo dulce: pancakes o banana bread"],["igual","Me da igual"]]},
+  {id:"prefDes", t:"¿Qué te apetece más para desayunar?", tipo:"varios", sub:"Marca todo lo que te guste: te pondremos opciones de eso.", ninguna:"igual", ops:[["salado","🥖 Bocadillo o tostadas"],["yogur","🥣 Yogur, porridge o cereales"],["batido","🥤 Batido o smoothie"],["dulce","🥞 Algo dulce: pancakes o banana bread"],["huevos","🍳 Algo caliente: huevos revueltos con tostadas"],["igual","Me da igual"]]},
   {id:"prefMer", t:"¿Y entre horas (media mañana o merienda)?", tipo:"varios", si:a=>["4","5"].includes(a.comidas), ninguna:"igual", ops:[["salado","🥖 Bocadillo o tostadas"],["yogur","🥣 Yogur con fruta o frutos secos"],["fruta","🍎 Algo rápido: fruta y tortitas"],["batido","🥤 Batido"],["igual","Me da igual"]]},
   {id:"cafeN", t:"¿Tomas café? ¿Cuántos al día?", tipo:"uno", sub:"Las infusiones y el té sin azúcar no cuentan.", ops:[["0","No tomo café"],["1","1"],["2","2"],["3","3"],["4","4 o más"]]},
   {id:"cafeForma", t:"¿Cómo lo tomas?", tipo:"uno", si:a=>a.cafeN&&a.cafeN!=="0", ops:[["solo","Solo"],["cortado","Cortado (un chorrito de leche)"],["leche","Con leche"],["latte","Latte o capuchino grande"]]},
