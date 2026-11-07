@@ -403,10 +403,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.45.0"></script>
-<script src="i18n-vs.js?v=2.45.0"></script>
-<script src="i18n-alim.js?v=2.45.0"></script>
-<script src="recetas-esp.js?v=2.45.0"></script>
+<script src="i18n.js?v=2.46.0"></script>
+<script src="i18n-vs.js?v=2.46.0"></script>
+<script src="i18n-alim.js?v=2.46.0"></script>
+<script src="recetas-esp.js?v=2.46.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -592,6 +592,8 @@ const FICHA = {
   cardioSemana: 0,    // sesiones de cardio pautadas (0 = 2, o 4 en resistencia)
   edad: 0, altura: 0, // del alta de cliente nuevo (#nuevo)
   supermercado: "",   // supermercado habitual (para la futura lista de la compra)
+  prefDes: [],        // tipos de desayuno que prefiere: salado | yogur | batido | dulce (vacío = todos)
+  prefMer: [],        // lo mismo para media mañana y merienda (+ fruta)
   cafe: null          // null = cafés como siempre (≈60 kcal) · {n, forma, leche, azucar, cuando:[]} (del alta)
 };
 const SUPERS = ["","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo"];
@@ -976,7 +978,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.45.0";
+const APP_VERSION = "2.46.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1471,12 +1473,19 @@ function lineaIng(id,q){ const g=ING[id]; if(g.fijo) return g.es;
 const llevaSuple = r => r.i.some(([id])=>SUPLE.includes(id));
 const recetaOk = r => !r.i.some(([id])=>prohibido(ING[id].es)) && !prohibido(r.n) && (conSuple() || !llevaSuple(r));
 /* recetas de una comida: las que ha elegido el nutricionista o, si no ha elegido, las que mejor encajan con sus kcal */
+/* tipo de cada receta, para las preferencias de desayuno y merienda */
+const RECETA_TIPO = {porridge:"yogur", bananabread:"dulce", batidoArroz:"batido", bocPavo:"salado", bocSerrano:"salado", bocTortilla:"salado", bocAguacate:"salado", bocAtun:"salado", bocSalmon:"salado",
+  platanoFS:"fruta", bolYogur:"yogur", tortitas:"fruta", cerealesBeb:"yogur", cremaArrozBeb:"yogur", pancake:"dulce", bocIntAtun:"salado", bocIntPavo:"salado", bocIntTortilla:"salado", bolGriego:"yogur",
+  tostMolde:"salado", postWhey:"batido", yogFruta:"yogur", frutaTort:"fruta", castanas:"fruta", bolGrande:"yogur", bocPollo:"salado", bocTofu:"salado", tortPavo:"salado"};
+const prefsDe = comida => (comida==="Desayuno" ? FICHA.prefDes : FICHA.prefMer) || [];
 function recetasPara(comida, T){
   const sel=(FICHA.recetas||{})[comida];
   if(Array.isArray(sel)) return sel.map(id=>RECETA[id]).filter(Boolean).filter(recetaOk);
   const C=RECETAS.filter(r=>r.m.includes(comida) && recetaOk(r)).map(r=>({r, f:(T)/recetaKcal(r)})).filter(x=>x.f>=0.6&&x.f<=1.7).sort((a,b)=>Math.abs(Math.log(a.f))-Math.abs(Math.log(b.f))).map(x=>x.r);
-  const top=C.slice(0,3);
-  if(conSuple() && top.length===3 && !top.some(llevaSuple)){ const s=C.find(llevaSuple); if(s) top[2]=s; }
+  const P=prefsDe(comida); let top;
+  if(P.length){ const si=C.filter(r=>P.includes(RECETA_TIPO[r.id])), no=C.filter(r=>!P.includes(RECETA_TIPO[r.id])); top=[...si,...no].slice(0,3); }
+  else top=C.slice(0,3);
+  if(!P.length && conSuple() && top.length===3 && !top.some(llevaSuple)){ const s=C.find(llevaSuple); if(s) top[2]=s; }
   return top;
 }
 const kcalComida = c => { const R=reparto(); return FICHA.comidas.includes(c) ? Math.round(kcalMenus()*R[c]/1000)*10 : 0; };
@@ -4132,6 +4141,8 @@ const ALTA_Q = [
   {id:"comidas", t:"¿Cuántas comidas quieres hacer al día?", tipo:"uno", ops:[["3","3: desayuno, comida y cena"],["4","4: + merienda"],["5","5: + media mañana y merienda"],["4c","4: + algo antes de dormir"]]},
   {id:"hambre", t:"¿Cuándo tienes más hambre?", tipo:"uno", ops:[["igual","Igual todo el día"],["manana","Por la mañana"],["noche","Por la tarde y la noche"],["sinmanana","Al levantarme casi no tengo hambre"]]},
   {id:"horario", t:"¿A qué hora sueles comer y cenar?", tipo:"uno", ops:[["pronto","Como sobre las 13:00 y ceno sobre las 20:00"],["normal","Como sobre las 14:00 y ceno sobre las 21:00"],["tarde","Como sobre las 15:00 y ceno sobre las 22:00"]]},
+  {id:"prefDes", t:"¿Qué te apetece más para desayunar?", tipo:"varios", sub:"Marca todo lo que te guste: te pondremos opciones de eso.", ninguna:"igual", ops:[["salado","🥖 Bocadillo o tostadas"],["yogur","🥣 Yogur, porridge o cereales"],["batido","🥤 Batido o smoothie"],["dulce","🥞 Algo dulce: pancakes o banana bread"],["igual","Me da igual"]]},
+  {id:"prefMer", t:"¿Y entre horas (media mañana o merienda)?", tipo:"varios", si:a=>["4","5"].includes(a.comidas), ninguna:"igual", ops:[["salado","🥖 Bocadillo o tostadas"],["yogur","🥣 Yogur con fruta o frutos secos"],["fruta","🍎 Algo rápido: fruta y tortitas"],["batido","🥤 Batido"],["igual","Me da igual"]]},
   {id:"cafeN", t:"¿Tomas café? ¿Cuántos al día?", tipo:"uno", sub:"Las infusiones y el té sin azúcar no cuentan.", ops:[["0","No tomo café"],["1","1"],["2","2"],["3","3"],["4","4 o más"]]},
   {id:"cafeForma", t:"¿Cómo lo tomas?", tipo:"uno", si:a=>a.cafeN&&a.cafeN!=="0", ops:[["solo","Solo"],["cortado","Cortado (un chorrito de leche)"],["leche","Con leche"],["latte","Latte o capuchino grande"]]},
   {id:"cafeLeche", t:"¿Con qué leche?", tipo:"uno", si:a=>a.cafeN&&a.cafeN!=="0"&&a.cafeForma!=="solo", ops:Object.entries(CAFE_LECHE).map(([k,v])=>[k,v.t.charAt(0).toUpperCase()+v.t.slice(1)])},
@@ -4139,6 +4150,7 @@ const ALTA_Q = [
   {id:"cafeCuando", t:"¿Cuándo los tomas?", tipo:"varios", si:a=>a.cafeN&&a.cafeN!=="0", sub:"Marca todos los momentos.", ops:Object.entries(CAFE_CUANDO)},
   {id:"restr", t:"¿Tienes alguna alergia, intolerancia o forma de comer especial?", tipo:"varios", sub:"Marca todas las que tengas.", ninguna:"ninguna", ops:[["ninguna","Ninguna"],["vegano","🌱 Vegetariana o vegana"],["lactosa","Intolerancia a la lactosa"],["gluten","Celiaquía / sin gluten"],["digestiva","Digestiones delicadas (colon irritable…)"],["frutosSecos","Alergia a frutos secos"],["cacahuete","Alergia al cacahuete"],["huevo","Alergia al huevo"],["pescado","Alergia al pescado"],["marisco","Alergia al marisco"],["soja","Alergia a la soja"]]},
   {id:"veg", t:"De esto, ¿qué sí comes?", tipo:"varios", si:a=>(a.restr||[]).includes("vegano"), ninguna:"nada", ops:[["huevo","🥚 Huevo"],["lacteos","🥛 Lácteos"],["pescado","🐟 Pescado"],["nada","Nada de esto (vegana)"]]},
+  {id:"alim", t:"¿Hay alimentos que no te gusten o no te sienten bien?", tipo:"alimentos", sub:"Toca una vez si no te gusta (👎) y otra vez si te sienta mal (🚫). No saldrán en tu dieta. Si te gusta todo, pulsa Siguiente."},
   {id:"integ", t:"Pan, pasta y arroz integrales…", tipo:"uno", ops:[["si","Me gustan"],["no","Prefiero los normales"],["","Me da igual"]]},
   {id:"cenaHC", t:"En la cena, ¿quieres hidratos (pan, arroz, patata…)?", tipo:"uno", ops:[["si","Sí"],["no","Prefiero cenar sin hidratos"]], sub:"Si cenas sin hidratos, llevarás un poco más de proteína."},
   {id:"postre", t:"¿Quieres postre en la comida y la cena?", tipo:"uno", sub:"Fruta o yogur.", ops:[["si","Sí"],["no","No"]]},
@@ -4178,6 +4190,8 @@ function altaFicha(a){
     tmb, factor, perfil:a.perfil, objetivo, ajuste, comidas,
     entreno: (a.entreno && (nF||nC||hR)) ? a.entreno : "no",
     hambre: a.hambre==="sinmanana" ? "noche" : (a.hambre||"igual"), sinHambreManana: a.hambre==="sinmanana",
+    noGusta:[...(a.ng||[])], intolAlim:[...(a.it||[])],
+    prefDes:(a.prefDes||[]).filter(x=>x!=="igual"), prefMer:(a.prefMer||[]).filter(x=>x!=="igual"),
     cafe: {n:Math.min(4,+a.cafeN||0), forma:a.cafeForma||"leche", leche:a.cafeForma==="solo"?"":(a.cafeLeche||"semi"), azucar:a.cafeAz||"no", cuando:a.cafeCuando||[]},
     pasosObjetivo: pasos>=10000 ? 12000 : 10000, pasosMedia: a.pasos==="nose"?0:pasos,
     restricciones:restr, vegCome: restr.includes("vegano") ? {huevo:veg.includes("huevo"), lacteos:veg.includes("lacteos"), pescado:veg.includes("pescado")} : {},
@@ -4189,6 +4203,10 @@ function altaFicha(a){
   return {f, calc:{tmb, factor, fBase, fTrab, fEnt:Math.round(fEnt*100)/100, kSem:Math.round(kSem), mant, ajuste, objetivo, imc:Math.round(imc*10)/10, pAj:Math.round(pAj), protDia:Math.round((protGkg||gkg)*peso)}};
 }
 let ALTA = {i:0, a:{}};
+/* para la rejilla de alimentos: la ficha con las restricciones y lo ya marcado */
+function altaFichaTemporal(){ const a=ALTA.a, r=(a.restr||[]).filter(x=>x!=="ninguna"), v=a.veg||[];
+  FICHA.restricciones=r; FICHA.vegCome=r.includes("vegano")?{huevo:v.includes("huevo"), lacteos:v.includes("lacteos"), pescado:v.includes("pescado")}:{};
+  FICHA.noGusta=[...(a.ng||[])]; FICHA.intolAlim=[...(a.it||[])]; NOGUSTA_KEY="#"; }
 function altaVisibles(){ return ALTA_Q.filter(q=>!q.si || q.si(ALTA.a)); }
 function altaInicio(){
   document.getElementById("app").classList.remove("ancho");
@@ -4203,6 +4221,7 @@ function altaPintar(){
   if(q.tipo==="varios") cuerpo=`<div class="altops">${q.ops.map(([k,t])=>`<button type="button" class="altop${(v||[]).includes(k)?" on":""}" data-v="${esc(k)}">${t}</button>`).join("")}</div><button type="button" class="altnext" ${(v||[]).length?"":"disabled"}>Siguiente</button>`;
   if(q.tipo==="num"){ const x=v??q.def; cuerpo=`<div class="altnum"><button type="button" class="altpm" data-d="-1">−</button><b><span class="altv">${String(x).replace(".",",")}</span> <small>${q.u}</small></b><button type="button" class="altpm" data-d="1">+</button></div>
       <input type="range" class="altrange" min="${q.min}" max="${q.max}" step="${q.paso}" value="${x}"><button type="button" class="altnext">Siguiente</button>`; }
+  if(q.tipo==="alimentos"){ altaFichaTemporal(); cuerpo=`${alimLeyenda()}<div class="alimbox">${alimRejilla()}</div><button type="button" class="altnext">Siguiente</button>`; }
   if(q.tipo==="texto") cuerpo=`<input class="alttxt" maxlength="40" value="${esc(v||"")}" placeholder="Nombre"><button type="button" class="altnext">Siguiente</button>`;
   app.innerHTML=`<div class="alta">${selectorIdioma()}
     <div class="altbar"><i style="width:${Math.round(ALTA.i/Q.length*100)}%"></i></div>
@@ -4218,6 +4237,8 @@ function altaPintar(){
   if(q.tipo==="num"){ const r=app.querySelector(".altrange"), sv=app.querySelector(".altv"), put=x=>{ x=Math.min(q.max,Math.max(q.min,Math.round(x/q.paso)*q.paso)); a[q.id]=x; r.value=x; sv.textContent=String(x).replace(".",","); };
     if(a[q.id]==null) a[q.id]=q.def;
     r.oninput=()=>put(+r.value); app.querySelectorAll(".altpm").forEach(b=>b.onclick=()=>put(+a[q.id] + (+b.dataset.d)*q.paso)); }
+  if(q.tipo==="alimentos") app.querySelectorAll(".al3").forEach(b=>b.onclick=()=>{ alimCiclo(b.dataset.a); a.ng=[...FICHA.noGusta]; a.it=[...FICHA.intolAlim]; guardar();
+      const e=alimEstado(b.dataset.a); b.className=`chip al3 ${e}`; b.querySelector(".ae").textContent={ng:"👎",it:"🚫"}[e]||""; });
   if(q.tipo==="texto"){ const t=app.querySelector(".alttxt"); t.oninput=()=>{ a[q.id]=t.value; }; }
   const nx=app.querySelector(".altnext"); if(nx) nx.onclick=sig;
 }
