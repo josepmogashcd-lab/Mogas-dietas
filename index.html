@@ -240,6 +240,7 @@
   .linkbox .linkbtns{display:flex;gap:8px;margin:10px 0 4px}.panel .linkbox .linkbtns button{margin:0;flex:1}
   .docres p{margin:0 0 8px;font-size:14px}
   .docres .ok{color:var(--brand)}
+  .pdfbtns .doclink{width:100%;box-sizing:border-box;border:0;font:inherit;font-weight:600;margin:8px 0 0;cursor:pointer}
   .doclink{display:block;text-align:center;background:var(--brand-2);color:var(--brand);font-weight:600;border-radius:10px;padding:11px;margin-bottom:12px;text-decoration:none}
   .langsel{display:flex;gap:2px;background:rgba(255,255,255,.18);border-radius:999px;padding:3px;margin-left:auto;position:relative;z-index:1;flex:0 0 auto}
   .langsel button{font:inherit;font-size:12px;font-weight:600;border:0;background:none;color:#fff;padding:5px 8px;border-radius:999px;cursor:pointer;opacity:.85}
@@ -384,10 +385,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.42.1"></script>
-<script src="i18n-vs.js?v=2.42.1"></script>
-<script src="i18n-alim.js?v=2.42.1"></script>
-<script src="recetas-esp.js?v=2.42.1"></script>
+<script src="i18n.js?v=2.43.0"></script>
+<script src="i18n-vs.js?v=2.43.0"></script>
+<script src="i18n-alim.js?v=2.43.0"></script>
+<script src="recetas-esp.js?v=2.43.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -924,7 +925,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.42.1";
+const APP_VERSION = "2.43.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -1093,6 +1094,63 @@ function dietaParaDoc(){
   return {titulo:`MENÚ DIARIO ${FICHA.nombre.toUpperCase()} · ${obj} · ${meses[hoy.getMonth()]} ${String(hoy.getFullYear()).slice(2)}`, datos, cajas};
 }
 async function docxBytes(){ return await MogasDoc.build(dietaParaDoc(), {headerPng:DOC_HEADER, footerPng:DOC_FOOTER}); }
+
+/* =========== DIETA EN PDF (para el cliente) ===========
+   Misma dieta que el Word del nutricionista (dietaParaDoc), maquetada con pdfmake (lib/, se carga solo al pedirla). */
+function cargarScript(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("No se ha podido cargar "+src)); document.head.appendChild(s); }); }
+let PDFMAKE_OK=null;
+function pdfmakeListo(){
+  if(window.pdfMake && window.pdfMake.vfs) return Promise.resolve();
+  const v="?v="+(typeof APP_VERSION!=="undefined"?APP_VERSION:"");
+  return PDFMAKE_OK = PDFMAKE_OK || cargarScript("lib/pdfmake.min.js"+v).then(()=>cargarScript("lib/vfs_fonts.js"+v)).catch(e=>{ PDFMAKE_OK=null; throw e; });
+}
+function dietaPdfDef(){
+  const d=dietaParaDoc(), MM=2.8346, DARK="#657E52", LIGHT="#93B482", BLUE="#0B9BDB", GREY="#404040";
+  const L = s => String(s==null?"":s).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,"").replace(/[⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/g,c=>({"⅓":"1/3","⅔":"2/3","⅕":"1/5","⅖":"2/5","⅗":"3/5","⅘":"4/5","⅙":"1/6","⅚":"5/6","⅛":"1/8","⅜":"3/8","⅝":"5/8","⅞":"7/8"})[c]).replace(/\s{2,}/g," ");   // Roboto no tiene ⅓, ⅔…
+  const bloque = b => { switch(b.k){
+    case "h":  return {text:[{text:L(b.t),bold:true,decoration:"underline",color:DARK,fontSize:11.5}, b.extra?{text:" "+L(b.extra),fontSize:10.5}:""], margin:[0,b.first?0:8,0,2]};
+    case "l":  return {text:[{text:L(b.t),bold:true,decoration:"underline",color:"#000"}, b.azul?{text:" "+L(b.azul),bold:true,color:BLUE}:""], margin:[0,6,0,2]};
+    case "azul": return {text:L(b.t),bold:true,color:BLUE,margin:[0,0,0,2]};
+    case "o":  return {text:[{text:L(b.p),bold:true,color:"#000"},L(b.t)], margin:[0,0,0,2]};
+    case "tb": return {text:L(b.t),bold:true,color:"#000",margin:[0,(b.before||0)/20,0,2]};
+    case "t":  return {text:L(b.t),margin:[0,0,0,2]};
+    case "esp":return {text:" ",fontSize:6};
+    case "total": return {text:{text:L(`Total KCAL:${b.kcal}`),decoration:"underline",background:LIGHT,color:"#000"},alignment:"right",margin:[0,6,0,0]};
+    default: return null; } };
+  const W=210*MM;
+  return {
+    pageSize:"A4", pageMargins:[25*MM, 42*MM, 25*MM, 18*MM],
+    info:{title:d.titulo, author:"MOGAS · Nutrició i Entrenament"},
+    defaultStyle:{font:"Roboto", fontSize:10.5, color:GREY, lineHeight:1.15},
+    background:()=>[{image:DOC_HEADER, width:W, height:24*MM, absolutePosition:{x:0,y:9*MM}},{image:DOC_FOOTER, width:W, height:7*MM, absolutePosition:{x:0,y:290*MM}}],
+    footer:(p)=>({text:String(p), alignment:"right", fontSize:9, color:"#000", margin:[0,1*MM,25*MM,0]}),
+    content:[
+      {text:L(d.titulo).toUpperCase(), bold:true, color:DARK, fontSize:11, margin:[0,0,0,4]},
+      ...d.datos.map(([k,v])=>({text:[{text:L(k),bold:true,color:"#000"}," "+L(v)], fontSize:11})),
+      {text:" ", margin:[0,0,0,8]},
+      ...d.cajas.map(c=>({table:{widths:["*"], body:[[{stack:c.map(bloque).filter(Boolean)}]]},
+        layout:{hLineColor:()=>DARK, vLineColor:()=>DARK, hLineWidth:()=>1, vLineWidth:()=>1, paddingLeft:()=>8, paddingRight:()=>8, paddingTop:()=>7, paddingBottom:()=>7},
+        margin:[0,0,0,10]}))
+    ]};
+}
+let PDF_URL=null;
+async function dietaPdf(){
+  bot(`<span class="note">📄 Preparando tu dieta en PDF…</span>`);
+  const aviso=chat.lastElementChild;
+  try{
+    await pdfmakeListo();
+    const blob=await new Promise((res,rej)=>{ try{ pdfMake.createPdf(dietaPdfDef()).getBlob(res); }catch(e){ rej(e); } });
+    const nombre=`Dieta ${(FICHA.nombre||FICHA.codigo||"MOGAS").trim()}.pdf`, file=new File([blob],nombre,{type:"application/pdf"});
+    if(PDF_URL) URL.revokeObjectURL(PDF_URL); PDF_URL=URL.createObjectURL(blob);
+    aviso.remove();
+    const comp = navigator.canShare && navigator.canShare({files:[file]});
+    bot(`<b>📄 Tu dieta en PDF</b>\n<span class="note">Ábrela para verla como un documento normal. Con «Guardar o compartir» la puedes guardar en Archivos o enviarla.</span>
+<div class="pdfbtns"><a class="doclink" href="${PDF_URL}" target="_blank" rel="noopener">📄 Abrir el PDF</a>${comp?`<button type="button" class="doclink pdfshare">📤 Guardar o compartir</button>`:`<a class="doclink" href="${PDF_URL}" download="${esc(nombre)}">⬇️ Descargar el PDF</a>`}</div>`);
+    const sh=chat.lastElementChild.querySelector(".pdfshare");
+    if(sh) sh.onclick=()=>navigator.share({files:[file], title:nombre}).catch(()=>{});
+  }catch(e){ aviso.remove(); bot(`<span class="warn">No se ha podido crear el PDF. Revisa la conexión e inténtalo otra vez.</span>`); }
+  opts([{t:"📋 Ver mi dieta", f:verDieta}]);
+}
 
 
 /* Crea la dieta como documento de Google en el Drive del nutricionista (o la descarga en .docx) */
@@ -2168,6 +2226,7 @@ let SECCION=null;
 const SECCIONES = [
   {id:"dieta", ico:"🍽️", t:"Mi dieta", sub:"Ver tu dieta, montar platos, cambiar alimentos y recetas", items:()=>[
     {t:"📋 Ver mi dieta", f:verDieta},
+    {t:"📄 Ver mi dieta en PDF", f:dietaPdf},
     ...(conTiposDia()?[{t:"📅 ¿Qué día es hoy? (ajusta tu dieta)", f:tipoDiaHoy}]:[]),
     {t:"🥗 Montar mi comida o cena", f:montarInicio},
     {t:"🔄 Cambiar un alimento", f:cambiar},
