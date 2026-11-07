@@ -52,6 +52,23 @@
   .login{flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px}
   .card{background:#fff;border-radius:18px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
   .card h1{font-size:20px;margin:0 0 6px;color:var(--grey);text-align:center}
+  .alta{flex:1;display:flex;flex-direction:column;gap:12px;padding:18px 18px 28px;max-width:560px;width:100%;margin:0 auto}
+  .alta .langsel{align-self:flex-end;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.08)}.alta .langsel button{color:var(--muted)}.alta .langsel button.on{background:var(--brand);color:#fff}
+  .altbar{height:6px;border-radius:3px;background:var(--brand-2);overflow:hidden}.altbar i{display:block;height:100%;background:var(--brand-dark);border-radius:3px;transition:width .2s}
+  .altcab{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);min-height:30px}
+  .altback{font:inherit;font-weight:700;border:0;background:none;color:var(--brand-dark);cursor:pointer;padding:4px 0}
+  .alta h2{margin:4px 0 0;font-size:22px;line-height:1.25;color:var(--grey)}.altsub{margin:0;color:var(--muted);font-size:14px}
+  .altops{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .altop{font:inherit;font-size:16px;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;color:var(--grey)}
+  .altop.on{border-color:var(--brand-dark);background:var(--brand-2);font-weight:700}
+  .altnext{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:14px;padding:15px;background:var(--brand-dark);color:#fff;cursor:pointer;margin-top:8px}.altnext:disabled{opacity:.4}
+  .altsec{font:inherit;font-size:15px;font-weight:600;border:1.5px solid var(--line);border-radius:14px;padding:13px;background:#fff;color:var(--brand-dark);cursor:pointer}
+  .altnum{display:flex;align-items:center;justify-content:space-between;margin-top:14px}.altnum b{font-size:42px;color:var(--grey)}.altnum small{font-size:16px;color:var(--muted)}
+  .altpm{font:inherit;font-size:28px;width:58px;height:58px;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--brand-dark);cursor:pointer}
+  .altrange{width:100%;accent-color:var(--brand-dark);margin:10px 0}
+  .alttxt{font:inherit;font-size:18px;padding:14px;border:1.5px solid var(--line);border-radius:14px;margin-top:6px}
+  .altres{background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}.altk{text-align:center}.altk b{display:block;font-size:44px;color:var(--brand-dark)}.altk small{color:var(--muted)}
+  .altlink{font:inherit;font-size:14px;font-weight:700;border:0;background:none;color:var(--brand-dark);text-decoration:underline;cursor:pointer;margin-top:12px}
   .loginlogo{display:block;width:78%;max-width:260px;margin:4px auto 22px}
   .login{background:radial-gradient(circle at 85% 12%,rgba(147,180,130,.35) 0,rgba(147,180,130,0) 45%),radial-gradient(circle at 10% 90%,rgba(101,126,82,.18) 0,rgba(101,126,82,0) 40%)}
   .card p{text-align:center}
@@ -571,7 +588,9 @@ const FICHA = {
   platoAuto: true,    // comida y cena calculadas solas (si hay peso)
   vegCome: {},        // dieta vegetal: {huevo, lacteos, pescado} lo que sí come
   integrales: "",     // "" según perfil · "si" · "no"
-  cardioSemana: 0     // sesiones de cardio pautadas (0 = 2, o 4 en resistencia)
+  cardioSemana: 0,    // sesiones de cardio pautadas (0 = 2, o 4 en resistencia)
+  edad: 0, altura: 0, // del alta de cliente nuevo (#nuevo)
+  supermercado: ""    // supermercado habitual (para la futura lista de la compra)
 };
 const SUPERS = ["","Mercadona","Bonpreu / Esclat","Consum","Lidl","Carrefour","Caprabo","Aldi","Dia","Condis","Alcampo"];
 
@@ -600,6 +619,17 @@ function repartoAuto(ent=FICHA.entreno){
   if(FICHA.hambre==="manana"){m("Desayuno",1.3);m("Segundo desayuno",1.2);m("Cena",.85);m("Pre-cama",.8);}
   if(FICHA.sinHambreManana){m("Desayuno",.6);}
   const {pre,post}=prePost(ent); if(pre)m(pre,1.15); if(post)m(post,1.25);
+  /* comida y cena llevan la misma proteína: que ninguna sea más de un 25 % mayor que la otra (si no, la pequeña limita la proteína de las dos) */
+  if(w.Comida!=null && w.Cena!=null){ const mx=Math.max(w.Comida,w.Cena), mn=Math.min(w.Comida,w.Cena);
+    if(mx>mn*1.25){ const sum=w.Comida+w.Cena, big=w.Comida>w.Cena?"Comida":"Cena", small=big==="Comida"?"Cena":"Comida"; w[big]=sum*1.25/2.25; w[small]=sum/2.25; } }
+  /* cena sin hidratos: la cena se queda con lo que de verdad lleva (proteína, verdura, extra, aceite y postre)
+     y el resto de sus kcal pasa a las demás comidas */
+  if(FICHA.cenaSinHC && w.Cena!=null && FICHA.peso>0 && FICHA.comidas.length>1){
+    const t0=Object.values(w).reduce((a,b)=>a+b,0), K=kcalMenus(), pd=FICHA.peso*protGkg();
+    const pc=Math.min(75*1.15, pd*0.8*1.15/2.15), objK=pc*4.8 + KCAL_VERD + KCAL_AOVE5 + KCAL_EXTRA + (FICHA.postrePrincipal!==false?KCAL_POSTRE:0);
+    const nueva=Math.min(w.Cena, objK/K*t0), libre=w.Cena-nueva, resto=Object.keys(w).filter(c=>c!=="Cena"), sr=resto.reduce((a,c)=>a+w[c],0);
+    if(libre>0 && sr>0){ resto.forEach(c=>w[c]+=libre*w[c]/sr); w.Cena=nueva; }
+  }
   // a porcentajes enteros que sumen 100
   const tot=Object.values(w).reduce((a,b)=>a+b,0), r={}; let acc=0;
   const fr=Object.keys(w).map(c=>{const x=w[c]/tot*100;r[c]=Math.floor(x);acc+=r[c];return [c,x-r[c]]}).sort((a,b)=>b[1]-a[1]);
@@ -637,7 +667,7 @@ const RESTRICCIONES = {
       L.push("marisco","gamba","langostino","sepia","calamar","pulpo","mejill","almeja");
       return new RegExp(L.join("|"),"i"); },
     get cambiar(){ const c=FICHA.vegCome||{}, C=[[/\bmiel\b/gi,"sirope de agave"],[/prote[ií]na (?:whey|en polvo)|proteina whey/gi,"proteína vegetal en polvo"]];
-      if(!c.lacteos) C.push([/\bleche(?! de coco)(?: entera| semidesnatada| desnatada)?/gi,"bebida vegetal de soja (sin azúcar)"],
+      if(!c.lacteos) C.push([/\bleche(?! de (?:coco|avena|soja|almendras?|arroz))(?: entera| semidesnatada| desnatada)?/gi,"bebida vegetal de soja (sin azúcar)"],
         [/\byogur(?:es)?(?! de soja| vegetal)(?: natural| desnatados?| griegos?| ligeros?| proteicos?| alto en proteína| light| natural o proteico| natural o griego ligero)*/gi,"yogur de soja natural"],[/\bk[eé]fir(?: desnatado)?/gi,"yogur de soja natural"]);
       if(!c.huevo) C.push([/\bmayonesa(?! vegana)( light)?/gi,"mayonesa vegana"]);
       return C; },
@@ -974,8 +1004,10 @@ function login(){
       <form id="f"><input id="code" autocomplete="off" placeholder="CÓDIGO" maxlength="20"><button>Entrar</button></form>
       <div class="err" id="err"></div>
       <div class="hint">Consejo: añade esta página a la pantalla de inicio para abrirla como una app.</div>
+      <button type="button" class="altlink" id="altlink">¿Eres nuevo? Crea tu dieta</button>
     </div></div>`;
   activarSelector(login);
+  document.getElementById("altlink").onclick=()=>altaInicio();
   document.getElementById("f").addEventListener("submit", e=>{
     e.preventDefault();
     const v = document.getElementById("code").value.trim().toUpperCase();
@@ -4053,6 +4085,155 @@ function apuntarMenu(){
   w.querySelectorAll(".apsec button").forEach(b=>b.onclick=()=>{ const [txt,fn]=otras[b.dataset.o]; w.remove(); me(trT(txt)); setTimeout(fn,250); });
   chat.appendChild(w); requestAnimationFrame(()=>{ chat.scrollTop=Math.max(0,w.offsetTop-chat.offsetTop-8); });
 }
+/* =========== ALTA DE CLIENTE NUEVO (#nuevo) ===========
+   Cuestionario de botones → ficha completa → la misma dieta que haría el panel (y su PDF).
+   El cálculo es automático: TMB por fórmula (Mifflin-St Jeor) y factor de actividad estimado con trabajo, pasos y entrenos. */
+const ALTA_Q = [
+  {id:"nombre", t:"¿Cómo te llamas?", tipo:"texto", sub:"Saldrá en tu dieta. Puedes dejarlo en blanco."},
+  {id:"sexo", t:"Sexo", tipo:"uno", ops:[["Hombre","Hombre"],["Mujer","Mujer"]]},
+  {id:"edad", t:"Edad", tipo:"num", min:16, max:85, paso:1, def:35, u:"años"},
+  {id:"altura", t:"Altura", tipo:"num", min:140, max:210, paso:1, def:170, u:"cm"},
+  {id:"peso", t:"Peso", tipo:"num", min:40, max:180, paso:0.5, def:75, u:"kg", sub:"El de esta semana, en ayunas si puedes."},
+  {id:"perfil", t:"¿Cuál es tu objetivo principal?", tipo:"uno", ops:[["salud","❤️ Perder grasa y ganar salud"],["fit_def","🔥 Definir: perder grasa sin perder músculo"],["fit_vol","💪 Ganar masa muscular"],["resist","🏃 Rendir en mi deporte de resistencia (running, bici, triatlón…)"]]},
+  {id:"objRes", t:"Y con tu peso, ¿qué quieres?", tipo:"uno", si:a=>a.perfil==="resist", ops:[["deficit","Perder grasa"],["normo","Mantenerme"],["superavit","Ganar peso"]]},
+  {id:"trabajo", t:"¿Cómo es tu trabajo o tu día a día?", tipo:"uno", ops:[["sentado","🪑 Casi todo el día sentado"],["pie","🧍 De pie una parte del día"],["camina","🚶 De pie y caminando casi todo el día"],["fisico","🏗️ Trabajo físico duro (obra, almacén, campo…)"]]},
+  {id:"pasos", t:"¿Cuántos pasos haces al día, más o menos?", tipo:"uno", sub:"Lo puedes mirar en la app de Salud del móvil.", ops:[["p4","Menos de 5.000"],["p6","5.000 – 8.000"],["p9","8.000 – 10.000"],["p11","10.000 – 12.000"],["p13","Más de 12.000"],["nose","No lo sé"]]},
+  {id:"fuerza", t:"¿Cuántos días a la semana entrenas fuerza?", tipo:"uno", sub:"Pesas, máquinas, CrossFit, entreno personal…", ops:[["0","Ninguno"],["1","1"],["2","2"],["3","3"],["4","4"],["5","5 o más"]]},
+  {id:"cardio", t:"¿Y cardio? (correr, bici, nadar, elíptica, clases…)", tipo:"uno", si:a=>a.perfil!=="resist", sub:"Sesiones de al menos 30 minutos a la semana.", ops:[["0","Ninguna"],["1","1 – 2"],["3","3 – 4"],["5","5 o más"]]},
+  {id:"horasRes", t:"¿Cuántas horas entrenas tu deporte a la semana?", tipo:"uno", si:a=>a.perfil==="resist", ops:[["3","Menos de 4 h"],["5","4 – 6 h"],["7.5","6 – 9 h"],["10.5","9 – 12 h"],["13","Más de 12 h"]]},
+  {id:"entreno", t:"¿A qué hora sueles entrenar?", tipo:"uno", si:a=>a.fuerza!=="0" || (a.cardio && a.cardio!=="0") || a.perfil==="resist", ops:Object.entries(ENTRENOS).filter(([k])=>k!=="no").map(([k,v])=>[k,v.t]).concat([["no","Cada día a una hora diferente"]])},
+  {id:"comidas", t:"¿Cuántas comidas quieres hacer al día?", tipo:"uno", ops:[["3","3: desayuno, comida y cena"],["4","4: + merienda"],["5","5: + media mañana y merienda"],["4c","4: + algo antes de dormir"]]},
+  {id:"manana", t:"Por la mañana, al levantarte…", tipo:"uno", ops:[["si","Tengo hambre y desayuno bien"],["poco","Tengo poco hambre: prefiero algo ligero"]]},
+  {id:"hambre", t:"¿Cuándo tienes más hambre?", tipo:"uno", ops:[["igual","Igual todo el día"],["manana","Por la mañana"],["noche","Por la tarde y la noche"]]},
+  {id:"horario", t:"¿A qué hora sueles comer y cenar?", tipo:"uno", ops:[["pronto","Como sobre las 13:00 y ceno sobre las 20:00"],["normal","Como sobre las 14:00 y ceno sobre las 21:00"],["tarde","Como sobre las 15:00 y ceno sobre las 22:00"]]},
+  {id:"restr", t:"¿Tienes alguna alergia, intolerancia o forma de comer especial?", tipo:"varios", sub:"Marca todas las que tengas.", ninguna:"ninguna", ops:[["ninguna","Ninguna"],["vegano","🌱 Vegetariana o vegana"],["lactosa","Intolerancia a la lactosa"],["gluten","Celiaquía / sin gluten"],["digestiva","Digestiones delicadas (colon irritable…)"],["frutosSecos","Alergia a frutos secos"],["cacahuete","Alergia al cacahuete"],["huevo","Alergia al huevo"],["pescado","Alergia al pescado"],["marisco","Alergia al marisco"],["soja","Alergia a la soja"]]},
+  {id:"veg", t:"De esto, ¿qué sí comes?", tipo:"varios", si:a=>(a.restr||[]).includes("vegano"), ninguna:"nada", ops:[["huevo","🥚 Huevo"],["lacteos","🥛 Lácteos"],["pescado","🐟 Pescado"],["nada","Nada de esto (vegana)"]]},
+  {id:"integ", t:"Pan, pasta y arroz integrales…", tipo:"uno", ops:[["si","Me gustan"],["no","Prefiero los normales"],["","Me da igual"]]},
+  {id:"cenaHC", t:"En la cena, ¿quieres hidratos (pan, arroz, patata…)?", tipo:"uno", ops:[["si","Sí"],["no","Prefiero cenar sin hidratos"]], sub:"Si cenas sin hidratos, llevarás un poco más de proteína."},
+  {id:"postre", t:"¿Quieres postre en la comida y la cena?", tipo:"uno", sub:"Fruta o yogur.", ops:[["si","Sí"],["no","No"]]},
+  {id:"batido", t:"¿Tomarías un batido de proteína después de entrenar?", tipo:"uno", si:a=>a.fuerza!=="0" || a.perfil==="resist", ops:[["si","Sí"],["no","No, prefiero comida"]]},
+  {id:"super", t:"¿Dónde haces la compra normalmente?", tipo:"uno", ops:SUPERS.filter(Boolean).map(s=>[s,s]).concat([["Otro","Otro"]])},
+  {id:"fuma", t:"¿Fumas?", tipo:"uno", ops:[["no","No"],["si","Sí"]], sub:"Para tu Vital Score: llevarás la cuenta de los días sin fumar."}
+];
+const ALTA_PASOS = {p4:4000, p6:6500, p9:9000, p11:11000, p13:13500, nose:6000};
+/* Del cuestionario a la ficha. Devuelve también el desglose del cálculo para enseñarlo. */
+function altaFicha(a){
+  const peso=+a.peso, alt=+a.altura, edad=+a.edad, hombre=a.sexo==="Hombre";
+  const tmb=Math.round(10*peso + 6.25*alt - 5*edad + (hombre?5:-161));
+  const pasos=ALTA_PASOS[a.pasos]||6000;
+  /* factor: base por pasos + trabajo + entrenos (kcal de la semana repartidas entre 7 días) */
+  const fBase = pasos<5000?1.25 : pasos<8000?1.32 : pasos<10000?1.4 : pasos<12000?1.47 : 1.55;
+  const fTrab = ({sentado:0, pie:0.03, camina:0.05, fisico:0.12})[a.trabajo]||0;
+  const nF=+a.fuerza||0, nC=a.perfil==="resist"?0:(+a.cardio||0), hR=a.perfil==="resist"?(+a.horasRes||0):0;
+  const kSem = nF*peso*4 + nC*peso*4.5 + hR*peso*7;   // ≈ kcal activas por sesión de fuerza (1 h), de cardio (45 min) y por hora de resistencia
+  const fEnt = kSem/7/tmb;
+  const factor = Math.min(2.2, Math.max(1.2, Math.round((fBase+fTrab+fEnt)*20)/20));
+  const mant=Math.round(tmb*factor);
+  const objetivo = a.perfil==="resist" ? (a.objRes||"deficit") : PERFILES[a.perfil].obj;
+  const r50=x=>Math.round(x/50)*50;
+  const ajuste = objetivo==="normo" ? 0
+    : a.perfil==="salud" ? Math.min(DEFICIT_MAX_SALUD, Math.max(300, r50(mant*0.2)))
+    : a.perfil==="fit_def" ? Math.min(500, Math.max(250, r50(mant*0.15)))
+    : objetivo==="superavit" ? (hombre?300:200) : 300;
+  /* proteína: con obesidad (IMC ≥ 30) se calcula sobre el peso ajustado */
+  const imc=peso/((alt/100)**2), pIdeal=25*(alt/100)**2, pAj=imc>=30 ? pIdeal+0.25*(peso-pIdeal) : peso;
+  const gkg=PROT_GKG[a.perfil]||2, protGkg = imc>=30 ? Math.round(gkg*pAj/peso*10)/10 : 0;
+  const comidas = ({"3":["Desayuno","Comida","Cena"], "4":["Desayuno","Comida","Merienda","Cena"], "5":["Desayuno","Segundo desayuno","Comida","Merienda","Cena"], "4c":["Desayuno","Comida","Cena","Pre-cama"]})[a.comidas]||["Desayuno","Comida","Merienda","Cena"];
+  const H = ({pronto:[13,20], normal:[14,21], tarde:[15,22]})[a.horario]||[14,21], hh=h=>`${String(h).padStart(2,"0")}:00`;
+  const franjas = {Desayuno:["07:00","09:00"], "Segundo desayuno":["10:30","11:30"], Comida:[hh(H[0]-0.5|0).replace(":00",":30"), hh(H[0]+1)], Merienda:[hh(H[0]+3), hh(H[0]+4)], Cena:[hh(H[1]-0.5|0).replace(":00",":30"), hh(H[1]+1)], "Pre-cama":[hh(H[1]+1), hh(H[1]+2)]};
+  const restr=(a.restr||[]).filter(x=>x!=="ninguna"), veg=a.veg||[];
+  const f = {
+    codigo:"PRUEBA", nombre:(a.nombre||"").trim()||"Cliente nuevo", sexo:hombre?"Hombre":"Mujer", edad, altura:alt, peso,
+    tmb, factor, perfil:a.perfil, objetivo, ajuste, comidas,
+    entreno: (a.entreno && (nF||nC||hR)) ? a.entreno : "no",
+    hambre:a.hambre||"igual", sinHambreManana:a.manana==="poco",
+    pasosObjetivo: pasos>=10000 ? 12000 : 10000, pasosMedia: a.pasos==="nose"?0:pasos,
+    restricciones:restr, vegCome: restr.includes("vegano") ? {huevo:veg.includes("huevo"), lacteos:veg.includes("lacteos"), pescado:veg.includes("pescado")} : {},
+    entrenosSemana: Math.max(1,nF), cardioSemana: a.perfil==="resist" ? Math.max(3, Math.round(hR/1.5)) : (nC ? (nC>=5?5:nC>=3?3:2) : 0),
+    suplementos: a.batido ? a.batido==="si" : false, batidoPost: a.batido ? a.batido==="si" : null,
+    integrales:a.integ||"", cenaSinHC:a.cenaHC==="no", postrePrincipal:a.postre!=="no",
+    fumador:a.fuma==="si", supermercado:a.super||"", franjas:Object.fromEntries(comidas.map(c=>[c,franjas[c]])), protGkg, platoAuto:true, diasAuto:true
+  };
+  return {f, calc:{tmb, factor, fBase, fTrab, fEnt:Math.round(fEnt*100)/100, kSem:Math.round(kSem), mant, ajuste, objetivo, imc:Math.round(imc*10)/10, pAj:Math.round(pAj), protDia:Math.round((protGkg||gkg)*peso)}};
+}
+let ALTA = {i:0, a:{}};
+function altaVisibles(){ return ALTA_Q.filter(q=>!q.si || q.si(ALTA.a)); }
+function altaInicio(){
+  document.getElementById("app").classList.remove("ancho");
+  const saved=store.get("mogas-alta"); if(saved && saved.a) ALTA=saved;
+  altaPintar();
+}
+function altaPintar(){
+  const Q=altaVisibles(); if(ALTA.i>=Q.length) return altaFin();
+  const q=Q[ALTA.i], a=ALTA.a, v=a[q.id];
+  let cuerpo="";
+  if(q.tipo==="uno") cuerpo=`<div class="altops">${q.ops.map(([k,t])=>`<button type="button" class="altop${v===k?" on":""}" data-v="${esc(k)}">${t}</button>`).join("")}</div>`;
+  if(q.tipo==="varios") cuerpo=`<div class="altops">${q.ops.map(([k,t])=>`<button type="button" class="altop${(v||[]).includes(k)?" on":""}" data-v="${esc(k)}">${t}</button>`).join("")}</div><button type="button" class="altnext" ${(v||[]).length?"":"disabled"}>Siguiente</button>`;
+  if(q.tipo==="num"){ const x=v??q.def; cuerpo=`<div class="altnum"><button type="button" class="altpm" data-d="-1">−</button><b><span class="altv">${String(x).replace(".",",")}</span> <small>${q.u}</small></b><button type="button" class="altpm" data-d="1">+</button></div>
+      <input type="range" class="altrange" min="${q.min}" max="${q.max}" step="${q.paso}" value="${x}"><button type="button" class="altnext">Siguiente</button>`; }
+  if(q.tipo==="texto") cuerpo=`<input class="alttxt" maxlength="40" value="${esc(v||"")}" placeholder="Nombre"><button type="button" class="altnext">Siguiente</button>`;
+  app.innerHTML=`<div class="alta">${selectorIdioma()}
+    <div class="altbar"><i style="width:${Math.round(ALTA.i/Q.length*100)}%"></i></div>
+    <div class="altcab"><button type="button" class="altback" ${ALTA.i?"":"hidden"}>‹ <span>Atrás</span></button><span><span>Pregunta</span> ${ALTA.i+1} <span>de</span> ${Q.length}</span></div>
+    <h2>${q.t}</h2>${q.sub?`<p class="altsub">${q.sub}</p>`:""}${cuerpo}</div>`;
+  activarSelector(altaPintar);
+  const guardar=()=>store.set("mogas-alta",ALTA), sig=()=>{ ALTA.i++; guardar(); altaPintar(); };
+  app.querySelector(".altback").onclick=()=>{ ALTA.i=Math.max(0,ALTA.i-1); guardar(); altaPintar(); };
+  if(q.tipo==="uno") app.querySelectorAll(".altop").forEach(b=>b.onclick=()=>{ a[q.id]=b.dataset.v; b.classList.add("on"); setTimeout(sig,160); });
+  if(q.tipo==="varios") app.querySelectorAll(".altop").forEach(b=>b.onclick=()=>{ let L=a[q.id]||[]; const k=b.dataset.v;
+      if(k===q.ninguna) L = L.includes(k)?[]:[k]; else { L=L.filter(x=>x!==q.ninguna); L = L.includes(k) ? L.filter(x=>x!==k) : [...L,k]; }
+      a[q.id]=L; guardar(); altaPintar(); });
+  if(q.tipo==="num"){ const r=app.querySelector(".altrange"), sv=app.querySelector(".altv"), put=x=>{ x=Math.min(q.max,Math.max(q.min,Math.round(x/q.paso)*q.paso)); a[q.id]=x; r.value=x; sv.textContent=String(x).replace(".",","); };
+    if(a[q.id]==null) a[q.id]=q.def;
+    r.oninput=()=>put(+r.value); app.querySelectorAll(".altpm").forEach(b=>b.onclick=()=>put(+a[q.id] + (+b.dataset.d)*q.paso)); }
+  if(q.tipo==="texto"){ const t=app.querySelector(".alttxt"); t.oninput=()=>{ a[q.id]=t.value; }; }
+  const nx=app.querySelector(".altnext"); if(nx) nx.onclick=sig;
+}
+async function altaPdfBlob(){
+  await pdfmakeListo();
+  return await new Promise((res,rej)=>{ try{ pdfMake.createPdf(dietaPdfDef()).getBlob(res); }catch(e){ rej(e); } });
+}
+function altaFin(){
+  const {f, calc:c} = altaFicha(ALTA.a);
+  aplicarDatos({f});
+  const nf=s=>String(s).replace(".",",");
+  const obj = c.objetivo==="deficit" ? `−${c.ajuste} kcal (déficit)` : c.objetivo==="superavit" ? `+${c.ajuste} kcal (superávit)` : "Mantenimiento";
+  app.innerHTML=`<div class="alta altfin">${selectorIdioma()}
+    <h2>✅ Tu dieta está lista</h2>
+    <div class="altres">
+      <div class="altk"><b>${kcalObj()}</b><small>kcal al día</small></div>
+      <ul class="pstat">
+        <li><span>Perfil</span> <b>${PERFILES[f.perfil].t}</b></li>
+        <li><span>TMB (Mifflin-St Jeor)</span> <b>${c.tmb} kcal</b></li>
+        <li><span>Factor de actividad</span> <b>${nf(c.factor)}</b></li>
+        <li><span>· por pasos</span> <b>${nf(c.fBase)}</b></li>
+        <li><span>· por trabajo</span> <b>+${nf(c.fTrab)}</b></li>
+        <li><span>· por entrenos</span> <b>+${nf(c.fEnt)}</b> <small class="notr">(≈${fmtN(c.kSem)} kcal/sem)</small></li>
+        <li><span>Mantenimiento</span> <b>${c.mant} kcal</b></li>
+        <li><span>Objetivo</span> <b>${obj}</b></li>
+        <li><span>Proteína</span> <b>≈${c.protDia} g/día</b></li>
+        <li><span>IMC</span> <b>${nf(c.imc)}</b></li>
+        ${c.imc>=30?`<li><span>Proteína calculada sobre el peso ajustado</span> <b>${c.pAj} kg</b></li>`:""}
+      </ul>
+    </div>
+    <button type="button" class="altnext" id="altpdf">📄 Ver la dieta en PDF</button>
+    <div id="altout"></div>
+    <button type="button" class="altsec" id="altapp">📱 Abrir la app con esta dieta</button>
+    <button type="button" class="altsec" id="altedit">✏️ Cambiar respuestas</button>
+    <button type="button" class="altsec" id="altnew">🔁 Empezar de cero</button>
+  </div>`;
+  activarSelector(altaFin);
+  app.querySelector("#altpdf").onclick=async e=>{ const b=e.currentTarget, out=app.querySelector("#altout"); b.disabled=true; out.innerHTML=`<p class="note">Preparando el PDF…</p>`;
+    try{ const blob=await altaPdfBlob(), nombre=`Dieta ${f.nombre}.pdf`; if(PDF_URL) URL.revokeObjectURL(PDF_URL); PDF_URL=URL.createObjectURL(blob);
+      out.innerHTML=`<div class="pdfbtns"><a class="doclink" href="${PDF_URL}" target="_blank" rel="noopener">📄 Abrir el PDF</a><a class="doclink" href="${PDF_URL}" download="${esc(nombre)}">⬇️ Descargar el PDF</a></div>`;
+      window.open(PDF_URL,"_blank"); }
+    catch(err){ out.innerHTML=`<p class="warn">No se ha podido crear el PDF. Revisa la conexión e inténtalo otra vez.</p>`; }
+    b.disabled=false; };
+  app.querySelector("#altapp").onclick=()=>{ store.set("mogas-dieta",datosActuales()); store.del("mogas-fuera"); store.del("mogas-modo"); start(); };
+  app.querySelector("#altedit").onclick=()=>{ ALTA.i=0; store.set("mogas-alta",ALTA); altaPintar(); };
+  app.querySelector("#altnew").onclick=()=>{ ALTA={i:0,a:{}}; store.del("mogas-alta"); altaPintar(); };
+}
+
 /* --- Arranque --- */
 (async function(){
   const m = location.hash.match(/^#d=([A-Za-z0-9_\-]+)$/);
@@ -4061,7 +4242,8 @@ function apuntarMenu(){
       history.replaceState(null,"",location.pathname); start(); return; }
     catch(e){ history.replaceState(null,"",location.pathname); login(); document.getElementById("err").textContent="El enlace no es válido o está incompleto. Pide a tu nutricionista que te lo vuelva a enviar."; return; }
   }
-  window.addEventListener("hashchange",()=>{ if(/^#(d=|r=|panel$)/.test(location.hash)) location.reload(); });
+  window.addEventListener("hashchange",()=>{ if(/^#(d=|r=|panel$|nuevo$)/.test(location.hash)) location.reload(); });
+  if(location.hash==="#nuevo"){ history.replaceState(null,"",location.pathname); store.del("mogas-modo"); altaInicio(); return; }
   const r = location.hash.match(/^#r=([A-Za-z0-9_\-]+)$/);
   if(r){ const h=location.hash; history.replaceState(null,"",location.pathname);
     if(store.get("mogas-modo")==="nutri"){ const res=await alimImportar(h); panelInicio(res.msg); return; }
