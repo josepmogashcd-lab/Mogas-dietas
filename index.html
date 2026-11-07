@@ -69,6 +69,7 @@
   .alttxt{font:inherit;font-size:18px;padding:14px;border:1.5px solid var(--line);border-radius:14px;margin-top:6px}
   .altres{background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}.altk{text-align:center}.altk b{display:block;font-size:44px;color:var(--brand-dark)}.altk small{color:var(--muted)}
   .altlink{font:inherit;font-size:14px;font-weight:700;border:0;background:none;color:var(--brand-dark);text-decoration:underline;cursor:pointer;margin-top:12px}
+  .bjrojo{background:#B42318}.alta>.altback{align-self:flex-start}
   .loginlogo{display:block;width:78%;max-width:260px;margin:4px auto 22px}
   .login{background:radial-gradient(circle at 85% 12%,rgba(147,180,130,.35) 0,rgba(147,180,130,0) 45%),radial-gradient(circle at 10% 90%,rgba(101,126,82,.18) 0,rgba(101,126,82,0) 40%)}
   .card p{text-align:center}
@@ -402,10 +403,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.43.0"></script>
-<script src="i18n-vs.js?v=2.43.0"></script>
-<script src="i18n-alim.js?v=2.43.0"></script>
-<script src="recetas-esp.js?v=2.43.0"></script>
+<script src="i18n.js?v=2.44.0"></script>
+<script src="i18n-vs.js?v=2.44.0"></script>
+<script src="i18n-alim.js?v=2.44.0"></script>
+<script src="recetas-esp.js?v=2.44.0"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -955,7 +956,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.43.0";
+const APP_VERSION = "2.44.0";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -2219,13 +2220,14 @@ function start(){
     <div id="vsbar" class="vsbar" hidden></div>
     <div id="vs" class="vs" hidden></div>
     <div id="chat" hidden></div>
-    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <span class="notr">v${APP_VERSION}</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>
+    <footer><b>MOGAS</b> · Nutrició i Entrenament · <a href="#" id="salir">Salir</a> · <a href="#" id="baja">Darme de baja</a> · <span class="notr">v${APP_VERSION}</span><br>Respuestas basadas en la pauta de tu nutricionista. Ante cualquier duda de salud, consúltale directamente.</footer>
     <nav class="tabs" aria-label="Secciones"><button type="button" data-t="vs">${ICO.vs}<span>Vital Score</span></button><button type="button" data-t="apuntar">${ICO.apuntar}<span>Apuntar</span></button><button type="button" data-t="dieta">${ICO.dieta}<span>Mi dieta</span></button><button type="button" data-t="ayuda">${ICO.ayuda}<span>Ayuda</span></button></nav>`;
   chat = document.getElementById("chat");
   activarSelector(start);
   const sl=document.getElementById("salir");
   if(sl && PREVIEW){ sl.textContent="← Volver al panel"; sl.classList.add("notr"); sl.onclick=e=>{e.preventDefault(); PREVIEW=false; panel();}; }
   else if(sl) sl.onclick=e=>{e.preventDefault(); store.del("mogas-codigo"); store.set("mogas-fuera",1); login();};
+  const bj=document.getElementById("baja"); if(bj) bj.onclick=e=>{ e.preventDefault(); bajaInicio(); };
   document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>irTab(b.dataset.t));
   irTab(TAB);
   vsBajar();
@@ -3956,7 +3958,11 @@ async function panelVS(el){
     el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="note">Últimos 30 días. Primero, quien más lo necesita.</p>
       ${filas.length?filas.map(x=>{ const b=x.r.score!=null?vsBanda(x.r.score):null; return `<div class="cli vsrow">${anillo(x.r.score,44,6,x.r.score==null?"—":x.r.score)}<div><b>${esc(x.c.nombre||x.c.codigo)}</b><small>${b?esc(b.n)+" · ":""}${x.ult?`Último cuestionario: ${esc(fmtDia(deISO(x.ult),{day:"numeric",month:"short"}))} · ${x.n} días en 30`:"Aún no ha contestado ningún cuestionario"}</small></div></div>`; }).join("")
         :`<p class="note">Aún no hay clientes en la base de datos. Guarda un cliente para que aparezca aquí.</p>`}
+      <div id="st_bajas"></div>
       <p class="note">Conectado como ${esc(s.email)} · <a href="#" id="st_out">Salir</a></p>`;
+    nube("/rest/v1/bajas?select=codigo,fecha,motivo&order=fecha.desc&limit=20",{token:t}).then(L=>{ const bx=el.querySelector("#st_bajas"); if(!bx||!L||!L.length) return;
+      const M=Object.fromEntries(BAJA_MOTIVOS);
+      bx.innerHTML=`<h3>🚪 Bajas recientes</h3>${L.map(x=>`<div class="cli"><div><b>${esc(x.codigo)}</b><small>${esc(fmtDia(new Date(x.fecha),{day:"numeric",month:"short",year:"numeric"}))} · ${esc(M[x.motivo]||"Sin motivo")}</small></div></div>`).join("")}`; }).catch(()=>{});
   }catch(e){
     el.innerHTML=`<h2>📊 Vital Score de tus clientes</h2><p class="warn">No se han podido cargar los datos (${esc(e.message)}).</p><p class="note"><a href="#" id="st_out">Volver a entrar</a></p>`;
   }
@@ -4232,6 +4238,41 @@ function altaFin(){
   app.querySelector("#altapp").onclick=()=>{ store.set("mogas-dieta",datosActuales()); store.del("mogas-fuera"); store.del("mogas-modo"); start(); };
   app.querySelector("#altedit").onclick=()=>{ ALTA.i=0; store.set("mogas-alta",ALTA); altaPintar(); };
   app.querySelector("#altnew").onclick=()=>{ ALTA={i:0,a:{}}; store.del("mogas-alta"); altaPintar(); };
+}
+
+/* =========== DARSE DE BAJA (dejar el servicio y borrar los datos) ===========
+   Lo exigen App Store y Google Play: el cliente puede borrar su cuenta y sus datos desde la app. */
+const BAJA_MOTIVOS = [["objetivo","He conseguido mi objetivo"],["precio","Por el precio"],["tiempo","No tengo tiempo"],["app","No me acaba de convencer la app"],["otro","Otro motivo"]];
+function bajaInicio(){
+  let motivo="";
+  const pinta=()=>{ app.innerHTML=`<div class="alta">${selectorIdioma()}
+    <button type="button" class="altback" id="bjvol">‹ <span>Volver</span></button>
+    <h2>Dejar el servicio</h2>
+    <p class="altsub">Si te das de baja:</p>
+    <ul class="ptips"><li>Se borran de este móvil tu dieta, tus cuestionarios, tus pasos, tus entrenos y tus bebidas.</li><li>Se borra tu Vital Score de nuestra base de datos.</li><li>Tu código deja de funcionar. Si vuelves, tu nutricionista te dará uno nuevo.</li></ul>
+    <p class="altsub"><b>¿Nos dices por qué te vas?</b> (opcional)</p>
+    <div class="altops">${BAJA_MOTIVOS.map(([k,t])=>`<button type="button" class="altop${motivo===k?" on":""}" data-m="${k}">${t}</button>`).join("")}</div>
+    <button type="button" class="altnext bjrojo" id="bjok">Darme de baja y borrar mis datos</button>
+    <p class="warn" id="bjerr"></p></div>`;
+    activarSelector(pinta);
+    app.querySelector("#bjvol").onclick=()=>start();
+    app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{ motivo = motivo===b.dataset.m ? "" : b.dataset.m; pinta(); });
+    app.querySelector("#bjok").onclick=async e=>{
+      if(!confirm(trT("¿Seguro? Esto no se puede deshacer."))) return;
+      const b=e.currentTarget; b.disabled=true; b.textContent=trT("Borrando…");
+      const er=app.querySelector("#bjerr");
+      if(nubeOn() && FICHA.token){
+        try{ const ok=await nube("/rest/v1/rpc/borrar_mis_datos",{method:"POST", body:{p_codigo:FICHA.codigo, p_token:FICHA.token, p_motivo:motivo}});
+          if(ok===false) throw new Error("token"); }
+        catch(x){ er.textContent=trT("No hemos podido borrar tus datos de la base de datos. Revisa la conexión e inténtalo otra vez, o pídeselo a tu nutricionista."); b.disabled=false; b.textContent=trT("Darme de baja y borrar mis datos"); return; }
+      }
+      const lang=LANG; try{ Object.keys(localStorage).filter(k=>k.startsWith("mogas-")).forEach(k=>localStorage.removeItem(k)); localStorage.setItem("mogas-lang",lang); }catch(x){}
+      app.innerHTML=`<div class="alta">${selectorIdioma()}<h2>Te has dado de baja</h2><p class="altsub">Hemos borrado tus datos. Gracias por confiar en MOGAS: ha sido un placer acompañarte. Si algún día quieres volver, aquí estaremos.</p>
+        <button type="button" class="altsec" id="bjfin">Volver al inicio</button></div>`;
+      activarSelector(()=>{}); app.querySelector("#bjfin").onclick=()=>login();
+    };
+  };
+  pinta();
 }
 
 /* --- Arranque --- */
