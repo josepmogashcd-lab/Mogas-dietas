@@ -403,10 +403,10 @@
 <body>
 <div class="app" id="app"></div>
 
-<script src="i18n.js?v=2.48.0"></script>
-<script src="i18n-vs.js?v=2.48.0"></script>
-<script src="i18n-alim.js?v=2.48.0"></script>
-<script src="recetas-esp.js?v=2.48.0"></script>
+<script src="i18n.js?v=2.48.1"></script>
+<script src="i18n-vs.js?v=2.48.1"></script>
+<script src="i18n-alim.js?v=2.48.1"></script>
+<script src="recetas-esp.js?v=2.48.1"></script>
 <script>
 /* =====================================================================
    MOGAS · Generador de la dieta en .docx (Word / Google Docs)
@@ -978,7 +978,7 @@ const FAQ = [
    MOTOR DEL CHAT (sin IA: botones + reglas)
    ========================================================= */
 const app = document.getElementById("app");
-const APP_VERSION = "2.48.0";
+const APP_VERSION = "2.48.1";
 /* Si hay una versión nueva publicada, recarga saltándose la caché del móvil */
 (function(){ try{
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():null).then(v=>{
@@ -4259,8 +4259,17 @@ function altaFichaTemporal(){ const a=ALTA.a, r=(a.restr||[]).filter(x=>x!=="nin
 function altaVisibles(){ return ALTA_Q.filter(q=>!q.si || q.si(ALTA.a)); }
 function altaInicio(){
   document.getElementById("app").classList.remove("ancho");
-  const saved=store.get("mogas-alta"); if(saved && saved.a) ALTA=saved;
-  altaPintar();
+  const saved=store.get("mogas-alta");
+  if(saved && saved.a && saved.i>0){ ALTA=saved; const Q=altaVisibles(), fin=ALTA.i>=Q.length;
+    app.innerHTML=`<div class="alta">${selectorIdioma()}<h2>${fin?"Ya tienes una dieta hecha con el cuestionario":"Tienes el cuestionario a medias"}</h2>
+      ${fin?"":`<p class="altsub"><span>Ibas por la pregunta</span> ${ALTA.i+1} <span>de</span> ${Q.length}.</p>`}
+      <button type="button" class="altnext" id="altseg">${fin?"Ver esa dieta":"Continuar donde lo dejé"}</button>
+      <button type="button" class="altsec" id="altcero">🔁 Empezar de cero</button></div>`;
+    activarSelector(altaInicio);
+    app.querySelector("#altseg").onclick=()=>altaPintar();
+    app.querySelector("#altcero").onclick=()=>{ ALTA={i:0,a:{}}; store.del("mogas-alta"); altaPintar(); };
+    return; }
+  ALTA={i:0,a:{}}; altaPintar();
 }
 function altaPintar(){
   const Q=altaVisibles(); if(ALTA.i>=Q.length) return altaFin();
@@ -4274,11 +4283,12 @@ function altaPintar(){
   if(q.tipo==="texto") cuerpo=`<input class="alttxt" maxlength="40" value="${esc(v||"")}" placeholder="Nombre"><button type="button" class="altnext">Siguiente</button>`;
   app.innerHTML=`<div class="alta">${selectorIdioma()}
     <div class="altbar"><i style="width:${Math.round(ALTA.i/Q.length*100)}%"></i></div>
-    <div class="altcab"><button type="button" class="altback" ${ALTA.i?"":"hidden"}>‹ <span>Atrás</span></button><span><span>Pregunta</span> ${ALTA.i+1} <span>de</span> ${Q.length}</span></div>
+    <div class="altcab"><button type="button" class="altback" ${ALTA.i?"":"hidden"}>‹ <span>Atrás</span></button><span><span>Pregunta</span> ${ALTA.i+1} <span>de</span> ${Q.length}</span>${ALTA.i?`<button type="button" class="altback" id="altreset">🔁 <span>Empezar de cero</span></button>`:""}</div>
     <h2>${q.t}</h2>${q.sub?`<p class="altsub">${q.sub}</p>`:""}${cuerpo}</div>`;
   activarSelector(altaPintar);
   const guardar=()=>store.set("mogas-alta",ALTA), sig=()=>{ ALTA.i++; guardar(); altaPintar(); };
   app.querySelector(".altback").onclick=()=>{ ALTA.i=Math.max(0,ALTA.i-1); guardar(); altaPintar(); };
+  const rs=app.querySelector("#altreset"); if(rs) rs.onclick=()=>{ if(!confirm(trT("¿Borrar todas las respuestas y empezar de cero?"))) return; ALTA={i:0,a:{}}; store.del("mogas-alta"); altaPintar(); };
   if(q.tipo==="uno") app.querySelectorAll(".altop").forEach(b=>b.onclick=()=>{ a[q.id]=b.dataset.v; b.classList.add("on"); setTimeout(sig,160); });
   if(q.tipo==="varios") app.querySelectorAll(".altop").forEach(b=>b.onclick=()=>{ let L=a[q.id]||[]; const k=b.dataset.v;
       if(k===q.ninguna) L = L.includes(k)?[]:[k]; else { L=L.filter(x=>x!==q.ninguna); L = L.includes(k) ? L.filter(x=>x!==k) : [...L,k]; }
